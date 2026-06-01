@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "MCP Server (stdio)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "qspice_mcp",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "QSPICE_LOG_LEVEL": "DEBUG",
+        "QSPICE_LOG_FORMAT": "console"
+      }
+    },
+    {
+      "name": "Probe QSpice",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/probe_qspice.py",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Capture fixtures",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/scripts/capture_qraw_fixtures.py",
+      "envFile": "${workspaceFolder}/.env",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Pytest: current file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-v"],
+      "console": "integratedTerminal"
+    }
+  ]
+}

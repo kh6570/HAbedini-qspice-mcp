@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "cwd": "${workspaceFolder}",
+    "shell": {
+      "executable": "powershell",
+      "args": [
+        "-NoProfile",
+        "-Command"
+      ]
+    }
+  },
+  "tasks": [
+    {
+      "label": "Quality Gate",
+      "type": "shell",
+      "command": "& .\\.venv\\Scripts\\python.exe -m ruff check .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & .\\.venv\\Scripts\\python.exe -m ruff format --check .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & .\\.venv\\Scripts\\python.exe -m mypy --strict src/; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & .\\.venv\\Scripts\\python.exe -m pytest -m 'not integration' --cov; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & .\\.venv\\Scripts\\python.exe scripts\\check_package_coverage.py",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Format",
+      "type": "shell",
+      "command": "& .\\.venv\\Scripts\\python.exe -m ruff format .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & .\\.venv\\Scripts\\python.exe -m ruff check --fix .",
+      "problemMatcher": []
+    },
+    {
+      "label": "Tests: integration",
+      "type": "shell",
+      "command": "& .\\.venv\\Scripts\\python.exe -m pytest -m integration -v",
+      "problemMatcher": []
+    },
+    {
+      "label": "Reload QSpice MCP",
+      "type": "shell",
+      "command": "$mcp = Get-Content -Raw '.\\.cursor\\mcp.json' | ConvertFrom-Json; $mcp.mcpServers.qspice | Add-Member -NotePropertyName devReloadStamp -NotePropertyValue ((Get-Date).ToString('o')) -Force; $mcp | ConvertTo-Json -Depth 10 | Set-Content -Path '.\\.cursor\\mcp.json' -Encoding UTF8; Write-Host 'Bumped .cursor/mcp.json devReloadStamp — toggle qspice MCP in Settings if it does not reload automatically.'",
+      "problemMatcher": []
+    }
+  ]
+}

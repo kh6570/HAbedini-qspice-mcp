@@ -1,0 +1,184 @@
+# QSpice MCP User Guide
+
+One guide for installing, connecting, and using the QSpice MCP server with AI clients.
+
+---
+
+## What this is
+
+[qspice-mcp](https://github.com/kh6570/HAbedini-qspice-mcp) is a [Model Context Protocol](https://modelcontextprotocol.io) server for the [QSpice](https://www.qorvo.com/design-hub/design-tools/interactive/qspice) simulator on Windows. AI assistants use it to:
+
+- Inspect and edit `.qsch` schematics
+- Run simulations and sweeps
+- Read waveforms, operating points, and measurements
+- Export artifacts and scaffold mixed-signal devices
+
+**Source of truth:** your `.qsch` file. Netlists, logs, and `.qraw` files are derived outputs.
+
+---
+
+## Install
+
+Follow the [Installation steps in the README](../README.md#installation): clone the repo, create a virtualenv, `pip install -e .`, set `QSPICE_EXE`, and verify with `qspice-mcp --describe`. Requirements are Windows, Python ≥ 3.11, and QSpice (`QSPICE64.exe`).
+
+### Optional extras
+
+| Extra | Purpose |
+| --- | --- |
+| `[backends]` | Richer schematic/raw integration when installed |
+| `[telemetry]` | OpenTelemetry span export |
+| `[dev]` | Lint, test, and coverage tooling (contributors) |
+
+Base install is enough for MCP usage with the supported clean-room schematic subset and common waveform readback. Call `describe_server_capabilities` to see what is active on your machine.
+
+---
+
+## Connect an MCP client
+
+**Easiest path (AI-assisted):** open **[AGENTS.md](../AGENTS.md)** and run `scripts/setup_mcp.ps1`. That merges `qspice` into **user-level** MCP config (Cursor: `%USERPROFILE%\.cursor\mcp.json`; VS Code: `%APPDATA%\Code\User\mcp.json`) and runs a sanity check. JSON templates are in AGENTS.md.
+
+**First-time order:**
+
+1. Verify `qspice-mcp --describe` works.
+2. Configure your client to **spawn** `qspice-mcp` (do not run it manually for normal use).
+3. Set `QSPICE_EXE` in the server environment.
+4. Restart the client.
+5. Ask the AI to call `describe_server_capabilities` before edits or simulations.
+
+### VS Code / Cursor
+
+```json
+{
+  "mcpServers": {
+    "qspice": {
+      "command": "D:\\path\\to\\qspice-mcp\\.venv\\Scripts\\qspice-mcp.exe",
+      "env": {
+        "QSPICE_EXE": "C:\\Program Files\\QSPICE\\QSPICE64.exe"
+      }
+    }
+  }
+}
+```
+
+Use the **full path** to the virtualenv executable on Windows.
+
+**First prompt:**
+
+```text
+Call describe_server_capabilities for the qspice MCP server and summarize the available tool groups.
+```
+
+### Claude Desktop
+
+Same pattern: `command` = venv `qspice-mcp.exe`, `env.QSPICE_EXE` = QSpice path. Restart Claude after editing `claude_desktop_config.json`.
+
+### Inspector CLI
+
+Let Inspector spawn the server — do not start `qspice-mcp` in the same terminal first.
+
+```powershell
+npx -y @modelcontextprotocol/inspector .\.venv\Scripts\qspice-mcp.exe --cli --transport stdio --method tools/list
+
+npx -y @modelcontextprotocol/inspector .\.venv\Scripts\qspice-mcp.exe --cli --transport stdio --method tools/call --tool-name describe_server_capabilities
+```
+
+Add `-e QSPICE_EXE="C:\Program Files\QSPICE\QSPICE64.exe"` after `inspector` if the variable is not set in your shell.
+
+---
+
+## Quick smoke test
+
+From the repo root (PowerShell):
+
+```powershell
+npx -y @modelcontextprotocol/inspector .\.venv\Scripts\qspice-mcp.exe --cli --transport stdio --method tools/call --tool-name materialize_reference_circuit --tool-arg recipe_id="buck_converter_cpp"
+```
+
+Then run without `dry_run`, `list_signals` on the `.qraw`, and `read_waveform` with `max_points=200`.
+
+---
+
+## Typical workflow
+
+1. **Inspect** — `inspect_schematic`, `list_components`, `read_component`, or `read_subcircuit`.
+2. **Edit** — `set_component_value`, `add_instruction`, `remove_instruction`, symbol/DLL tools as needed. Use `describe_edit_capability` before uncertain edits.
+3. **Simulate** — `run_simulation` (cached when netlist and switches match a prior success).
+4. **Sweeps / batches** — `run_value_sweep`, `run_param_sweep`, or `submit_batch` + `get_batch_status`.
+5. **Waveforms** — `list_signals`, `read_waveform` (bounded), `measure_waveform`, `plot_waveforms`.
+6. **Logs / measures** — `read_log`, `read_measures`.
+7. **Exports** — QUX CSV/ASCII/S2P, `export_derived_raw`, `merge_waveforms`.
+8. **Statistics** — `prepare_monte_carlo` / `run_monte_carlo`, worst-case tools.
+9. **Discover** — `describe_server_capabilities` when backends or degraded groups matter.
+
+Full tool list: [Tool reference](tool_reference.md).
+
+---
+
+## Architecture (concepts)
+
+`qspice-mcp` is schematic-first (`.qsch` is the source of truth), returns compact stable JSON instead of raw simulator objects, enforces waveform size budgets, and degrades gracefully when optional `[backends]` are absent. See [Architecture](architecture.md) for the layered design.
+
+---
+
+## Common problems
+
+| Problem | Fix |
+| --- | --- |
+| `QSPICE_EXE` missing | Set to `C:\Program Files\QSPICE\QSPICE64.exe`; re-run `--describe` |
+| `qspice-mcp` not found | Use full `.venv\Scripts\qspice-mcp.exe` path in client config |
+| Paths with spaces | Quote values: `QSPICE_EXE="C:\Program Files\QSPICE\QSPICE64.exe"` |
+| `Invalid JSON` / stdio error | You typed a shell command into a terminal running `qspice-mcp`; use Ctrl+C and let the **client** spawn the server |
+| Missing DLL / C-block errors | [C-Block Build Guide](cblock_build_guide.md) |
+
+### Manual server run (debug only)
+
+```powershell
+.\.venv\Scripts\qspice-mcp.exe
+```
+
+That terminal is JSON-RPC only — not a normal shell.
+
+---
+
+## DLL / C-block devices
+
+1. `scaffold_dll_device` or `scaffold_dll_device_from_symbol`
+2. Build the DLL with `build_dll_device` or the [C-Block Build Guide](cblock_build_guide.md)
+3. Place `.dll` next to the `.qsch`
+4. `validate_dll_symbol_signature` before simulating
+5. `run_simulation`
+
+QSPICE installs a bundled Digital Mars C++ compiler at `<install>/dm/bin/dmc.exe`.
+Set `QSPICE_EXE` in your MCP server environment so `build_dll_device` and
+`write_workspace_text_file` can auto-build `.cpp` sources with DMC (no Visual Studio
+required for typical QSpice-generated C++98 blocks). Use `toolchain="msvc"` when you
+need modern C++.
+
+**Buck example — two workflows:**
+
+| Track | Use when | MCP discovery | MCP workflow |
+| --- | --- | --- | --- |
+| **A — scratch** | Build from empty workspace with authoring tools only | `list_workflow_instructions` | `read_workflow_instruction(instruction_id="buck-converter-cpp")` |
+| **B — catalog** | Discover or materialize bundled canonical recipes | `list_reference_circuit_recipes`, `describe_reference_circuit_recipe(recipe_id="buck_converter_cpp")` | `read_workflow_instruction(instruction_id="buck-converter-cpp-catalog")` |
+
+Discover recipes with `list_reference_circuit_recipes` and inspect manifests with `describe_reference_circuit_recipe`. Preflight scratch builds with `describe_topology_authoring_support`.
+
+---
+
+## Optional telemetry
+
+Every tool response includes `trace_id`. OpenTelemetry spans need `[telemetry]`, `QSPICE_TELEMETRY_ENABLED=true`, and a tracer provider configured before `main()` — see `describe_server_capabilities` for readiness.
+
+---
+
+## Further reference
+
+| Doc | Contents |
+| --- | --- |
+| [Tool reference](tool_reference.md) | Every MCP tool — inputs, outputs, notes |
+| [Error codes](errors.md) | Stable `error_code` values for clients |
+| [Security](security.md) | Threat model and sandbox |
+| [C-Block build guide](cblock_build_guide.md) | Compile DLL scaffolds |
+| [CHANGELOG](../CHANGELOG.md) | Release history |
+
+Bundled recipes: `list_reference_circuit_recipes` / `describe_reference_circuit_recipe` / `materialize_reference_circuit`.

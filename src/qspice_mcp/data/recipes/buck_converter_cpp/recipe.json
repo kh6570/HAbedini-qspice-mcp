@@ -1,0 +1,37 @@
+{
+  "recipe_id": "buck_converter_cpp",
+  "title": "Buck Converter (C++ DLL)",
+  "description": "Mixed-signal buck converter with PWM control via a 10-pin C-block DLL (Buck_controller).",
+  "files": [
+    {
+      "relative_path": "Buck-converter.qsch",
+      "bundle_name": "Buck-converter.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "buck_controller.cpp",
+      "bundle_name": "buck_controller.cpp",
+      "encoding": "text"
+    }
+  ],
+  "build_required": true,
+  "build_hint": "build_dll_device(source_path=\"buck_controller.cpp\")",
+  "workflows": [
+    {
+      "instruction_id": "buck-converter-cpp",
+      "title": "Buck converter (C++ DLL) from scratch",
+      "summary": "Author Buck-converter.qsch from an empty workspace using MCP authoring tools only (Track A).",
+      "track": "scratch_authoring",
+      "document": "scratch.md",
+      "related_instruction_id": "buck-converter-cpp-catalog"
+    },
+    {
+      "instruction_id": "buck-converter-cpp-catalog",
+      "title": "Buck converter (C++ DLL) — materialize recipe",
+      "summary": "Copy bundled files into the workspace and simulate (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md",
+      "related_instruction_id": "buck-converter-cpp"
+    }
+  ]
+}

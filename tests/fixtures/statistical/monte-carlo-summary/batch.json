@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "source_path": "monte-carlo-summary/demo.qsch",
+  "output_root": "monte-carlo-summary",
+  "sweep_kind": "monte_carlo",
+  "run_count": 4,
+  "parallelism": 2,
+  "sequential": false,
+  "runs": [
+    {
+      "index": 0,
+      "label": "sample-000",
+      "assignment": {
+        "parameters": {"VIN": 11.4},
+        "component_values": {"R1": 900.0}
+      },
+      "schematic_path": "monte-carlo-summary/run-000-sample-000/demo.qsch",
+      "netlist_path": "monte-carlo-summary/run-000-sample-000/demo.net",
+      "log_path": "monte-carlo-summary/run-000-sample-000/demo.log",
+      "raw_path": "monte-carlo-summary/run-000-sample-000/demo.qraw",
+      "command": ["QSPICE64.exe", "demo.net"],
+      "dry_run": false,
+      "exit_code": 0,
+      "duration_s": 0.18,
+      "warnings": []
+    },
+    {
+      "index": 1,
+      "label": "sample-001",
+      "assignment": {
+        "parameters": {"VIN": 11.8},
+        "component_values": {"R1": 950.0}
+      },
+      "schematic_path": "monte-carlo-summary/run-001-sample-001/demo.qsch",
+      "netlist_path": "monte-carlo-summary/run-001-sample-001/demo.net",
+      "log_path": "monte-carlo-summary/run-001-sample-001/demo.log",
+      "raw_path": "monte-carlo-summary/run-001-sample-001/demo.qraw",
+      "command": ["QSPICE64.exe", "demo.net"],
+      "dry_run": false,
+      "exit_code": 0,
+      "duration_s": 0.19,
+      "warnings": []
+    },
+    {
+      "index": 2,
+      "label": "sample-002",
+      "assignment": {
+        "parameters": {"VIN": 12.2},
+        "component_values": {"R1": 1050.0}
+      },
+      "schematic_path": "monte-carlo-summary/run-002-sample-002/demo.qsch",
+      "netlist_path": "monte-carlo-summary/run-002-sample-002/demo.net",
+      "log_path": "monte-carlo-summary/run-002-sample-002/demo.log",
+      "raw_path": "monte-carlo-summary/run-002-sample-002/demo.qraw",
+      "command": ["QSPICE64.exe", "demo.net"],
+      "dry_run": false,
+      "exit_code": 0,
+      "duration_s": 0.20,
+      "warnings": []
+    },
+    {
+      "index": 3,
+      "label": "sample-003",
+      "assignment": {
+        "parameters": {"VIN": 12.6},
+        "component_values": {"R1": 1100.0}
+      },
+      "schematic_path": "monte-carlo-summary/run-003-sample-003/demo.qsch",
+      "netlist_path": "monte-carlo-summary/run-003-sample-003/demo.net",
+      "log_path": "monte-carlo-summary/run-003-sample-003/demo.log",
+      "raw_path": "monte-carlo-summary/run-003-sample-003/demo.qraw",
+      "command": ["QSPICE64.exe", "demo.net"],
+      "dry_run": false,
+      "exit_code": 0,
+      "duration_s": 0.21,
+      "warnings": []
+    }
+  ],
+  "warnings": [],
+  "batch_id": "fixture-mc-summary",
+  "status": "completed",
+  "completed_run_count": 4,
+  "manifest_path": "monte-carlo-summary/batch.json",
+  "submitted_at": "2026-05-15T10:00:00",
+  "completed_at": "2026-05-15T10:01:00",
+  "error": null,
+  "plan_path": "monte-carlo-summary/plan.json",
+  "seed": 17
+}

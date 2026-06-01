@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+pip-wheel-metadata/
+
+# Virtual envs
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.idea/
+*.swp
+*.swo
+.DS_Store
+.claude/
+.cursor/
+.vscode/
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+
+# QSpice artifacts (generated)
+*.qraw
+*.qsch.bak
+*.net
+work_dir/
+.qspice_cache/
+tmp/
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db
+
+# Docs build
+docs/_build/
+site/
+
+# Local private developer docs
+local-dev-docs/

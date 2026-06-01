@@ -1,0 +1,17 @@
+# Normalize line endings to LF in the repo; Git will convert on checkout for Windows
+* text=auto
+*.py text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.cfg text eol=lf
+*.ini text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Treat binary files correctly
+*.png binary
+*.jpg binary
+*.qsch binary
+*.qraw binary

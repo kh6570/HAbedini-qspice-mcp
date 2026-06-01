@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "recipes": [
+    {
+      "recipe_id": "buck_converter_cpp",
+      "title": "Buck Converter (C++ DLL)"
+    }
+  ]
+}

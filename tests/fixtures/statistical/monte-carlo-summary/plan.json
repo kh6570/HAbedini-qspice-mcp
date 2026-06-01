@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "source_path": "monte-carlo-summary/demo.qsch",
+  "plan_path": "monte-carlo-summary/plan.json",
+  "output_root": "monte-carlo-summary",
+  "sample_count": 4,
+  "seed": 17,
+  "distribution": "uniform",
+  "parameters": [
+    {
+      "name": "VIN",
+      "nominal": 12.0,
+      "tolerance_pct": 5.0,
+      "minimum": 11.4,
+      "maximum": 12.6
+    }
+  ],
+  "component_values": [
+    {
+      "reference": "R1",
+      "nominal": 1000.0,
+      "tolerance_pct": 10.0,
+      "minimum": 900.0,
+      "maximum": 1100.0
+    }
+  ],
+  "samples": [
+    {
+      "index": 0,
+      "parameter_values": {"VIN": 11.4},
+      "component_values": {"R1": 900.0},
+      "label": "sample-000"
+    },
+    {
+      "index": 1,
+      "parameter_values": {"VIN": 11.8},
+      "component_values": {"R1": 950.0},
+      "label": "sample-001"
+    },
+    {
+      "index": 2,
+      "parameter_values": {"VIN": 12.2},
+      "component_values": {"R1": 1050.0},
+      "label": "sample-002"
+    },
+    {
+      "index": 3,
+      "parameter_values": {"VIN": 12.6},
+      "component_values": {"R1": 1100.0},
+      "label": "sample-003"
+    }
+  ],
+  "native_mc_stage": null,
+  "warnings": []
+}
