@@ -140,8 +140,12 @@ def test_run_value_sweep_composes_edit_generate_and_run(
     assert result.sequential is False
     assert result.runs[0].assignment == {"R1": 1000}
     assert result.runs[1].assignment == {"R1": 2200}
-    assert editor_calls[0].calls == [("set_component_value", ("R1", 1000))]
-    assert editor_calls[1].calls == [("set_component_value", ("R1", 2200))]
+    actual_calls = [editor.calls for editor in editor_calls]
+    expected_calls = [
+        [("set_component_value", ("R1", 1000))],
+        [("set_component_value", ("R1", 2200))],
+    ]
+    assert sorted(actual_calls) == sorted(expected_calls)
 
 
 def test_run_param_sweep_builds_cartesian_product(
