@@ -6,9 +6,12 @@ import json
 from dataclasses import dataclass
 from functools import cache
 from importlib.resources import files
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from qspice_mcp.core.exceptions import ValidationError
+
+if TYPE_CHECKING:
+    from importlib.resources.abc import Traversable
 
 _RECIPES_ROOT = "qspice_mcp.data.recipes"
 
@@ -35,7 +38,7 @@ class WorkflowInstructionEntry:
 
 
 @cache
-def _recipes_root():
+def _recipes_root() -> Traversable:
     return files(_RECIPES_ROOT)
 
 
@@ -81,7 +84,7 @@ def load_recipe_manifest(recipe_id: str) -> dict[str, Any]:
     except FileNotFoundError as exc:
         raise ValidationError(f"Unknown recipe_id: {recipe_id!r}") from exc
 
-    manifest = json.loads(manifest_text)
+    manifest: dict[str, Any] = json.loads(manifest_text)
     if manifest.get("recipe_id") != normalized_recipe_id:
         raise ValidationError(
             f"Recipe manifest recipe_id mismatch: expected {normalized_recipe_id!r}, "
@@ -90,7 +93,7 @@ def load_recipe_manifest(recipe_id: str) -> dict[str, Any]:
     return manifest
 
 
-def recipe_bundle_path(recipe_id: str, bundle_name: str):
+def recipe_bundle_path(recipe_id: str, bundle_name: str) -> Traversable:
     """Return one artifact path inside a recipe bundle."""
 
     return _recipes_root() / recipe_id.strip() / bundle_name

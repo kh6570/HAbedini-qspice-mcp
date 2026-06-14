@@ -555,8 +555,9 @@ def component_rotation_degrees_to_index(degrees: int) -> int:
         )
     rotation_index = degrees // _ROTATION_STEP_DEGREES
     if rotation_index < 0 or rotation_index > _ROTATION_INDEX_MAX:
+        max_degrees = _ROTATION_INDEX_MAX * _ROTATION_STEP_DEGREES
         raise ValueError(
-            f"rotation_degrees {degrees} is outside the supported 0-{_ROTATION_INDEX_MAX * _ROTATION_STEP_DEGREES} range."
+            f"rotation_degrees {degrees} is outside the supported 0-{max_degrees} range."
         )
     return rotation_index
 
@@ -579,7 +580,7 @@ def normalize_component_rotation(rotation: object) -> int:
     elif hasattr(rotation, "value"):
         value = rotation.value
         if not isinstance(value, (int, float)):
-            raise ValueError(f"Unsupported schematic rotation object: {rotation!r}")
+            raise TypeError(f"Unsupported schematic rotation object: {rotation!r}")
         rotation_index = int(value)
     else:
         raise ValueError(f"Unsupported schematic rotation object: {rotation!r}")

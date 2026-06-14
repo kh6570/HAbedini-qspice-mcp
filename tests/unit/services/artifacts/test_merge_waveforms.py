@@ -3,23 +3,63 @@
 from __future__ import annotations
 
 import importlib
-from pathlib import Path
-from shutil import copy2
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
-
-# Load the optional waveform-writing backend (may be qspice or a compatible package).
-pytest.skip("No waveform-write backend available", allow_module_level=True)
-# ruff: noqa: E402, F821
 
 from qspice_mcp.services._backends.waveform import load_waveform
 from qspice_mcp.services.artifacts.merge_waveforms import merge_waveforms
 from qspice_mcp.services.waveform.list_steps import list_steps
 
+if TYPE_CHECKING:
+    from pathlib import Path
+
 raw_write_helpers = importlib.import_module("qspice_mcp.services.artifacts._raw_write")
-REPO_ROOT = Path(__file__).resolve().parents[4]
-BODE_RAW_FIXTURE = REPO_ROOT / "tmp" / "bode_probe_only" / "bode-only.qraw"
+
+
+def _write_real_single_step_source_raw(
+    raw_path: Path,
+    *,
+    axis_values: list[float],
+    values: list[float],
+    signal: str = "V(out)",
+) -> None:
+    raw_write_helpers.write_single_step_raw(
+        destination=raw_path,
+        plot_name="Transient Analysis",
+        axis_name_value="time",
+        axis_values=np.array(axis_values, dtype=float),
+        traces=(
+            raw_write_helpers.RawTraceSeries(
+                trace_name=signal,
+                source_signal=signal,
+                values=np.array(values, dtype=float),
+            ),
+        ),
+    )
+
+
+def _write_complex_single_step_source_raw(
+    raw_path: Path,
+    *,
+    axis_values: list[float],
+    values: list[complex],
+    signal: str = "OpenLoopGain",
+) -> None:
+    raw_write_helpers.write_single_step_raw(
+        destination=raw_path,
+        plot_name="AC Analysis",
+        axis_name_value="frequency",
+        axis_values=np.array(axis_values, dtype=float),
+        traces=(
+            raw_write_helpers.RawTraceSeries(
+                trace_name=signal,
+                source_signal=signal,
+                values=np.array(values, dtype=np.complex128),
+            ),
+        ),
+    )
 
 
 def _write_step_log(raw_path: Path) -> None:
@@ -103,24 +143,10 @@ def _write_complex_stepped_source_raw(
 
 def test_merge_waveforms_round_trips_multiple_inputs(tmp_path: Path) -> None:
     raw_a = tmp_path / "source-a.qraw"
-    writer_a = _spice_lib.RawWrite(plot_name="Transient Analysis")
-    writer_a.add_trace(
-        _spice_lib.Trace("time", np.array([0.0, 1.0, 2.0], dtype=float), whattype="time")
-    )
-    writer_a.add_trace(
-        _spice_lib.Trace("V(out)", np.array([1.0, 2.0, 3.0], dtype=float), whattype="voltage")
-    )
-    writer_a.save(raw_a)
+    _write_real_single_step_source_raw(raw_a, axis_values=[0.0, 1.0, 2.0], values=[1.0, 2.0, 3.0])
 
     raw_b = tmp_path / "source-b.qraw"
-    writer_b = _spice_lib.RawWrite(plot_name="Transient Analysis")
-    writer_b.add_trace(
-        _spice_lib.Trace("time", np.array([0.0, 1.0, 2.0], dtype=float), whattype="time")
-    )
-    writer_b.add_trace(
-        _spice_lib.Trace("V(out)", np.array([4.0, 5.0, 6.0], dtype=float), whattype="voltage")
-    )
-    writer_b.save(raw_b)
+    _write_real_single_step_source_raw(raw_b, axis_values=[0.0, 1.0, 2.0], values=[4.0, 5.0, 6.0])
 
     merged = merge_waveforms(
         [
@@ -152,24 +178,10 @@ def test_merge_waveforms_round_trips_without_rawwrite_backend(
     tmp_path: Path,
 ) -> None:
     raw_a = tmp_path / "source-a.qraw"
-    writer_a = _spice_lib.RawWrite(plot_name="Transient Analysis")
-    writer_a.add_trace(
-        _spice_lib.Trace("time", np.array([0.0, 1.0, 2.0], dtype=float), whattype="time")
-    )
-    writer_a.add_trace(
-        _spice_lib.Trace("V(out)", np.array([1.0, 2.0, 3.0], dtype=float), whattype="voltage")
-    )
-    writer_a.save(raw_a)
+    _write_real_single_step_source_raw(raw_a, axis_values=[0.0, 1.0, 2.0], values=[1.0, 2.0, 3.0])
 
     raw_b = tmp_path / "source-b.qraw"
-    writer_b = _spice_lib.RawWrite(plot_name="Transient Analysis")
-    writer_b.add_trace(
-        _spice_lib.Trace("time", np.array([0.0, 1.0, 2.0], dtype=float), whattype="time")
-    )
-    writer_b.add_trace(
-        _spice_lib.Trace("V(out)", np.array([4.0, 5.0, 6.0], dtype=float), whattype="voltage")
-    )
-    writer_b.save(raw_b)
+    _write_real_single_step_source_raw(raw_b, axis_values=[0.0, 1.0, 2.0], values=[4.0, 5.0, 6.0])
 
     monkeypatch.setattr(raw_write_helpers, "load_rawwrite_api", lambda: (None, None, None))
 
@@ -201,8 +213,12 @@ def test_merge_waveforms_frequency_round_trips_without_rawwrite_backend(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    raw_path = tmp_path / BODE_RAW_FIXTURE.name
-    copy2(BODE_RAW_FIXTURE, raw_path)
+    raw_path = tmp_path / "source-ac.qraw"
+    _write_complex_single_step_source_raw(
+        raw_path,
+        axis_values=[10.0, 100.0, 1000.0],
+        values=[1.0 + 2.0j, 3.0 + 4.0j, 5.0 + 6.0j],
+    )
 
     magnitude = load_waveform(
         raw_path,
@@ -261,8 +277,12 @@ def test_merge_waveforms_frequency_preserves_native_complex_without_rawwrite_bac
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    raw_path = tmp_path / BODE_RAW_FIXTURE.name
-    copy2(BODE_RAW_FIXTURE, raw_path)
+    raw_path = tmp_path / "source-ac.qraw"
+    _write_complex_single_step_source_raw(
+        raw_path,
+        axis_values=[10.0, 100.0, 1000.0],
+        values=[1.0 + 2.0j, 3.0 + 4.0j, 5.0 + 6.0j],
+    )
 
     source_real = load_waveform(
         raw_path,

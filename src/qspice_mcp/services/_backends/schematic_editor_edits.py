@@ -9,17 +9,17 @@ from qspice_mcp.core.exceptions import ArtifactMissingError, QSpiceError
 
 from .clean_room_schematic import write_blank_schematic
 from .schematic_editor_backend import (
+    _BEHAVIORAL_REFERENCE_PREFIX,
     _CAPACITOR_REFERENCE_PREFIX,
     _DIODE_REFERENCE_PREFIX,
     _GROUND_NET_NAME,
     _IMAGE_FILE_SUFFIXES,
+    _INDUCTOR_REFERENCE_PREFIX,
+    _MOSFET_REFERENCE_PREFIX,
     _NET_LABEL_FLAGS,
     _NET_LABEL_KIND,
     _NET_LABEL_STYLE_DEFAULT,
     _NET_LABEL_STYLE_GROUND,
-    _BEHAVIORAL_REFERENCE_PREFIX,
-    _INDUCTOR_REFERENCE_PREFIX,
-    _MOSFET_REFERENCE_PREFIX,
     _RESISTOR_REFERENCE_PREFIX,
     _SYMBOL_METADATA_TAGS,
     _SYMBOL_PIN_AUX,
@@ -53,6 +53,7 @@ from .schematic_editor_backend import (
 from .schematic_editor_geometry import resolve_wire_points
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from pathlib import Path
 
 
@@ -1078,18 +1079,14 @@ def _build_mosfet_component(
         channel_triangle,
     ):
         symbol_tag.items.append(tag_class(*item_def))
-    symbol_tag.items.append(
-        tag_class("text", "(100,-200)", 1, 102, 0, "0x1000000", -1, -1, '""')
-    )
-    symbol_tag.items.append(
-        tag_class("text", "(-200,1200)", 1, 103, 0, "0x1000000", -1, -1, '""')
-    )
-    for item_def in (
+    symbol_tag.items.append(tag_class("text", "(100,-200)", 1, 102, 0, "0x1000000", -1, -1, '""'))
+    symbol_tag.items.append(tag_class("text", "(-200,1200)", 1, 103, 0, "0x1000000", -1, -1, '""'))
+    for pin_def in (
         ("pin", "(100,200)", "(0,0)", 1, 0, 0, "0x0", -1, '"D"'),
         ("pin", "(-200,0)", "(0,0)", 1, 0, 0, "0x0", -1, '"G"'),
         ("pin", "(100,-200)", "(0,0)", 1, 0, 0, "0x0", -1, '"S"'),
     ):
-        symbol_tag.items.append(tag_class(*item_def))
+        symbol_tag.items.append(tag_class(*pin_def))
     component_tag.items.append(symbol_tag)
 
     texts = symbol_tag.get_items("text")
@@ -1676,6 +1673,30 @@ def create_blank_schematic_file(
     return destination.resolve(strict=False), existed
 
 
+def _build_simple_component(
+    editor: _QschEditorProtocol,
+    normalized_kind: str,
+    *,
+    reference: str,
+) -> _SchematicComponentProtocol:
+    """Construct the component object for one normalized simple-component kind."""
+
+    builders: dict[str, Callable[[], _SchematicComponentProtocol]] = {
+        "resistor": lambda: _build_resistor_component(editor, reference=reference),
+        "capacitor": lambda: _build_capacitor_component(editor, reference=reference),
+        "diode": lambda: _build_diode_component(editor, reference=reference),
+        "voltage_source": lambda: _build_voltage_source_component(editor, reference=reference),
+        "inductor": lambda: _build_inductor_component(editor, reference=reference),
+        "behavioral": lambda: _build_behavioral_source_component(editor, reference=reference),
+        "nmos": lambda: _build_mosfet_component(editor, reference=reference, polarity="nmos"),
+        "pmos": lambda: _build_mosfet_component(editor, reference=reference, polarity="pmos"),
+    }
+    builder = builders.get(normalized_kind)
+    if builder is None:
+        raise AssertionError(f"Unhandled component kind: {normalized_kind}")
+    return builder()
+
+
 def add_simple_component(
     editor: _QschEditorProtocol,
     *,
@@ -1711,24 +1732,7 @@ def add_simple_component(
     if reference in existing_references:
         raise ValueError(f"Component reference already exists in schematic: {reference}")
 
-    if normalized_kind == "resistor":
-        component = _build_resistor_component(editor, reference=reference)
-    elif normalized_kind == "capacitor":
-        component = _build_capacitor_component(editor, reference=reference)
-    elif normalized_kind == "diode":
-        component = _build_diode_component(editor, reference=reference)
-    elif normalized_kind == "voltage_source":
-        component = _build_voltage_source_component(editor, reference=reference)
-    elif normalized_kind == "inductor":
-        component = _build_inductor_component(editor, reference=reference)
-    elif normalized_kind == "behavioral":
-        component = _build_behavioral_source_component(editor, reference=reference)
-    elif normalized_kind == "nmos":
-        component = _build_mosfet_component(editor, reference=reference, polarity="nmos")
-    elif normalized_kind == "pmos":
-        component = _build_mosfet_component(editor, reference=reference, polarity="pmos")
-    else:
-        raise AssertionError(f"Unhandled component kind: {normalized_kind}")
+    component = _build_simple_component(editor, normalized_kind, reference=reference)
 
     editor.add_component(component)
     _append_schematic_tag(editor, component.attributes["tag"])

@@ -7,8 +7,8 @@ from ._tool_metadata.batch import BATCH_TOOL_METADATA
 from ._tool_metadata.live_gui import LIVE_GUI_TOOL_METADATA
 from ._tool_metadata.mixed_signal import MIXED_SIGNAL_TOOL_METADATA
 from ._tool_metadata.protocol import PROTOCOL_TOOL_METADATA
-from ._tool_metadata.remote import REMOTE_TOOL_METADATA
 from ._tool_metadata.recipes import RECIPES_TOOL_METADATA
+from ._tool_metadata.remote import REMOTE_TOOL_METADATA
 from ._tool_metadata.schematic import SCHEMATIC_TOOL_METADATA
 from ._tool_metadata.server import SERVER_TOOL_METADATA
 from ._tool_metadata.simulation import SIMULATION_TOOL_METADATA

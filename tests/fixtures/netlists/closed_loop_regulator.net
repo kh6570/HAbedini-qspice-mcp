@@ -1,0 +1,10 @@
+* Closed-loop regulator fixture for .bode integration coverage.
+VREF ref 0 0.5
+BDRIVE drive 0 V={60*(V(ref)-V(fb))+5}
+RPASS drive out 1
+COUT out 0 47u
+RLOAD out 0 100
+VPERT out fb_top 0
+RTOP fb_top fb 90k
+RBOT fb 0 10k
+.end

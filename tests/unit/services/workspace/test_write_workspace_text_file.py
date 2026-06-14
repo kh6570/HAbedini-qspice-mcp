@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.services.workspace.write_workspace_text_file import write_workspace_text_file
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_write_workspace_text_file_writes_cpp(tmp_path: Path) -> None:

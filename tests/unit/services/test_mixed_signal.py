@@ -3,18 +3,20 @@
 from __future__ import annotations
 
 import importlib
+import os
+from importlib.resources import files
 from pathlib import Path
 
 import pytest
 
 from qspice_mcp.core.exceptions import BackendUnavailableError, ValidationError
 from qspice_mcp.infra.config import QSpiceSettings
+from qspice_mcp.infra.subprocess import SubprocessResult
 from qspice_mcp.services._backends.schematic_editor import (
     ComponentSymbolMetadata,
     SymbolPinMetadata,
 )
 from qspice_mcp.services._internals.dll_contracts import parse_dll_source_contract_text
-from qspice_mcp.infra.subprocess import SubprocessResult
 from qspice_mcp.services.mixed_signal.build_dll_device import (
     _find_bundled_dmc,
     build_dll_device,
@@ -146,8 +148,6 @@ def test_scaffold_dll_device_places_next_to_schematic_when_requested(
 
 
 def test_parse_dll_source_contract_text_reads_buck_style_export_and_pins() -> None:
-    from importlib.resources import files
-
     bundle = files("qspice_mcp.data.recipes") / "buck_converter_cpp" / "buck_controller.cpp"
     source_text = bundle.read_text(encoding="utf-8")
 
@@ -173,12 +173,10 @@ def test_validate_dll_symbol_signature_reports_matching_contract(
             return "Buck_controller"
 
     source_path = tmp_path / "buck_controller.cpp"
-    from importlib.resources import files
-
     source_path.write_text(
-        (
-            files("qspice_mcp.data.recipes") / "buck_converter_cpp" / "buck_controller.cpp"
-        ).read_text(encoding="utf-8"),
+        (files("qspice_mcp.data.recipes") / "buck_converter_cpp" / "buck_controller.cpp").read_text(
+            encoding="utf-8"
+        ),
         encoding="utf-8",
     )
 
@@ -775,8 +773,6 @@ def test_build_dll_device_reports_missing_toolchain(
 
 @pytest.mark.integration
 def test_build_dll_device_dmc_integration(tmp_path: Path) -> None:
-    import os
-
     qspice_exe = os.environ.get("QSPICE_EXE")
     if not qspice_exe:
         pytest.skip("QSPICE_EXE not set")
@@ -789,10 +785,10 @@ def test_build_dll_device_dmc_integration(tmp_path: Path) -> None:
     workspace.mkdir()
     source = workspace / "stub_device.cpp"
     source.write_text(
-        '\n'.join(
+        "\n".join(
             [
-                '#define WIN32_LEAN_AND_MEAN',
-                '#include <windows.h>',
+                "#define WIN32_LEAN_AND_MEAN",
+                "#include <windows.h>",
                 'extern "C" __declspec(dllexport) void stub_device(void) {}',
             ]
         ),

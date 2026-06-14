@@ -119,7 +119,9 @@ def _to_mcp_error_data(error: QSpiceError) -> ErrorData:
 class _QSpiceFastMCP(FastMCP):
     """FastMCP variant that preserves structured qspice tool errors."""
 
-    def __init__(self, *args: Any, tool_runtime: QSpiceToolRuntime | None = None, **kwargs: Any) -> None:
+    def __init__(
+        self, *args: Any, tool_runtime: QSpiceToolRuntime | None = None, **kwargs: Any
+    ) -> None:
         super().__init__(*args, **kwargs)
         self._tool_runtime = tool_runtime
 

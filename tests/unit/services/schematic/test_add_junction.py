@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from qspice_mcp.services._backends.schematic_editor import open_schematic_editor
 from qspice_mcp.services.schematic.add_junction import add_junction
 from qspice_mcp.services.schematic.create_schematic import create_schematic
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_add_junction_persists_junction_tag(tmp_path: Path) -> None:

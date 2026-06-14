@@ -280,7 +280,9 @@ class TestQSpiceToolRuntime:
             destination = workspace_root / Path(output_path)
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_text("schematic", encoding="utf-8")
-            return CreatedSchematic(output_path=destination.resolve(strict=False), overwritten=overwrite)
+            return CreatedSchematic(
+                output_path=destination.resolve(strict=False), overwritten=overwrite
+            )
 
         monkeypatch.setattr(schematic_tools, "create_schematic_service", fake_create_schematic)
 

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from importlib.resources import files
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -11,6 +11,9 @@ from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.services.schematic.materialize_reference_circuit import (
     materialize_reference_circuit,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 _BUNDLE_ROOT = files("qspice_mcp.data.recipes") / "buck_converter_cpp"
 
@@ -32,9 +35,10 @@ def test_materialize_buck_converter_cpp_writes_expected_files(tmp_path: Path) ->
     assert source.is_file()
 
     assert schematic.read_bytes() == (_BUNDLE_ROOT / "Buck-converter.qsch").read_bytes()
-    assert source.read_text(encoding="utf-8") == (
-        _BUNDLE_ROOT / "buck_controller.cpp"
-    ).read_text(encoding="utf-8")
+    assert source.read_text(encoding="utf-8") == (_BUNDLE_ROOT / "buck_controller.cpp").read_text(
+        encoding="utf-8"
+    )
+
 
 def test_materialize_rejects_unknown_recipe(tmp_path: Path) -> None:
     with pytest.raises(ValidationError, match="Unknown recipe_id"):

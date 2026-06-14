@@ -120,7 +120,7 @@ _CAPABILITY_CATALOG: tuple[TopologyCapabilityEntry, ...] = (
         supported=True,
         limitations=(
             "Pass full input_pin_names and output_pin_names lists; "
-            "scaffold_dll_device_from_symbol emits TODO stubs only."
+            "scaffold_dll_device_from_symbol emits TODO stubs only.",
         ),
     ),
     TopologyCapabilityEntry(

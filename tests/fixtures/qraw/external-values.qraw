@@ -1,0 +1,15 @@
+Title: * supported external values raw
+Plotname: Transient Analysis
+Flags: real forward log double
+No. Variables: 2
+No. Points: 3
+Variables:
+	0	Time	time
+	1	V(out)	voltage
+Values:
+0	0.0000000000000000e+00
+1.2500000000000000e+00
+1	5.0000000000000000e-01
+2.5000000000000000e+00
+2	1.0000000000000000e+00
+3.7500000000000000e+00

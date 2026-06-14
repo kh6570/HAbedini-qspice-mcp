@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from qspice_mcp.services.schematic.add_component import add_component
 from qspice_mcp.services.schematic.create_schematic import create_schematic
 from qspice_mcp.services.schematic.list_components import list_components
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_scratch_power_stage_component_kinds_insert(tmp_path: Path) -> None:

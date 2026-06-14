@@ -1,0 +1,27 @@
+D:\Projects\2026_04_25_MCP_QSPICE\tmp\bode_probe_debug\closed_loop_regulator-bode-debug.net
+.tran 0 0.342156070836529 0.002
+CHIRP 0.005 0.002 61.7026856093911 0.342156070836529 110250 log xtrap
+Time domain  10% complete
+Time domain  20% complete
+Time domain  30% complete
+Time domain  40% complete
+Time domain  50% complete
+Time domain  60% complete
+Time domain  70% complete
+Time domain  80% complete
+Time domain  90% complete
+Time domain 100% complete
+Deconvoluting time domain data with 6 threads.
+ 72.3% done
+100.0% done
+Applying aperture diffraction corrections.
+ 34.5% done
+ 54.4% done
+ 70.2% done
+ 82.4% done
+ 93.1% done
+100.0% done
+100.0% done
+100.0% done
+
+Total elapsed time: 6.51836 seconds.

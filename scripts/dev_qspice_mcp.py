@@ -12,6 +12,7 @@ Set ``QSPICE_DEV_WATCH=0`` to disable auto-restart (single child only).
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import queue
 import subprocess
@@ -40,11 +41,7 @@ def _parse_args() -> argparse.Namespace:
 def _snapshot_mtimes(root: Path) -> dict[Path, float]:
     if not root.is_dir():
         return {}
-    return {
-        path: path.stat().st_mtime
-        for path in root.rglob("*.py")
-        if path.is_file()
-    }
+    return {path: path.stat().st_mtime for path in root.rglob("*.py") if path.is_file()}
 
 
 def _mtimes_changed(previous: dict[Path, float], root: Path) -> bool:
@@ -112,10 +109,8 @@ def _run_child(
             continue
         if chunk is None:
             stdin_closed = True
-            try:
+            with contextlib.suppress(OSError):
                 proc.stdin.close()
-            except OSError:
-                pass
             break
         try:
             proc.stdin.write(chunk)
@@ -222,9 +217,7 @@ def main() -> int:
 
         if restart_event.is_set():
             _terminate_child(proc)
-            sys.stderr.write(
-                "[dev_qspice_mcp] source changed; restarting qspice-mcp child\n"
-            )
+            sys.stderr.write("[dev_qspice_mcp] source changed; restarting qspice-mcp child\n")
             sys.stderr.flush()
             snapshot = _snapshot_mtimes(_WATCH_ROOT)
             continue

@@ -7,7 +7,6 @@ representation.  No third-party schematic packages are required.
 
 from __future__ import annotations
 
-import os
 import re
 from typing import TYPE_CHECKING, Any
 
@@ -698,15 +697,16 @@ class QschEditor:
         path.parent.mkdir(parents=True, exist_ok=True)
         temp_path = path.with_name(f"{path.name}.tmp")
         last_error: OSError | None = None
-        for attempt in range(3):
+        for _attempt in range(3):
             try:
                 temp_path.write_bytes(data)
-                os.replace(temp_path, path)
-                self.updated = False
-                return
+                temp_path.replace(path)
             except OSError as exc:
                 last_error = exc
                 temp_path.unlink(missing_ok=True)
+            else:
+                self.updated = False
+                return
         if last_error is not None:
             raise last_error
 

@@ -26,7 +26,6 @@ from qspice_mcp.services.schematic.describe_schematic_edit_support import (
     describe_schematic_edit_support,
 )
 from qspice_mcp.services.schematic.inspect_schematic import inspect_schematic
-from qspice_mcp.services.schematic.set_component_rotation import set_component_rotation
 from qspice_mcp.services.schematic.remove_component import (
     remove_component,
 )
@@ -36,6 +35,7 @@ from qspice_mcp.services.schematic.rename_component_reference import (
 )
 from qspice_mcp.services.schematic.save_schematic_as import save_schematic_as
 from qspice_mcp.services.schematic.set_component_parameters import set_component_parameters
+from qspice_mcp.services.schematic.set_component_rotation import set_component_rotation
 from qspice_mcp.services.schematic.set_component_value import set_component_value
 from qspice_mcp.services.schematic.set_element_model import set_element_model
 from qspice_mcp.services.schematic.set_parameter import set_parameter
@@ -1234,7 +1234,9 @@ def test_set_component_rotation_delegates_to_backend(
         saved_path.write_text("edited schematic\n", encoding="utf-8")
         return Path(schematic_path).resolve(strict=False), saved_path
 
-    rotation_module = importlib.import_module("qspice_mcp.services.schematic.set_component_rotation")
+    rotation_module = importlib.import_module(
+        "qspice_mcp.services.schematic.set_component_rotation"
+    )
     monkeypatch.setattr(rotation_module, "apply_component_rotation", fake_set_component_rotation)
     monkeypatch.setattr(rotation_module, "edit_schematic", fake_edit_schematic)
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import os
+from importlib.resources import files
 from pathlib import Path
 
 import pytest
@@ -17,8 +18,6 @@ generate_netlist_service = importlib.import_module(
 
 
 def _buck_schematic_bytes() -> bytes:
-    from importlib.resources import files
-
     return (
         files("qspice_mcp.data.recipes") / "buck_converter_cpp" / "Buck-converter.qsch"
     ).read_bytes()
@@ -154,7 +153,9 @@ def test_generate_netlist_clean_room_parser_handles_rotated_pins_and_micro_units
     destination = tmp_path / "artifacts" / "buck.net"
 
     monkeypatch.setattr(generate_netlist_service, "_load_qsch_editor_factory", lambda: (None, None))
-    monkeypatch.setattr(generate_netlist_service, "_try_generate_netlist_with_qux", lambda *_a, **_k: None)
+    monkeypatch.setattr(
+        generate_netlist_service, "_try_generate_netlist_with_qux", lambda *_a, **_k: None
+    )
 
     result = generate_netlist(schematic, workspace_root=tmp_path, output_path=destination)
     generated = destination.read_text(encoding="utf-8")
@@ -344,7 +345,9 @@ def test_generate_netlist_dll_schematic_without_qux_warns_about_omission(
     schematic.write_bytes(_buck_schematic_bytes())
 
     monkeypatch.setattr(generate_netlist_service, "_load_qsch_editor_factory", lambda: (None, None))
-    monkeypatch.setattr(generate_netlist_service, "_try_generate_netlist_with_qux", lambda *_a, **_k: None)
+    monkeypatch.setattr(
+        generate_netlist_service, "_try_generate_netlist_with_qux", lambda *_a, **_k: None
+    )
 
     result = generate_netlist(schematic, workspace_root=tmp_path)
 

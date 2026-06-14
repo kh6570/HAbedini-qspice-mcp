@@ -35,6 +35,8 @@ class BuiltDllDevice:
     stderr: str
 
 
+_CMD_SHELL_PREFIX_LENGTH = 3
+
 SERVICE_SPEC = ServiceSpec(
     name="build_dll_device",
     title="Build DLL Device",
@@ -255,7 +257,7 @@ def _run_build_command(
     timeout_s: float | None,
     env: dict[str, str] | None = None,
 ) -> SubprocessResult:
-    if len(command) >= 3 and command[0] == "cmd" and command[1] == "/c":
+    if len(command) >= _CMD_SHELL_PREFIX_LENGTH and command[0] == "cmd" and command[1] == "/c":
         return run_subprocess(command, cwd=working_directory, timeout_s=timeout_s, env=env)
     if "&&" in command:
         joined = " ".join(command)
@@ -315,9 +317,7 @@ def build_dll_device(
 
     if process.exit_code != 0:
         detail = process.stderr.strip() or process.stdout.strip() or "compiler failed"
-        raise ValidationError(
-            f"DLL build failed with exit code {process.exit_code}: {detail}"
-        )
+        raise ValidationError(f"DLL build failed with exit code {process.exit_code}: {detail}")
 
     if not resolved_output.is_file():
         sibling = resolved_source.with_suffix(".dll")

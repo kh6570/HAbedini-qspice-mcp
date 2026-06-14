@@ -43,8 +43,8 @@ dev = [
     "pytest-timeout>=2.3",
     "hypothesis>=6.100",
     "nox>=2024.4",
-    "ruff>=0.4",
-    "mypy>=1.10",
+    "ruff==0.15.12",
+    "mypy==1.20.2",
     "pre-commit>=3.7",
 ]
 backends = []

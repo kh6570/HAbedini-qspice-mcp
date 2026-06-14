@@ -134,9 +134,7 @@ def materialize_reference_circuit(
         files=tuple(materialized_files),
         build_required=bool(manifest.get("build_required", False)),
         build_hint=(
-            None
-            if manifest.get("build_hint") is None
-            else str(manifest.get("build_hint"))
+            None if manifest.get("build_hint") is None else str(manifest.get("build_hint"))
         ),
     )
 

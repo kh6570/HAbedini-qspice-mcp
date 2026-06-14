@@ -38,7 +38,8 @@ WORKSPACE_TOOL_METADATA: dict[str, dict[str, object]] = {
                     "type": "string",
                     "description": (
                         "Toolchain passed to build_dll_device "
-                        "(auto, dmc, msvc, cmake). auto prefers bundled DMC when QSPICE_EXE resolves."
+                        "(auto, dmc, msvc, cmake). auto prefers bundled DMC "
+                        "when QSPICE_EXE resolves."
                     ),
                 },
                 "dll_timeout_s": {

@@ -29,9 +29,6 @@ from qspice_mcp.services.schematic.add_wire import add_wire as add_wire_service
 from qspice_mcp.services.schematic.create_schematic import (
     create_schematic as create_schematic_service,
 )
-from qspice_mcp.services.schematic.materialize_reference_circuit import (
-    materialize_reference_circuit as materialize_reference_circuit_service,
-)
 from qspice_mcp.services.schematic.create_starter_schematic import (
     create_starter_schematic as create_starter_schematic_service,
 )
@@ -48,6 +45,9 @@ from qspice_mcp.services.schematic.inspect_schematic import (
     inspect_schematic as inspect_schematic_service,
 )
 from qspice_mcp.services.schematic.list_components import list_components as list_components_service
+from qspice_mcp.services.schematic.materialize_reference_circuit import (
+    materialize_reference_circuit as materialize_reference_circuit_service,
+)
 from qspice_mcp.services.schematic.read_component import read_component as read_component_service
 from qspice_mcp.services.schematic.read_component_symbol import (
     read_component_symbol as read_component_symbol_service,
@@ -73,6 +73,9 @@ from qspice_mcp.services.schematic.save_schematic_as import (
 from qspice_mcp.services.schematic.set_component_parameters import (
     set_component_parameters as set_component_parameters_service,
 )
+from qspice_mcp.services.schematic.set_component_rotation import (
+    set_component_rotation as set_component_rotation_service,
+)
 from qspice_mcp.services.schematic.set_component_symbol_drawing import (
     set_component_symbol_drawing as set_component_symbol_drawing_service,
 )
@@ -81,9 +84,6 @@ from qspice_mcp.services.schematic.set_component_symbol_pin import (
 )
 from qspice_mcp.services.schematic.set_component_symbol_text import (
     set_component_symbol_text as set_component_symbol_text_service,
-)
-from qspice_mcp.services.schematic.set_component_rotation import (
-    set_component_rotation as set_component_rotation_service,
 )
 from qspice_mcp.services.schematic.set_component_value import (
     set_component_value as set_component_value_service,
@@ -728,10 +728,10 @@ __all__ = [
     "rename_component_reference_service",
     "save_schematic_as_service",
     "set_component_parameters_service",
+    "set_component_rotation_service",
     "set_component_symbol_drawing_service",
     "set_component_symbol_pin_service",
     "set_component_symbol_text_service",
-    "set_component_rotation_service",
     "set_component_value_service",
     "set_dll_block_pin_role_service",
     "set_element_model_service",

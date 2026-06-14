@@ -17,18 +17,11 @@ QSPICE_EXE = Path(r"C:\Program Files\QSPICE\QSPICE64.exe")
 def _result_path(payload: dict[str, object], key: str) -> Path:
     value = payload.get(key)
     if not isinstance(value, str):
-        raise AssertionError(f"Expected string {key}, got {payload}")
+        raise TypeError(f"Expected string {key}, got {payload}")
     return Path(value)
 
 
-def main() -> int:
-    os.environ.setdefault("QSPICE_EXE", str(QSPICE_EXE))
-    TEST_WS.mkdir(parents=True, exist_ok=True)
-    results: list[tuple[str, str, str]] = []
-
-    server = create_server(QSpiceSettings(workspace_root=ROOT))
-
-    # 1. workspace_root override for create_schematic
+def _check_workspace_root_override(server: object, results: list[tuple[str, str, str]]) -> None:
     stray = ROOT / "roadmap_workspace_override.qsch"
     if stray.exists():
         stray.unlink()
@@ -53,7 +46,8 @@ def main() -> int:
     except Exception as exc:
         results.append(("create_schematic workspace_root", "FAIL", str(exc)))
 
-    # 2. add_instruction description
+
+def _check_add_instruction_description(server: object, results: list[tuple[str, str, str]]) -> None:
     add_tool = next(tool for tool in server.tools if tool.name == "add_instruction")
     description = add_tool.description
     ok = "instruction=" in description and "directive or analysis" not in description
@@ -65,23 +59,10 @@ def main() -> int:
         )
     )
 
-    test_server = create_server(QSpiceSettings(exe=QSPICE_EXE, workspace_root=TEST_WS))
 
-    # Prepare starter schematic in test workspace
-    try:
-        starter = test_server.invoke_tool(
-            "create_starter_schematic",
-            output_path="roadmap_starter.qsch",
-            overwrite=True,
-            analysis_instruction=".op",
-        )
-        starter_path = _result_path(starter, "output_path")
-    except Exception as exc:
-        results.append(("setup starter schematic", "FAIL", str(exc)))
-        _print_results(results)
-        return 1
-
-    # 3. inspect_schematic unicode-safe output
+def _check_inspect_schematic(
+    test_server: object, starter_path: Path, results: list[tuple[str, str, str]]
+) -> None:
     try:
         inspected = test_server.invoke_tool(
             "inspect_schematic",
@@ -98,7 +79,10 @@ def main() -> int:
     except Exception as exc:
         results.append(("inspect_schematic unicode output", "FAIL", str(exc)))
 
-    # 4. netlist regeneration after set_component_value
+
+def _check_netlist_staleness(
+    test_server: object, starter_path: Path, results: list[tuple[str, str, str]]
+) -> None:
     try:
         test_server.invoke_tool(
             "set_component_value",
@@ -112,7 +96,9 @@ def main() -> int:
             dry_run=True,
         )
         warnings = sim.get("warnings", [])
-        warning_text = " ".join(str(item) for item in warnings) if isinstance(warnings, list) else ""
+        warning_text = (
+            " ".join(str(item) for item in warnings) if isinstance(warnings, list) else ""
+        )
         netlist_path = TEST_WS / starter_path.with_suffix(".net").name
         netlist_text = netlist_path.read_text(encoding="utf-8") if netlist_path.is_file() else ""
         ok = "existing derived netlist" not in warning_text.lower() and "2.2k" in netlist_text
@@ -126,7 +112,10 @@ def main() -> int:
     except Exception as exc:
         results.append(("netlist cache staleness", "FAIL", str(exc)))
 
-    # 5. describe_edit_capability change_value for V1
+
+def _check_describe_edit_capability(
+    test_server: object, starter_path: Path, results: list[tuple[str, str, str]]
+) -> None:
     try:
         capability = test_server.invoke_tool(
             "describe_edit_capability",
@@ -135,15 +124,45 @@ def main() -> int:
             intent="change_value",
         )
         ok = capability.get("supported") is True
+        reason = capability.get("unsupported_reason")
         results.append(
             (
                 "describe_edit_capability V1 change_value",
                 "PASS" if ok else "FAIL",
-                f"supported={capability.get('supported')} reason={capability.get('unsupported_reason')}",
+                f"supported={capability.get('supported')} reason={reason}",
             )
         )
     except Exception as exc:
         results.append(("describe_edit_capability V1 change_value", "FAIL", str(exc)))
+
+
+def main() -> int:
+    os.environ.setdefault("QSPICE_EXE", str(QSPICE_EXE))
+    TEST_WS.mkdir(parents=True, exist_ok=True)
+    results: list[tuple[str, str, str]] = []
+
+    server = create_server(QSpiceSettings(workspace_root=ROOT))
+    _check_workspace_root_override(server, results)
+    _check_add_instruction_description(server, results)
+
+    test_server = create_server(QSpiceSettings(exe=QSPICE_EXE, workspace_root=TEST_WS))
+
+    try:
+        starter = test_server.invoke_tool(
+            "create_starter_schematic",
+            output_path="roadmap_starter.qsch",
+            overwrite=True,
+            analysis_instruction=".op",
+        )
+        starter_path = _result_path(starter, "output_path")
+    except Exception as exc:
+        results.append(("setup starter schematic", "FAIL", str(exc)))
+        _print_results(results)
+        return 1
+
+    _check_inspect_schematic(test_server, starter_path, results)
+    _check_netlist_staleness(test_server, starter_path, results)
+    _check_describe_edit_capability(test_server, starter_path, results)
 
     _print_results(results)
     return 0 if all(status == "PASS" for _, status, _ in results) else 1

@@ -12,8 +12,9 @@ from qspice_mcp.services._internals.qux import (
     resolve_qux_companion,
     run_qux_command,
 )
+from qspice_mcp.services.simulation._netlist_result import GeneratedNetlist
+
 if TYPE_CHECKING:
-    from qspice_mcp.services.simulation.generate_netlist import GeneratedNetlist
     from pathlib import Path
 
     from qspice_mcp.infra.config import QSpiceSettings
@@ -26,8 +27,6 @@ def generate_netlist_with_qux(
     settings: QSpiceSettings,
 ) -> GeneratedNetlist:
     """Generate a derived netlist through the documented QUX `-Netlist` path."""
-
-    from qspice_mcp.services.simulation.generate_netlist import GeneratedNetlist
 
     companion = resolve_qux_companion(settings)
     command = build_qux_netlist_command(companion.qux_path, schematic_path)

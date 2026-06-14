@@ -16,9 +16,7 @@ from .tool_metadata import TOOL_METADATA
 _DESCRIBE_SERVER_CAPABILITIES_SERVICE = ServiceSpec(
     name="describe_server_capabilities",
     title="Describe Server Capabilities",
-    summary=(
-        "Report server-level backend availability, degraded tool groups, and feature flags."
-    ),
+    summary=("Report server-level backend availability, degraded tool groups, and feature flags."),
     phase="implemented",
 )
 
@@ -85,7 +83,10 @@ def _with_workspace_root_property(input_schema: dict[str, object]) -> dict[str, 
     """Expose an optional per-call workspace root override in tool schemas."""
 
     schema = dict(input_schema)
-    properties = dict(schema.get("properties", {}))
+    existing_properties = schema.get("properties", {})
+    properties: dict[str, object] = (
+        dict(existing_properties) if isinstance(existing_properties, dict) else {}
+    )
     if "workspace_root" not in properties:
         properties["workspace_root"] = dict(_WORKSPACE_ROOT_SCHEMA_PROPERTY)
     schema["properties"] = properties

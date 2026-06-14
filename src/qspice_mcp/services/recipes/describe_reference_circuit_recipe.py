@@ -154,8 +154,7 @@ def _build_topology_digest(
         raw_bytes = bundle_path.read_bytes()
     except FileNotFoundError as exc:
         raise ValidationError(
-            f"Bundled schematic missing for recipe {recipe_id!r}: "
-            f"{schematic_entry.bundle_name!r}"
+            f"Bundled schematic missing for recipe {recipe_id!r}: {schematic_entry.bundle_name!r}"
         ) from exc
 
     inspection = inspect_schematic_bytes(raw_bytes)

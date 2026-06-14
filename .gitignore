@@ -35,18 +35,22 @@ coverage.xml
 .mypy_cache/
 .ruff_cache/
 .hypothesis/
+.nox/
+.tox/
 
 # QSpice artifacts (generated)
 *.qraw
 *.qsch.bak
 *.net
+*.cir
 work_dir/
 .qspice_cache/
 tmp/
 
 # Environment
 .env
-.env.local
+.env.*
+!.env.example
 
 # Logs
 *.log
@@ -61,3 +65,8 @@ site/
 
 # Local private developer docs
 local-dev-docs/
+
+# Keep committed test fixtures even though they share generated-artifact
+# extensions (*.qraw, *.net, *.cir, *.log). Anything under tests/fixtures/ is
+# curated input, not a generated artifact.
+!tests/fixtures/**

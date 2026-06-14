@@ -1,0 +1,6 @@
+* Small transient waveform fixture for QUX export coverage.
+VIN in 0 PULSE(0 5 0 1u 1u 50u 100u)
+R1 in out 1k
+C1 out 0 10u
+.tran 1m
+.end

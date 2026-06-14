@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
+from qspice_mcp.core.exceptions import BackendUnavailableError
 from qspice_mcp.infra.config import QSpiceSettings
 from qspice_mcp.mcp.definition import build_server_definition
 from qspice_mcp.mcp.server import create_server
@@ -246,8 +247,6 @@ def test_mcp_write_workspace_text_file_reports_dll_build_error(
     server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
 
     def fail_build(*_args: object, **_kwargs: object) -> BuiltDllDevice:
-        from qspice_mcp.core.exceptions import BackendUnavailableError
-
         raise BackendUnavailableError("no toolchain")
 
     typed_monkeypatch = monkeypatch
@@ -281,8 +280,6 @@ def test_mcp_write_workspace_text_file_reuses_existing_dll_for_validation(
     dll.write_bytes(b"MZ")
 
     def fail_build(*_args: object, **_kwargs: object) -> BuiltDllDevice:
-        from qspice_mcp.core.exceptions import BackendUnavailableError
-
         raise BackendUnavailableError("no toolchain")
 
     typed_monkeypatch = monkeypatch
@@ -330,7 +327,11 @@ def test_mcp_run_simulation_accepts_schematic_source(monkeypatch: object, tmp_pa
     typed_monkeypatch = monkeypatch
 
     def fake_generate_netlist(
-        raw_path: str | Path, *, workspace_root: Path, output_path: str | Path | None = None
+        raw_path: str | Path,
+        *,
+        workspace_root: Path,
+        output_path: str | Path | None = None,
+        settings: QSpiceSettings | None = None,
     ) -> GeneratedNetlist:
         calls.append(("generate_netlist", Path(raw_path)))
         return GeneratedNetlist(

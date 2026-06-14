@@ -1,0 +1,11 @@
+* Operating point fixture for Phase 6 coverage.
+V1 in 0 10
+R1 in out 1k
+D1 out 0 DTEST
+M1 out in 0 0 NMOS
+.model DTEST D(IS=1e-14 N=1)
+.model NMOS NMOS (VTO=2 KP=1m LAMBDA=0.02)
+.option KEEPOPINFO
+.option SAVEPOWERS
+.op
+.end

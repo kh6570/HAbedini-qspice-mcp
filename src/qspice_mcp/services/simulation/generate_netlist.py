@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from importlib import import_module
 from shutil import copy2
-from typing import TYPE_CHECKING, Literal, Protocol, cast
+from typing import TYPE_CHECKING, Protocol, cast
 
 from qspice_mcp.core.exceptions import ArtifactMissingError, BackendUnavailableError, QSpiceError
 from qspice_mcp.infra.config import QSpiceSettings
@@ -16,11 +15,11 @@ from qspice_mcp.services.simulation._clean_room_netlist import (
     netlist_covers_dll_references,
     render_clean_room_netlist,
 )
+from qspice_mcp.services.simulation._netlist_result import GeneratedNetlist, NetlistBackend
+from qspice_mcp.services.simulation._qux_netlist import generate_netlist_with_qux
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-NetlistBackend = Literal["qux", "clean_room", "editor", "existing"]
 
 _NETLIST_SUFFIXES = (".net", ".cir")
 _EDITOR_MODULE_CANDIDATES: tuple[str, ...] = ("qspice_mcp.services._backends._qsch_editor",)
@@ -42,19 +41,6 @@ class _QschEditorFactory(Protocol):
 
     def __call__(self, path: str) -> _QschEditor:
         """Create an editor bound to one schematic path."""
-
-
-@dataclass(frozen=True, slots=True)
-class GeneratedNetlist:
-    """Resolved or staged netlist artifact metadata."""
-
-    source_path: Path
-    netlist_path: Path
-    source_kind: Literal["schematic", "netlist"]
-    refreshed: bool
-    copied: bool
-    warnings: tuple[str, ...] = ()
-    netlist_backend: NetlistBackend | None = None
 
 
 SERVICE_SPEC = ServiceSpec(
@@ -123,7 +109,6 @@ def _effective_settings(
         workspace_root=workspace_root,
         exe=normalized.exe,
         log_level=normalized.log_level,
-        log_format=normalized.log_format,
         telemetry_enabled=normalized.telemetry_enabled,
     ).normalized()
 
@@ -239,8 +224,6 @@ def _try_generate_netlist_with_qux(
     settings: QSpiceSettings,
 ) -> GeneratedNetlist | None:
     """Generate a derived netlist through QUX when the companion executable is available."""
-
-    from qspice_mcp.services.simulation._qux_netlist import generate_netlist_with_qux
 
     try:
         return generate_netlist_with_qux(

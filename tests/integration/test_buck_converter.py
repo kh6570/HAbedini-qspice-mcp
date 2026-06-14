@@ -37,7 +37,9 @@ def test_buck_converter_example_can_generate_and_run(tmp_path: Path) -> None:
     executable = _require_local_qspice_runtime(tmp_path)
     schematic = tmp_path / "Buck-converter.qsch"
     schematic.write_bytes(
-        (files("qspice_mcp.data.recipes") / "buck_converter_cpp" / "Buck-converter.qsch").read_bytes()
+        (
+            files("qspice_mcp.data.recipes") / "buck_converter_cpp" / "Buck-converter.qsch"
+        ).read_bytes()
     )
 
     generated = generate_netlist(

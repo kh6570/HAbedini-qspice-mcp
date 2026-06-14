@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from qspice_mcp.services.schematic.materialize_reference_circuit import (
     materialize_reference_circuit,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_empty_workspace_materialize_path_writes_sibling_artifacts(tmp_path: Path) -> None:

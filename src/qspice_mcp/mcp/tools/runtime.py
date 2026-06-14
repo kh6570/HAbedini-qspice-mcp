@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from functools import wraps
 from time import perf_counter
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from qspice_mcp.infra.logging import get_logger
 from qspice_mcp.infra.telemetry import attach_trace_id, request_scope
@@ -17,20 +17,20 @@ from .batch import BATCH_HANDLER_NAMES, BatchToolMixin
 from .live_gui import LIVE_GUI_HANDLER_NAMES, LiveGuiToolMixin
 from .mixed_signal import MIXED_SIGNAL_HANDLER_NAMES, MixedSignalToolMixin
 from .protocol import PROTOCOL_HANDLER_NAMES, ProtocolToolMixin
-from .remote import REMOTE_HANDLER_NAMES, RemoteToolMixin
 from .recipes import RECIPES_HANDLER_NAMES, RecipesToolMixin
+from .remote import REMOTE_HANDLER_NAMES, RemoteToolMixin
 from .schematic import SCHEMATIC_HANDLER_NAMES, SchematicToolMixin
 from .server_info import SERVER_INFO_HANDLER_NAMES, ServerInfoToolMixin
 from .shared import to_jsonable
 from .simulation import SIMULATION_HANDLER_NAMES, SimulationToolMixin
 from .subcircuit import SUBCIRCUIT_HANDLER_NAMES, SubcircuitToolMixin
 from .waveform import WAVEFORM_HANDLER_NAMES, WaveformToolMixin
-from .workspace_files import WORKSPACE_FILES_HANDLER_NAMES, WorkspaceFilesToolMixin
 from .workspace import (
     _WorkspaceSettingsProxy,
     get_pending_workspace_root,
     resolve_workspace_override,
 )
+from .workspace_files import WORKSPACE_FILES_HANDLER_NAMES, WorkspaceFilesToolMixin
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -99,7 +99,10 @@ class QSpiceToolRuntime(
                 workspace_override = get_pending_workspace_root()
             original_settings = self.settings
             if workspace_override is not None:
-                self.settings = _WorkspaceSettingsProxy(original_settings, workspace_override)
+                self.settings = cast(
+                    "QSpiceSettings",
+                    _WorkspaceSettingsProxy(original_settings, workspace_override),
+                )
             with request_scope(
                 tool_name=tool.name,
                 telemetry_enabled=self.settings.telemetry_enabled,

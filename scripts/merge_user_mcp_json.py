@@ -8,11 +8,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_EXPECTED_ARG_COUNT = 5
+
 
 def main() -> int:
-    if len(sys.argv) != 5:
+    if len(sys.argv) != _EXPECTED_ARG_COUNT:
         print(
-            "usage: merge_user_mcp_json.py <config_path> <root_key> <server_name> <entry_json_path>",
+            "usage: merge_user_mcp_json.py <config_path> <root_key> "
+            "<server_name> <entry_json_path>",
             file=sys.stderr,
         )
         return 2

@@ -54,9 +54,7 @@ def test_probe_falls_back_to_default_install_location(monkeypatch: object, tmp_p
     assert result.executable == executable.resolve()
 
 
-def test_probe_uses_metadata_before_cli_on_windows(
-    monkeypatch: object, tmp_path: Path
-) -> None:
+def test_probe_uses_metadata_before_cli_on_windows(monkeypatch: object, tmp_path: Path) -> None:
     executable = tmp_path / "QSPICE64.exe"
     executable.write_text("", encoding="utf-8")
     calls: list[str] = []
