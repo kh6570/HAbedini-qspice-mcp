@@ -71,6 +71,7 @@ packages = ["src/qspice_mcp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-ra --strict-markers --strict-config"
 markers = [
     "integration: requires QSpice installed (set QSPICE_EXE)",

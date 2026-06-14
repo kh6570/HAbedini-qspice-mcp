@@ -161,6 +161,12 @@ def test_refresh_schematic_in_gui_restart_requires_force_confirmation(
     schematic = tmp_path / "demo.qsch"
     schematic.write_text("schematic", encoding="utf-8")
     monkeypatch.setattr(refresh_schematic_module.sys, "platform", "win32")
+    monkeypatch.setattr(
+        refresh_schematic_module.os,
+        "startfile",
+        lambda _path: None,
+        raising=False,
+    )
 
     with pytest.raises(ValueError, match="requires force_restart=true"):
         refresh_schematic_in_gui(

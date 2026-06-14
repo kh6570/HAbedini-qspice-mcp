@@ -766,6 +766,10 @@ def test_build_dll_device_reports_missing_toolchain(
         "qspice_mcp.services.mixed_signal.build_dll_device.discover_executable",
         lambda _exe: (None, "unavailable"),
     )
+    monkeypatch.setattr(
+        "qspice_mcp.services.mixed_signal.build_dll_device._find_vcvars64_bat",
+        lambda: None,
+    )
 
     with pytest.raises(BackendUnavailableError, match="No supported DLL build toolchain"):
         build_dll_device(source, workspace_root=workspace, toolchain="auto")

@@ -11,6 +11,11 @@ from qspice_mcp.core.exceptions import QSpiceError
 if TYPE_CHECKING:
     from pathlib import Path
 
+from tests.support.subcircuit_fixtures import (
+    supported_leaf_subcircuit_definition_bytes,
+    supported_subcircuit_schematic_bytes,
+)
+
 from qspice_mcp.services._backends._qsch_support import QschTag
 from qspice_mcp.services._backends.schematic_editor import (
     add_component_symbol_drawing_metadata,
@@ -639,14 +644,9 @@ def test_set_component_symbol_pin_metadata_updates_name_selector_and_behavioral_
 
 
 def test_get_subcircuit_resolves_external_definition_qsch(tmp_path: Path) -> None:
-    from tests.unit.services.subcircuit.test_subcircuits import (  # noqa: PLC0415
-        _supported_leaf_subcircuit_definition_bytes,
-        _supported_subcircuit_schematic_bytes,
-    )
-
     schematic = tmp_path / "demo.qsch"
-    schematic.write_bytes(_supported_subcircuit_schematic_bytes())
-    (tmp_path / "COMPARATOR.qsch").write_bytes(_supported_leaf_subcircuit_definition_bytes())
+    schematic.write_bytes(supported_subcircuit_schematic_bytes())
+    (tmp_path / "COMPARATOR.qsch").write_bytes(supported_leaf_subcircuit_definition_bytes())
 
     editor, _, _ = open_schematic_editor(schematic, workspace_root=tmp_path)
     subeditor = editor.get_subcircuit("X1")
