@@ -16,6 +16,9 @@ generate_netlist_service = importlib.import_module(
     "qspice_mcp.services.simulation.generate_netlist"
 )
 
+_REPO_ROOT = Path(__file__).resolve().parents[4]
+COMPARATOR_QSCH_FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "schematics" / "comparator-test.qsch"
+
 
 def _buck_schematic_bytes() -> bytes:
     return (
@@ -122,9 +125,8 @@ def test_generate_netlist_generates_from_supported_qsch_via_clean_room_parser(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    source_fixture = Path(__file__).resolve().parents[4] / "tmp" / "cli_probe" / "probe.qsch"
     schematic = tmp_path / "demo.qsch"
-    schematic.write_bytes(source_fixture.read_bytes())
+    schematic.write_bytes(COMPARATOR_QSCH_FIXTURE.read_bytes())
     destination = tmp_path / "artifacts" / "generated.net"
 
     monkeypatch.setattr(generate_netlist_service, "_load_qsch_editor_factory", lambda: (None, None))
@@ -259,9 +261,8 @@ def test_generate_netlist_regenerates_when_schematic_is_newer_than_sidecar(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    source_fixture = Path(__file__).resolve().parents[4] / "tmp" / "cli_probe" / "probe.qsch"
     schematic = tmp_path / "demo.qsch"
-    schematic.write_bytes(source_fixture.read_bytes())
+    schematic.write_bytes(COMPARATOR_QSCH_FIXTURE.read_bytes())
     derived = tmp_path / "demo.net"
     derived.write_text("* stale derived\n", encoding="utf-8")
     os.utime(derived, (1_000_000_000, 1_000_000_000))
