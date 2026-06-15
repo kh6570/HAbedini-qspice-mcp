@@ -83,11 +83,14 @@ def quality(session: nox.Session) -> None:
     """Mirror the local repo quality gate."""
 
     _install_dev_environment(session)
-    session.run("python", "-m", "ruff", "check", ".")
-    session.run("python", "-m", "ruff", "format", "--check", ".")
+    for hook_id in (
+        "ruff",
+        "ruff-format",
+        "check-no-third-party-imports",
+        "check-test-ci-safety",
+    ):
+        session.run("pre-commit", "run", hook_id, "--all-files", "--show-diff-on-failure")
     session.run("python", "-m", "mypy", "--strict", "src/")
-    session.run("python", "scripts/check_no_third_party_imports.py")
-    session.run("python", "scripts/check_test_ci_safety.py")
     _run_non_integration_tests(session)
 
 

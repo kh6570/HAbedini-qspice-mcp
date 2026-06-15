@@ -1,19 +1,19 @@
 default_language_version:
-  python: python3.11
+  python: python3.12
 
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.10
+    rev: v0.15.12
     hooks:
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    rev: v1.20.2
     hooks:
       - id: mypy
         files: ^src/
+        args: [--strict]
         additional_dependencies:
           - pydantic>=2.6
           - pydantic-settings>=2.2
@@ -31,14 +31,22 @@ repos:
       - id: check-added-large-files
         args: [--maxkb=500]
       - id: detect-private-key
-      - id: mixed-line-ending
-        args: [--fix=lf]
 
   - repo: local
     hooks:
+      - id: check-no-third-party-imports
+        name: check no third-party imports
+        entry: python scripts/check_no_third_party_imports.py
+        language: system
+        pass_filenames: false
+      - id: check-test-ci-safety
+        name: check test CI safety
+        entry: python scripts/check_test_ci_safety.py
+        language: system
+        pass_filenames: false
       - id: pytest-fast
         name: pytest (unit only)
-        entry: pytest -m "not integration and not slow" -q
+        entry: python -m pytest -m "not integration and not slow" -q
         language: system
         pass_filenames: false
         stages: [pre-push]

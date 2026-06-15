@@ -58,6 +58,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,backends]"
 
+      - name: Pre-commit quality gate
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: |
+          pre-commit run ruff --all-files --show-diff-on-failure
+          pre-commit run ruff-format --all-files --show-diff-on-failure
+          pre-commit run check-no-third-party-imports --all-files --show-diff-on-failure
+          pre-commit run check-test-ci-safety --all-files --show-diff-on-failure
+
       - name: Lint (ruff check)
         run: ruff check . --output-format=github
 
@@ -66,10 +74,6 @@ jobs:
 
       - name: Type-check (mypy)
         run: mypy --strict src/
-
-      - name: Test CI-safety guards
-        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
-        run: python scripts/check_test_ci_safety.py
 
       - name: Unit tests
         run: pytest -m "not integration" --cov --cov-report=xml --cov-report=term
