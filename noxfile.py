@@ -88,6 +88,7 @@ def quality(session: nox.Session) -> None:
         "ruff-format",
         "check-no-third-party-imports",
         "check-test-ci-safety",
+        "check-tool-reference-drift",
     ):
         session.run("pre-commit", "run", hook_id, "--all-files", "--show-diff-on-failure")
     session.run("python", "-m", "mypy", "--strict", "src/")

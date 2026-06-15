@@ -44,6 +44,11 @@ repos:
         entry: python scripts/check_test_ci_safety.py
         language: system
         pass_filenames: false
+      - id: check-tool-reference-drift
+        name: check tool reference drift
+        entry: python scripts/check_tool_reference_drift.py
+        language: system
+        pass_filenames: false
       - id: pytest-fast
         name: pytest (unit only)
         entry: python -m pytest -m "not integration and not slow" -q

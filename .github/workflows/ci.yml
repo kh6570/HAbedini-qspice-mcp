@@ -65,6 +65,7 @@ jobs:
           pre-commit run ruff-format --all-files --show-diff-on-failure
           pre-commit run check-no-third-party-imports --all-files --show-diff-on-failure
           pre-commit run check-test-ci-safety --all-files --show-diff-on-failure
+          pre-commit run check-tool-reference-drift --all-files --show-diff-on-failure
 
       - name: Lint (ruff check)
         run: ruff check . --output-format=github
