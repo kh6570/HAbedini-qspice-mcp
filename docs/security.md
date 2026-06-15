@@ -4,7 +4,7 @@ This document records the current threat model, the security properties the
 server is trying to preserve, and the controls that are already enforced in
 repo-owned code.
 
-The project is a local MCP server that launches first-party QSPICE tooling on
+The project is a local MCP server that launches first-party QSpice tooling on
 files inside a caller-selected workspace. It is not a container sandbox, a
 multi-tenant service, or a privilege boundary between hostile local users.
 
@@ -17,7 +17,7 @@ code:
 - persisted manifests or plan files that smuggle out-of-workspace artifact
   paths back into later read, write, or cleanup operations
 - caller-provided CLI switches that override repo-managed outputs or introduce
-  unaudited path-bearing arguments to QSPICE
+  unaudited path-bearing arguments to QSpice
 - accidental deletion of files outside the intended artifact roots during
   resume, cleanup, or session-bundle lifecycle operations
 
@@ -25,7 +25,7 @@ The server does not currently try to defend against:
 
 - a hostile local user who can already modify the workspace, interpreter, or
   configured executables
-- kernel- or OS-level sandbox escapes from the QSPICE or QUX processes
+- kernel- or OS-level sandbox escapes from the QSpice or QUX processes
 - time-of-check/time-of-use races after validation on a filesystem controlled
   by another local actor
 
@@ -55,13 +55,13 @@ The server does not currently try to defend against:
 ### Process Invocation Guardrails
 
 - The server controls simulation log and raw output locations instead of
-  allowing callers to override them through raw QSPICE `-o` or `-r` switches.
+  allowing callers to override them through raw QSpice `-o` or `-r` switches.
 - Main QSpice runs now preserve prior `.log` and `.qraw` artifacts by backing
   them up before launch and restoring them if the run times out or exits
   unsuccessfully.
 - `extra_switches` now only accepts standalone dash-prefixed flags and rejects
   positional or path-like tokens so callers cannot smuggle ad hoc filesystem
-  arguments through the QSPICE invocation surface.
+  arguments through the QSpice invocation surface.
 - Audited writable artifact and bundle outputs now enforce explicit expected
   suffixes instead of silently rewriting or accepting mismatched file types.
 - QPOST-backed measure refreshes now stage `.meas` output to temporary paths,

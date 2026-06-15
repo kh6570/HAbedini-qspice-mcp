@@ -148,7 +148,7 @@ That terminal is JSON-RPC only — not a normal shell.
 4. `validate_dll_symbol_signature` before simulating
 5. `run_simulation`
 
-QSPICE installs a bundled Digital Mars C++ compiler at `<install>/dm/bin/dmc.exe`.
+QSpice installs a bundled Digital Mars C++ compiler at `<install>/dm/bin/dmc.exe`.
 Set `QSPICE_EXE` in your MCP server environment so `build_dll_device` and
 `write_workspace_text_file` can auto-build `.cpp` sources with DMC (no Visual Studio
 required for typical QSpice-generated C++98 blocks). Use `toolchain="msvc"` when you

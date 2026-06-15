@@ -89,6 +89,8 @@ def quality(session: nox.Session) -> None:
         "check-no-third-party-imports",
         "check-test-ci-safety",
         "check-tool-reference-drift",
+        "check-mcp-env-drift",
+        "check-markdown-docs",
     ):
         session.run("pre-commit", "run", hook_id, "--all-files", "--show-diff-on-failure")
     session.run("python", "-m", "mypy", "--strict", "src/")

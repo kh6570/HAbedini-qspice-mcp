@@ -8,18 +8,6 @@ repos:
       - id: ruff
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.20.2
-    hooks:
-      - id: mypy
-        files: ^src/
-        args: [--strict]
-        additional_dependencies:
-          - pydantic>=2.6
-          - pydantic-settings>=2.2
-          - numpy>=1.26
-          - types-setuptools
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
     hooks:
@@ -49,6 +37,22 @@ repos:
         entry: python scripts/check_tool_reference_drift.py
         language: system
         pass_filenames: false
+      - id: check-mcp-env-drift
+        name: check MCP launcher env drift
+        entry: python scripts/check_mcp_env_drift.py
+        language: system
+        pass_filenames: false
+      - id: check-markdown-docs
+        name: check markdown docs (links + tables)
+        entry: python scripts/check_markdown_docs.py
+        language: system
+        pass_filenames: false
+      - id: mypy
+        name: mypy (strict, src)
+        entry: mypy --strict src/
+        language: system
+        pass_filenames: false
+        types: [python]
       - id: pytest-fast
         name: pytest (unit only)
         entry: python -m pytest -m "not integration and not slow" -q

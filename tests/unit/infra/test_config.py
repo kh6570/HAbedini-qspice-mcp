@@ -32,8 +32,7 @@ def test_env_example_keys_map_to_qspice_settings_fields() -> None:
 
     unknown = sorted(documented - allowed)
     assert unknown == [], (
-        ".env.example documents env vars with no QSpiceSettings field: "
-        + ", ".join(unknown)
+        ".env.example documents env vars with no QSpiceSettings field: " + ", ".join(unknown)
     )
 
 

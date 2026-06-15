@@ -59,14 +59,14 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `describe_mixed_signal_support` | implemented | Report which mixed-signal custom-device scaffold generators are available. |
 | `validate_dll_symbol_signature` | implemented | Cross-check one `.DLL` schematic symbol against a C or C++ source file. |
 | `build_dll_device` | implemented | Compile a workspace C or C++ source file into a `.dll` custom device using QSpice-bundled DMC, MSVC (`cl`), or CMake. |
-| `scaffold_dll_device` | implemented | Generate a C++ DLL custom-device project scaffold with the documented QSPICE entry points. See [C-Block Build Guide](cblock_build_guide.md) for compilation. |
+| `scaffold_dll_device` | implemented | Generate a C++ DLL custom-device project scaffold with the documented QSpice entry points. See [C-Block Build Guide](cblock_build_guide.md) for compilation. |
 | `scaffold_dll_device_from_symbol` | implemented | Generate a C++ DLL scaffold directly from one existing `.DLL` schematic block. See [C-Block Build Guide](cblock_build_guide.md) for compilation. |
-| `scaffold_verilog_device` | implemented | Generate a Verilog module scaffold for QSPICE Verilog device integration. |
-| `scaffold_socket_device` | implemented | Generate a Python socket-server scaffold for QSPICE socket-based device workflows. |
-| `scaffold_python_device` | implemented | Generate a Python-backed custom-device server scaffold for QSPICE Python device integration. |
+| `scaffold_verilog_device` | implemented | Generate a Verilog module scaffold for QSpice Verilog device integration. |
+| `scaffold_socket_device` | implemented | Generate a Python socket-server scaffold for QSpice socket-based device workflows. |
+| `scaffold_python_device` | implemented | Generate a Python-backed custom-device server scaffold for QSpice Python device integration. |
 | `describe_protocol_support` | implemented | Report which protocol co-simulation scaffold generators (I2C, SPI) are available. |
-| `scaffold_i2c_device` | implemented | Generate a C++ DLL scaffold using QSPICE's built-in I2C bus helper functions. |
-| `scaffold_spi_device` | implemented | Generate a C++ DLL scaffold using QSPICE's built-in SPI bus helper functions. |
+| `scaffold_i2c_device` | implemented | Generate a C++ DLL scaffold using QSpice's built-in I2C bus helper functions. |
+| `scaffold_spi_device` | implemented | Generate a C++ DLL scaffold using QSpice's built-in SPI bus helper functions. |
 | `materialize_reference_circuit` | implemented | Write server-bundled recipe artifacts into the workspace (for example `buck_converter_cpp`). |
 | `list_reference_circuit_recipes` | implemented | List bundled reference-circuit recipe ids and short summaries (Track B discovery). |
 | `describe_reference_circuit_recipe` | implemented | Return one bundled recipe manifest, workflow entries, file list, and topology digest. |
@@ -263,7 +263,7 @@ Expected outputs:
 Notes:
 This tool writes a manifest contract with `transport = "windows_messages"`
 plus `bridge_protocol.command_queue` and `bridge_protocol.event_log` channels,
-but it does not execute QSPICE or own live cross-probing itself. Empty session
+but it does not execute QSpice or own live cross-probing itself. Empty session
 names and empty list entries are rejected.
 
 ## launch_live_gui_session
@@ -529,7 +529,7 @@ Expected outputs:
 - `warnings`
 
 Notes:
-The current parser targets the real QSPICE-style named exported-function flow
+The current parser targets the real QSpice-style named exported-function flow
 plus explicit `data[]` pin bindings with `// input` and `// output` comments,
 which matches the checked-in Buck C++ example and the new symbol-driven DLL
 scaffold.
@@ -538,7 +538,7 @@ scaffold.
 
 Purpose:
 Compile one workspace C or C++ custom-device source file into a `.dll` artifact
-that QSPICE can load beside the schematic.
+that QSpice can load beside the schematic.
 
 Typical inputs:
 - `source_path`
@@ -598,7 +598,7 @@ DLL instances.
 ## scaffold_dll_device
 
 Purpose:
-Generate a C++ DLL custom-device project scaffold with the documented QSPICE
+Generate a C++ DLL custom-device project scaffold with the documented QSpice
 entry points (`dll_device_count`, `dll_device`, `dll_device_end`).
 
 Typical inputs:
@@ -616,7 +616,7 @@ Expected outputs:
 
 Notes:
 When `schematic_path` is provided, the `.cpp` and `CMakeLists.txt` are placed
-next to the schematic so QSPICE's "Show Source" command finds them. Compile the
+next to the schematic so QSpice's "Show Source" command finds them. Compile the
 result with the [C-Block Build Guide](cblock_build_guide.md) or `build_dll_device`.
 Use `scaffold_dll_device_from_symbol` instead when an existing `.DLL` block
 already defines the pin contract.
@@ -624,7 +624,7 @@ already defines the pin contract.
 ## scaffold_verilog_device
 
 Purpose:
-Generate a Verilog module scaffold for the documented QSPICE Verilog
+Generate a Verilog module scaffold for the documented QSpice Verilog
 device-integration path.
 
 Typical inputs:
@@ -638,12 +638,12 @@ Expected outputs:
 
 Notes:
 This emits a starter Verilog module only. Building and registering the device
-with QSPICE remains a manual external step.
+with QSpice remains a manual external step.
 
 ## scaffold_socket_device
 
 Purpose:
-Generate a Python socket-server scaffold for the documented QSPICE
+Generate a Python socket-server scaffold for the documented QSpice
 socket-based custom-device workflow.
 
 Typical inputs:
@@ -663,7 +663,7 @@ not launch or supervise the socket process on the caller's behalf.
 
 Purpose:
 Generate a Python-backed custom-device server scaffold for the documented
-QSPICE Python device-integration path.
+QSpice Python device-integration path.
 
 Typical inputs:
 - `device_name`
@@ -675,13 +675,13 @@ Expected outputs:
 - `line_count`
 
 Notes:
-This emits a starter Python device server only; wiring it into QSPICE remains a
+This emits a starter Python device server only; wiring it into QSpice remains a
 manual external step.
 
 ## scaffold_i2c_device
 
 Purpose:
-Generate a C++ DLL scaffold that uses QSPICE's built-in I2C bus helper
+Generate a C++ DLL scaffold that uses QSpice's built-in I2C bus helper
 functions for protocol-level co-simulation.
 
 Typical inputs:
@@ -701,7 +701,7 @@ The generated source calls the documented `qspice_i2c_*` helpers
 ## scaffold_spi_device
 
 Purpose:
-Generate a C++ DLL scaffold that uses QSPICE's built-in SPI bus helper
+Generate a C++ DLL scaffold that uses QSpice's built-in SPI bus helper
 functions for protocol-level co-simulation.
 
 Typical inputs:
@@ -1514,7 +1514,7 @@ Expected outputs:
 
 Notes:
 Pin world coordinates depend on rotation; re-check wire endpoints after rotating.
-`read_component` reports `rotation_degrees` in human-friendly degrees, not the raw QSPICE rotation index.
+`read_component` reports `rotation_degrees` in human-friendly degrees, not the raw QSpice rotation index.
 
 ## set_component_parameters
 
@@ -2283,7 +2283,7 @@ Notes:
 This tool is the detailed operating-point read surface. It expects an `Operating Point`
 raw artifact and uses sibling netlist metadata when available to enrich each
 device with nodes, model name, and model type. `KEEPOPINFO` and `SAVEPOWERS`
-make currents and dissipation available as scalar traces in QSPICE's raw data.
+make currents and dissipation available as scalar traces in QSpice's raw data.
 
 ## filter_device_operating_points
 
@@ -2694,7 +2694,7 @@ Expected outputs:
 
 Notes:
 The frequency and time parameters are accepted as strings so the caller can use
-QSPICE-friendly engineering suffixes such as `5m`, `1k`, or `1Meg` without the
+QSpice-friendly engineering suffixes such as `5m`, `1k`, or `1Meg` without the
 server reformatting them. For `.qsch` sources the tool stages a schematic copy
 with the added directive; for `.net` and `.cir` sources it appends the
 directive to the staged netlist artifact.
@@ -2770,7 +2770,7 @@ Expected outputs:
 
 Notes:
 Worst-case preparation is a repo-owned orchestration contract rather than a
-claim of native QSPICE worst-case syntax. It reuses the same target authoring
+claim of native QSpice worst-case syntax. It reuses the same target authoring
 rules as Monte Carlo, including per-prefix preset expansion and schematic-based
 nominal resolution for per-reference overrides, caps full-corner expansion to a
 bounded case count, and persists explicit cases for later inspection.
