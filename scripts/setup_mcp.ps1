@@ -210,8 +210,6 @@ function Write-QspiceServerEntry([string] $SimWorkspace, [string] $QspicePath) {
 
             QSPICE_LOG_LEVEL  = "error"
 
-            QSPICE_LOG_FORMAT = "console"
-
             QSPICE_DEV_WATCH  = "0"
 
         }
