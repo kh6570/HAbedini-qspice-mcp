@@ -64,6 +64,10 @@ jobs:
       - name: Type-check (mypy)
         run: mypy --strict src/
 
+      - name: Test CI-safety guards
+        if: matrix.os == 'ubuntu-latest' && matrix.python == '3.12'
+        run: python scripts/check_test_ci_safety.py
+
       - name: Unit tests
         run: pytest -m "not integration" --cov --cov-report=xml --cov-report=term
 

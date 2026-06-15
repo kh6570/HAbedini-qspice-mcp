@@ -87,6 +87,7 @@ def quality(session: nox.Session) -> None:
     session.run("python", "-m", "ruff", "format", "--check", ".")
     session.run("python", "-m", "mypy", "--strict", "src/")
     session.run("python", "scripts/check_no_third_party_imports.py")
+    session.run("python", "scripts/check_test_ci_safety.py")
     _run_non_integration_tests(session)
 
 
