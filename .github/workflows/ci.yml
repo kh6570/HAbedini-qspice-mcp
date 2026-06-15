@@ -32,6 +32,9 @@ jobs:
       - name: Smoke test packaged MCP CLI
         run: qspice-mcp --describe
 
+      - name: MCP cold-start budget probe
+        run: python scripts/verify_mcp_stdio.py 30
+
   quality:
     name: Lint, Type-check, Test
     strategy:

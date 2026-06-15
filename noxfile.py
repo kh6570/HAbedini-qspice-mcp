@@ -91,6 +91,14 @@ def quality(session: nox.Session) -> None:
     _run_non_integration_tests(session)
 
 
+@nox.session(name="cold-start")
+def cold_start(session: nox.Session) -> None:
+    """Assert MCP stdio initialize + tools/list completes within the Cursor budget."""
+
+    session.install(".")
+    session.run("python", "scripts/verify_mcp_stdio.py", "30")
+
+
 @nox.session(name="check-imports")
 def check_imports(session: nox.Session) -> None:
     """Verify zero third-party imports in the source and test trees.
