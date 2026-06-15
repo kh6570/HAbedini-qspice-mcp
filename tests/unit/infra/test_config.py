@@ -2,12 +2,50 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import re
+from pathlib import Path
 
 from qspice_mcp.infra.config import QSpiceSettings, build_settings
 
-if TYPE_CHECKING:
-    from pathlib import Path
+REPO_ROOT = Path(__file__).resolve().parents[3]
+ENV_EXAMPLE_PATH = REPO_ROOT / ".env.example"
+_ENV_EXAMPLE_KEY = re.compile(r"^(?:#\s*)?(QSPICE_[A-Z0-9_]+)=")
+
+
+def _qspice_settings_env_names() -> set[str]:
+    prefix = QSpiceSettings.model_config.get("env_prefix", "QSPICE_")
+    return {f"{prefix}{field_name.upper()}" for field_name in QSpiceSettings.model_fields}
+
+
+def _env_example_keys(path: Path = ENV_EXAMPLE_PATH) -> set[str]:
+    keys: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        match = _ENV_EXAMPLE_KEY.match(line.strip())
+        if match is not None:
+            keys.add(match.group(1))
+    return keys
+
+
+def test_env_example_keys_map_to_qspice_settings_fields() -> None:
+    documented = _env_example_keys()
+    allowed = _qspice_settings_env_names()
+
+    unknown = sorted(documented - allowed)
+    assert unknown == [], (
+        ".env.example documents env vars with no QSpiceSettings field: "
+        + ", ".join(unknown)
+    )
+
+
+def test_env_example_documents_every_qspice_settings_field() -> None:
+    documented = _env_example_keys()
+    expected = _qspice_settings_env_names()
+
+    missing = sorted(expected - documented)
+    assert missing == [], (
+        ".env.example is missing documented entries for QSpiceSettings fields: "
+        + ", ".join(missing)
+    )
 
 
 def test_settings_read_executable_from_environment(monkeypatch: object, tmp_path: Path) -> None:
