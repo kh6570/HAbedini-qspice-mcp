@@ -122,10 +122,34 @@ Full tool list: [Tool reference](tool_reference.md).
 
 ## Common problems
 
+### MCP shows `connected=false`
+
+Cursor and VS Code mark a server `connected=false` when the MCP child process exits during startup or never completes the MCP handshake (`initialize` + `tools/list`). The fixes below apply to **instant** failures (status flips red within a few seconds), not slow first-time loads.
+
+| Symptom | Likely cause | Fix |
+| --- | --- | --- |
+| `connected=false` immediately after adding or editing MCP config | User-level config uses a relative or placeholder `command` (for example `${workspaceFolder}`) | Re-run `scripts/setup_mcp.ps1` from the cloned repo, or set **absolute** paths in `%USERPROFILE%\.cursor\mcp.json` (Cursor) or `%APPDATA%\Code\User\mcp.json` (VS Code). See [AGENTS.md](../AGENTS.md). |
+| `connected=false` after a prior session or crash | Stale `python.exe` / `qspice-mcp` child still running or holding a lock on the venv entry point | Close the IDE fully, end orphaned `python` / `qspice-mcp` processes in Task Manager, then restart the IDE. |
+| Config looks correct but startup still fails | `command` points at `qspice-mcp.exe` while Windows holds a lock on that file, or at a Python that is not the repo venv | Prefer **`python -u -m qspice_mcp`** as the launch form: absolute path to `.venv\Scripts\python.exe` as `command`, with `-u`, `-m`, `qspice_mcp` in `args` (this is what `setup_mcp.ps1` writes). Avoid bare `qspice-mcp` / `qspice-mcp.exe` in user-level configs. |
+| Failure after moving or recloning the repo | Broken editable-install metadata: MCP still points at an old venv or site-packages `.pth` | From the **new** repo root: recreate `.venv`, `pip install -e .`, then re-run `scripts/setup_mcp.ps1` so user-level MCP JSON picks up the new absolute paths. |
+| Changed MCP config but status unchanged | IDE reload did not restart MCP subprocesses | **Fully quit** Cursor or VS Code and reopen (Settings → reload is often not enough after the first MCP install). |
+| Need to confirm the server boots outside the IDE | — | From the repo root: `pwsh -File scripts/verify_mcp.ps1` (runs `--describe` and a stdio `tools/list` budget probe). |
+
+**Sanity check outside the IDE:**
+
+```powershell
+.\.venv\Scripts\python.exe -u -m qspice_mcp --describe --log-level error
+.\.venv\Scripts\python.exe scripts\verify_mcp_stdio.py 30
+```
+
+Both must exit 0. If they fail in a normal terminal, fix the venv/`QSPICE_EXE` setup before debugging the IDE client.
+
+### Simulation, paths, and stdio misuse
+
 | Problem | Fix |
 | --- | --- |
 | `QSPICE_EXE` missing | Set to `C:\Program Files\QSPICE\QSPICE64.exe`; re-run `--describe` |
-| `qspice-mcp` not found | Use full `.venv\Scripts\qspice-mcp.exe` path in client config |
+| Tools work but simulation fails | Check `QSPICE_EXE` and the `--workspace-root` folder in MCP config |
 | Paths with spaces | Quote values: `QSPICE_EXE="C:\Program Files\QSPICE\QSPICE64.exe"` |
 | `Invalid JSON` / stdio error | You typed a shell command into a terminal running `qspice-mcp`; use Ctrl+C and let the **client** spawn the server |
 | Missing DLL / C-block errors | [C-Block Build Guide](cblock_build_guide.md) |
@@ -133,10 +157,10 @@ Full tool list: [Tool reference](tool_reference.md).
 ### Manual server run (debug only)
 
 ```powershell
-.\.venv\Scripts\qspice-mcp.exe
+.\.venv\Scripts\python.exe -u -m qspice_mcp --workspace-root "C:\path\to\circuits" --log-level error
 ```
 
-That terminal is JSON-RPC only — not a normal shell.
+That terminal is JSON-RPC only — not a normal shell. Prefer `scripts/verify_mcp.ps1` for a non-interactive health check.
 
 ---
 

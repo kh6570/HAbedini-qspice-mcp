@@ -13,6 +13,12 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Changed
 
+- **Docs** — expanded MCP `connected=false` troubleshooting in the [user guide](docs/user-guide.md)
+  and [AGENTS.md](AGENTS.md): absolute user-level paths, stale child processes,
+  prefer `python -u -m qspice_mcp` over locked `.exe` launchers, editable-install
+  drift after moving the repo, and `scripts/verify_mcp.ps1` / `verify_mcp_stdio.py`
+  sanity checks.
+
 - **Docs / MCP contracts** — standardized user-facing prose on the Qorvo-style
   product name **QSpice** across public markdown and MCP tool descriptions
   (including scaffold generator templates and returned notes). Code identifiers

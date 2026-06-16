@@ -137,11 +137,12 @@ Root key: `servers` (not `mcpServers`). Command Palette: **MCP: Open User Config
 
 | Symptom | Likely fix |
 |---------|------------|
-| `connected=false` immediately | User-level config needs absolute `command`; use `python -m qspice_mcp`; full IDE restart |
+| `connected=false` immediately | User-level config needs **absolute** `command`; prefer `python.exe` + `["-u","-m","qspice_mcp",…]` over `qspice-mcp.exe`; kill stale `python`/`qspice-mcp` children; **full IDE restart** (not reload). See [user-guide § MCP connected=false](docs/user-guide.md#mcp-shows-connectedfalse). |
 | MCP missing in other projects | Re-run setup; config must be in user profile paths above, not repo `.cursor/` |
 | MCP loading > 30s | `QSPICE_DEV_WATCH=0` and `--log-level error` (set by setup script) |
 | Tools work but sim fails | Check `QSPICE_EXE` and `--workspace-root` folder |
-| Moved cloned repo | Re-run `setup_mcp.ps1` to refresh absolute venv path |
+| Moved cloned repo | Re-run `setup_mcp.ps1` to refresh absolute venv path (stale editable-install / `.pth` metadata) |
+| Verify outside IDE | `pwsh -File scripts/verify_mcp.ps1` from repo root |
 
 More detail: [docs/user-guide.md](docs/user-guide.md)
 
