@@ -1,4 +1,4 @@
-"""Mixed-signal custom-device scaffolding services for QSPICE."""
+"""Mixed-signal custom-device scaffolding services for QSpice."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Scaffold an I2C bus device DLL project for QSPICE co-simulation."""
+"""Scaffold an I2C bus device DLL project for QSpice co-simulation."""
 
 from __future__ import annotations
 
@@ -16,18 +16,18 @@ if TYPE_CHECKING:
     from qspice_mcp.infra.config import QSpiceSettings  # noqa: F401
 
 
-_I2C_TEMPLATE = r"""// QSPICE I2C custom device: {device_name}
+_I2C_TEMPLATE = r"""// QSpice I2C custom device: {device_name}
 // Build: cl /LD /EHsc {safe_name}.cpp /Fe{device_name}.dll
-// See QSPICE Help > Digital/Custom Devices > I2C Bus Helpers.
+// See QSpice Help > Digital/Custom Devices > I2C Bus Helpers.
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <cmath>
 
 // ---------------------------------------------------------------------------
-// QSPICE I2C helper declarations (imported from the simulator at runtime).
+// QSpice I2C helper declarations (imported from the simulator at runtime).
 // ---------------------------------------------------------------------------
-// These functions are provided by QSPICE and resolve automatically when
+// These functions are provided by QSpice and resolve automatically when
 // the DLL is loaded by the simulator.  They are NOT exported from the DLL.
 
 // I2C master helpers:
@@ -49,7 +49,7 @@ extern "C" {{
 }}
 
 // ---------------------------------------------------------------------------
-// Device entry points (called by QSPICE).
+// Device entry points (called by QSpice).
 // ---------------------------------------------------------------------------
 
 extern "C" {{
@@ -109,7 +109,7 @@ SERVICE_SPEC = ServiceSpec(
     name="scaffold_i2c_device",
     title="Scaffold I2C Device",
     summary=(
-        "Generate a C++ DLL scaffold that uses QSPICE's built-in I2C bus "
+        "Generate a C++ DLL scaffold that uses QSpice's built-in I2C bus "
         "helper functions (qspice_i2c_read, qspice_i2c_write, qspice_i2c_start, "
         "qspice_i2c_stop, qspice_i2c_ack, qspice_i2c_nack) for protocol-level "
         "co-simulation."
@@ -152,7 +152,7 @@ def scaffold_i2c_device(
         line_count=len(content.splitlines()),
         notes=(
             f"Build with: cl /LD /EHsc {safe_name}.cpp /Fe{device_name}.dll",
-            f"Place {device_name}.dll where QSPICE can find it.",
+            f"Place {device_name}.dll where QSpice can find it.",
             "Add an I2C bus symbol and a DLL Device symbol to your schematic.",
             "The I2C helper functions resolve at runtime when the DLL is loaded.",
         ),

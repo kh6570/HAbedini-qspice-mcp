@@ -1,4 +1,4 @@
-"""Scaffold a Python-backed custom-device server for QSPICE."""
+"""Scaffold a Python-backed custom-device server for QSpice."""
 
 from __future__ import annotations
 
@@ -15,11 +15,11 @@ if TYPE_CHECKING:
 
     from qspice_mcp.infra.config import QSpiceSettings
 
-_PYTHON_TEMPLATE = r'''"""QSPICE Python-backed custom device: {device_name}
+_PYTHON_TEMPLATE = r'''"""QSpice Python-backed custom device: {device_name}
 
-See QSPICE Help > Digital/Custom Devices > Python Devices.
+See QSpice Help > Digital/Custom Devices > Python Devices.
 
-QSPICE launches this script as a subprocess and communicates over stdin/stdout
+QSpice launches this script as a subprocess and communicates over stdin/stdout
 using a line-oriented text protocol.  The server reads pin voltages, computes
 currents, and writes the result back.
 
@@ -52,7 +52,7 @@ def compute(
 # ---------------------------------------------------------------------------
 
 def serve() -> NoReturn:
-    """Run the QSPICE Python-device protocol loop on stdin/stdout."""
+    """Run the QSpice Python-device protocol loop on stdin/stdout."""
 
     while True:
         line = sys.stdin.readline()
@@ -95,7 +95,7 @@ SERVICE_SPEC = ServiceSpec(
     title="Scaffold Python Device",
     summary=(
         "Generate a Python-backed custom-device server scaffold for the "
-        "documented QSPICE Python device integration path."
+        "documented QSpice Python device integration path."
     ),
     phase="implemented",
 )

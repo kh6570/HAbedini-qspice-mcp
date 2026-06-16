@@ -1,4 +1,4 @@
-"""Scaffold a Python socket-based custom-device server for QSPICE."""
+"""Scaffold a Python socket-based custom-device server for QSpice."""
 
 from __future__ import annotations
 
@@ -15,11 +15,11 @@ if TYPE_CHECKING:
 
     from qspice_mcp.infra.config import QSpiceSettings
 
-_SOCKET_TEMPLATE = r'''"""QSPICE socket-based custom device: {device_name}
+_SOCKET_TEMPLATE = r'''"""QSpice socket-based custom device: {device_name}
 
-See QSPICE Help > Digital/Custom Devices > Socket Devices.
+See QSpice Help > Digital/Custom Devices > Socket Devices.
 
-QSPICE communicates with this server over a TCP socket.  The server reads
+QSpice communicates with this server over a TCP socket.  The server reads
 one line of text per timestep (pin voltages, space-separated), computes
 currents, and writes one line back (currents, space-separated).
 
@@ -41,7 +41,7 @@ def compute_currents(time: float, timestep: float, pins: list[float]) -> list[fl
     """Compute device currents from pin voltages.
 
     Override this function with your device behaviour.  The returned list
-    must have the same length as the number of pins reported to QSPICE.
+    must have the same length as the number of pins reported to QSpice.
     """
     del time, timestep, pins
     return [0.0]
@@ -52,7 +52,7 @@ def compute_currents(time: float, timestep: float, pins: list[float]) -> list[fl
 # ---------------------------------------------------------------------------
 
 def serve(port: int) -> None:
-    """Run the QSPICE socket-device server on the given port."""
+    """Run the QSpice socket-device server on the given port."""
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server:
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -86,7 +86,7 @@ def serve(port: int) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=f"QSPICE socket device: {device_name}")
+    parser = argparse.ArgumentParser(description=f"QSpice socket device: {device_name}")
     parser.add_argument("--port", type=int, required=True, help="TCP port to listen on")
     args = parser.parse_args()
     serve(args.port)
@@ -107,7 +107,7 @@ SERVICE_SPEC = ServiceSpec(
     name="scaffold_socket_device",
     title="Scaffold Socket Device",
     summary=(
-        "Generate a Python socket-server scaffold for the documented QSPICE "
+        "Generate a Python socket-server scaffold for the documented QSpice "
         "socket-based custom-device workflow."
     ),
     phase="implemented",
@@ -147,7 +147,7 @@ def scaffold_socket_device(
         notes=(
             f"Run: python {resolved.name} --port 5555",
             "Add a 'Socket Device' symbol to your schematic with the matching port.",
-            "QSPICE sends 'time timestep Vpin1 Vpin2 ...' and expects "
+            "QSpice sends 'time timestep Vpin1 Vpin2 ...' and expects "
             "'Ipin1 Ipin2 ...' in response.",
         ),
     )

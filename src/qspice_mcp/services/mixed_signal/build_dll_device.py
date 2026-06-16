@@ -1,4 +1,4 @@
-"""Compile a workspace C-block source file into a QSPICE custom-device DLL."""
+"""Compile a workspace C-block source file into a QSpice custom-device DLL."""
 
 from __future__ import annotations
 

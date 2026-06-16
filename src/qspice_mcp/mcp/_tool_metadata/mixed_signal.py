@@ -60,9 +60,9 @@ MIXED_SIGNAL_TOOL_METADATA: dict[str, dict[str, object]] = {
         "title": "Scaffold DLL Device",
         "description": (
             "Generate a C++ DLL custom-device project scaffold with the documented "
-            "QSPICE entry points (dll_device_count, dll_device, dll_device_end). "
+            "QSpice entry points (dll_device_count, dll_device, dll_device_end). "
             "When schematic_path is provided, the .cpp and CMakeLists.txt are placed "
-            "next to the schematic so QSPICE's Show Source can find them."
+            "next to the schematic so QSpice's Show Source can find them."
         ),
         "input_schema": {
             "type": "object",
@@ -81,7 +81,7 @@ MIXED_SIGNAL_TOOL_METADATA: dict[str, dict[str, object]] = {
             "Generate a C++ DLL custom-device scaffold directly from one existing `.DLL` "
             "schematic block so the source stub matches the symbol contract. "
             "By default the .cpp and CMakeLists.txt are placed next to the schematic "
-            "so QSPICE's Show Source command can find them automatically."
+            "so QSpice's Show Source command can find them automatically."
         ),
         "input_schema": {
             "type": "object",
@@ -97,7 +97,7 @@ MIXED_SIGNAL_TOOL_METADATA: dict[str, dict[str, object]] = {
     "scaffold_verilog_device": {
         "title": "Scaffold Verilog Device",
         "description": (
-            "Generate a Verilog module scaffold for use as a QSPICE custom device "
+            "Generate a Verilog module scaffold for use as a QSpice custom device "
             "through the documented Verilog device integration path."
         ),
         "input_schema": {
@@ -113,7 +113,7 @@ MIXED_SIGNAL_TOOL_METADATA: dict[str, dict[str, object]] = {
     "scaffold_socket_device": {
         "title": "Scaffold Socket Device",
         "description": (
-            "Generate a Python socket-server scaffold for the documented QSPICE "
+            "Generate a Python socket-server scaffold for the documented QSpice "
             "socket-based custom-device workflow."
         ),
         "input_schema": {
@@ -130,7 +130,7 @@ MIXED_SIGNAL_TOOL_METADATA: dict[str, dict[str, object]] = {
         "title": "Scaffold Python Device",
         "description": (
             "Generate a Python-backed custom-device server scaffold for the "
-            "documented QSPICE Python device integration path."
+            "documented QSpice Python device integration path."
         ),
         "input_schema": {
             "type": "object",

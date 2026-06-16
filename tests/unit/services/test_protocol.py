@@ -64,7 +64,7 @@ def test_scaffold_i2c_device_writes_dll_source(tmp_path) -> None:
     assert "SCL" in text
 
     assert any("cl /LD" in note for note in result.notes)
-    assert any("QSPICE" in note for note in result.notes)
+    assert any("QSpice" in note for note in result.notes)
 
 
 def test_scaffold_i2c_device_rejects_numeric_start(tmp_path) -> None:
@@ -143,7 +143,7 @@ def test_scaffold_spi_device_writes_dll_source(tmp_path) -> None:
     assert "CPHA" in text
 
     assert any("cl /LD" in note for note in result.notes)
-    assert any("QSPICE" in note for note in result.notes)
+    assert any("QSpice" in note for note in result.notes)
 
 
 def test_scaffold_spi_device_rejects_numeric_start(tmp_path) -> None:

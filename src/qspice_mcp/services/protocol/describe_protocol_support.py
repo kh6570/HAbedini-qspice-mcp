@@ -38,7 +38,7 @@ def describe_protocol_support(*, settings: QSpiceSettings) -> ProtocolSupport:
         notes=(
             "All protocol scaffold generators are available. "
             "Use scaffold_i2c_device or scaffold_spi_device to generate "
-            "a C++ DLL project that uses QSPICE's built-in I2C/SPI helper "
+            "a C++ DLL project that uses QSpice's built-in I2C/SPI helper "
             "functions for bus-level co-simulation.",
         ),
     )

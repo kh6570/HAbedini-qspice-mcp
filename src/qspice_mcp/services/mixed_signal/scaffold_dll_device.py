@@ -1,4 +1,4 @@
-"""Scaffold a C++ DLL custom-device project for QSPICE."""
+"""Scaffold a C++ DLL custom-device project for QSpice."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from qspice_mcp.services.service_spec import ServiceSpec
 if TYPE_CHECKING:
     from qspice_mcp.infra.config import QSpiceSettings  # noqa: F401
 
-_DLL_TEMPLATE = r"""// QSPICE custom device DLL: {device_name}
+_DLL_TEMPLATE = r"""// QSpice custom device DLL: {device_name}
 // Build: cl /LD /EHsc {safe_name}.cpp /Fe{device_name}.dll
 //        or use the CMakeLists.txt generated alongside this file.
 
@@ -23,8 +23,8 @@ _DLL_TEMPLATE = r"""// QSPICE custom device DLL: {device_name}
 #include <windows.h>
 #include <cmath>
 
-// QSPICE calls these entry points by ordinal.
-// See QSPICE Help > Digital/Custom Devices > C++ DLL Devices.
+// QSpice calls these entry points by ordinal.
+// See QSpice Help > Digital/Custom Devices > C++ DLL Devices.
 
 extern "C" {{
 
@@ -69,7 +69,7 @@ __declspec(dllexport) void __stdcall dll_device_end() {{
 }}  // extern "C"
 """
 
-_CMAKE_TEMPLATE = r"""# CMakeLists.txt for {device_name} QSPICE custom device DLL
+_CMAKE_TEMPLATE = r"""# CMakeLists.txt for {device_name} QSpice custom device DLL
 cmake_minimum_required(VERSION 3.16)
 project({device_name} LANGUAGES CXX)
 
@@ -86,8 +86,8 @@ if(WIN32)
     )
 endif()
 
-# Place the DLL next to the QSPICE executable or in a directory on the
-# library search path so QSPICE can load it by name.
+# Place the DLL next to the QSpice executable or in a directory on the
+# library search path so QSpice can load it by name.
 """
 
 
@@ -108,7 +108,7 @@ SERVICE_SPEC = ServiceSpec(
     title="Scaffold DLL Device",
     summary=(
         "Generate a C++ DLL custom-device project scaffold with the documented "
-        "QSPICE entry points (dll_device_count, dll_device, dll_device_end)."
+        "QSpice entry points (dll_device_count, dll_device, dll_device_end)."
     ),
     phase="implemented",
 )
@@ -126,7 +126,7 @@ def scaffold_dll_device(
 
     When *schematic_path* is provided and *output_dir* is not, the generated
     ``.cpp`` and ``CMakeLists.txt`` are placed next to the schematic so that
-    QSPICE's "Show Source" command can find them automatically.
+    QSpice's "Show Source" command can find them automatically.
     """
 
     del settings
@@ -173,7 +173,7 @@ def scaffold_dll_device(
         notes=(
             f"Build with: cl /LD /EHsc {safe_name}.cpp /Fe{device_name}.dll",
             f"Or: cmake -S {safe_name} -B {safe_name}/build && cmake --build {safe_name}/build",
-            f"Place {device_name}.dll where QSPICE can find it, then use "
+            f"Place {device_name}.dll where QSpice can find it, then use "
             f"a 'DLL Device' symbol in your schematic with Device={device_name}.",
         ),
     )

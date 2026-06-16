@@ -1,4 +1,4 @@
-"""Scaffold an SPI bus device DLL project for QSPICE co-simulation."""
+"""Scaffold an SPI bus device DLL project for QSpice co-simulation."""
 
 from __future__ import annotations
 
@@ -16,18 +16,18 @@ if TYPE_CHECKING:
     from qspice_mcp.infra.config import QSpiceSettings  # noqa: F401
 
 
-_SPI_TEMPLATE = r"""// QSPICE SPI custom device: {device_name}
+_SPI_TEMPLATE = r"""// QSpice SPI custom device: {device_name}
 // Build: cl /LD /EHsc {safe_name}.cpp /Fe{device_name}.dll
-// See QSPICE Help > Digital/Custom Devices > SPI Bus Helpers.
+// See QSpice Help > Digital/Custom Devices > SPI Bus Helpers.
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <cmath>
 
 // ---------------------------------------------------------------------------
-// QSPICE SPI helper declarations (imported from the simulator at runtime).
+// QSpice SPI helper declarations (imported from the simulator at runtime).
 // ---------------------------------------------------------------------------
-// These functions are provided by QSPICE and resolve automatically when
+// These functions are provided by QSpice and resolve automatically when
 // the DLL is loaded by the simulator.  They are NOT exported from the DLL.
 
 // SPI helpers:
@@ -49,7 +49,7 @@ extern "C" {{
 }}
 
 // ---------------------------------------------------------------------------
-// Device entry points (called by QSPICE).
+// Device entry points (called by QSpice).
 // ---------------------------------------------------------------------------
 
 extern "C" {{
@@ -115,7 +115,7 @@ SERVICE_SPEC = ServiceSpec(
     name="scaffold_spi_device",
     title="Scaffold SPI Device",
     summary=(
-        "Generate a C++ DLL scaffold that uses QSPICE's built-in SPI bus "
+        "Generate a C++ DLL scaffold that uses QSpice's built-in SPI bus "
         "helper functions (qspice_spi_read, qspice_spi_write) for "
         "protocol-level co-simulation with configurable SPI mode."
     ),
@@ -157,7 +157,7 @@ def scaffold_spi_device(
         line_count=len(content.splitlines()),
         notes=(
             f"Build with: cl /LD /EHsc {safe_name}.cpp /Fe{device_name}.dll",
-            f"Place {device_name}.dll where QSPICE can find it.",
+            f"Place {device_name}.dll where QSpice can find it.",
             "Add an SPI bus symbol and a DLL Device symbol to your schematic.",
             "SPI mode is selected per-call (0-3) via the mode parameter.",
         ),

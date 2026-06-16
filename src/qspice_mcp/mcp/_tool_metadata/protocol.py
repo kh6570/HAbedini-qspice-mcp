@@ -19,7 +19,7 @@ PROTOCOL_TOOL_METADATA: dict[str, dict[str, object]] = {
     "scaffold_i2c_device": {
         "title": "Scaffold I2C Device",
         "description": (
-            "Generate a C++ DLL scaffold that uses QSPICE's built-in I2C bus "
+            "Generate a C++ DLL scaffold that uses QSpice's built-in I2C bus "
             "helper functions (qspice_i2c_read, qspice_i2c_write, "
             "qspice_i2c_start, qspice_i2c_stop, qspice_i2c_ack, "
             "qspice_i2c_nack) for protocol-level co-simulation."
@@ -37,7 +37,7 @@ PROTOCOL_TOOL_METADATA: dict[str, dict[str, object]] = {
     "scaffold_spi_device": {
         "title": "Scaffold SPI Device",
         "description": (
-            "Generate a C++ DLL scaffold that uses QSPICE's built-in SPI bus "
+            "Generate a C++ DLL scaffold that uses QSpice's built-in SPI bus "
             "helper functions (qspice_spi_read, qspice_spi_write) for "
             "protocol-level co-simulation with configurable SPI mode."
         ),

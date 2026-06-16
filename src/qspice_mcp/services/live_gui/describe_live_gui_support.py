@@ -69,7 +69,7 @@ def describe_live_gui_support(*, settings: QSpiceSettings) -> LiveGuiSupport:
         )
     if not qspice_executable_configured:
         notes.append(
-            "No configured QSPICE executable is currently available for launch-command scaffolding."
+            "No configured QSpice executable is currently available for launch-command scaffolding."
         )
 
     return LiveGuiSupport(

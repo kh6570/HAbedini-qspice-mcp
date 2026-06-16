@@ -99,7 +99,7 @@ def test_scaffold_dll_device_writes_cpp_and_cmake(tmp_path) -> None:
     assert "add_library" in cmake_text
 
     assert any("cl /LD" in note for note in result.notes)
-    assert any("QSPICE" in note for note in result.notes)
+    assert any("QSpice" in note for note in result.notes)
 
 
 def test_scaffold_dll_device_rejects_numeric_leading_name(tmp_path) -> None:

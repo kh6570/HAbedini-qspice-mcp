@@ -47,6 +47,11 @@ repos:
         entry: python scripts/check_markdown_docs.py
         language: system
         pass_filenames: false
+      - id: check-tool-metadata-casing
+        name: check tool metadata QSpice casing
+        entry: python scripts/check_tool_metadata_casing.py
+        language: system
+        pass_filenames: false
       - id: mypy
         name: mypy (strict, src)
         entry: mypy --strict src/

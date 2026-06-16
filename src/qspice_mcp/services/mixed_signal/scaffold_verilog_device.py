@@ -1,4 +1,4 @@
-"""Scaffold a Verilog custom-device module for QSPICE."""
+"""Scaffold a Verilog custom-device module for QSpice."""
 
 from __future__ import annotations
 
@@ -15,14 +15,14 @@ if TYPE_CHECKING:
 
     from qspice_mcp.infra.config import QSpiceSettings
 
-_VERILOG_TEMPLATE = r"""// QSPICE Verilog custom device: {device_name}
-// See QSPICE Help > Digital/Custom Devices > Verilog Devices.
+_VERILOG_TEMPLATE = r"""// QSpice Verilog custom device: {device_name}
+// See QSpice Help > Digital/Custom Devices > Verilog Devices.
 
 `timescale 1ns / 1ps
 
 module {module_name} (
-    // QSPICE maps Verilog ports to symbol pins by position.
-    // Port directions are inferred from QSPICE symbol pin types.
+    // QSpice maps Verilog ports to symbol pins by position.
+    // Port directions are inferred from QSpice symbol pin types.
     input  wire a,     // example input pin
     output wire y      // example output pin
 );
@@ -52,7 +52,7 @@ SERVICE_SPEC = ServiceSpec(
     name="scaffold_verilog_device",
     title="Scaffold Verilog Device",
     summary=(
-        "Generate a Verilog module scaffold for use as a QSPICE custom device "
+        "Generate a Verilog module scaffold for use as a QSpice custom device "
         "through the documented Verilog device integration path."
     ),
     phase="implemented",
@@ -94,7 +94,7 @@ def scaffold_verilog_device(
         output_path=resolved,
         line_count=len(content.splitlines()),
         notes=(
-            f"Add a 'Verilog Device' symbol to your QSPICE schematic and set File={resolved.name}.",
+            f"Add a 'Verilog Device' symbol to your QSpice schematic and set File={resolved.name}.",
             "Ports in the module declaration are mapped to symbol pins by position.",
         ),
     )

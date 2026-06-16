@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial public release — a Model Context Protocol server that lets AI assistants
 drive the QSpice circuit simulator through stable JSON tools.
 
+### Changed
+
+- **Docs / MCP contracts** — standardized user-facing prose on the Qorvo-style
+  product name **QSpice** across public markdown and MCP tool descriptions
+  (including scaffold generator templates and returned notes). Code identifiers
+  such as `QSPICE_EXE`, `QSPICE64.exe`, and install paths under
+  `Program Files\QSPICE\` are unchanged. Corrected `SECURITY.md` to reference
+  `QSPICE64.exe` instead of the nonexistent `QSPICE.exe`.
+
 ### Added
 
 - **MCP server** — FastMCP stdio server (`qspice-mcp`) with runtime capability

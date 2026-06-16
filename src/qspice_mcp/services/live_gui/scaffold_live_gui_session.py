@@ -115,7 +115,7 @@ def scaffold_live_gui_session(
 
     notes = [
         (
-            "This manifest does not execute QSPICE directly; it is a contract "
+            "This manifest does not execute QSpice directly; it is a contract "
             "for an external Windows-only bridge."
         ),
         (
@@ -133,12 +133,12 @@ def scaffold_live_gui_session(
         )
     if not launch_command:
         notes.append(
-            "No launch command was embedded because a configured QSPICE "
+            "No launch command was embedded because a configured QSpice "
             "executable was not available."
         )
     elif resolved_schematic is None:
         notes.append(
-            "A QSPICE executable was found, but no schematic path was supplied "
+            "A QSpice executable was found, but no schematic path was supplied "
             "for launch scaffolding."
         )
     else:

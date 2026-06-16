@@ -1,4 +1,4 @@
-"""Protocol co-simulation scaffolding services for QSPICE."""
+"""Protocol co-simulation scaffolding services for QSpice."""
 
 from __future__ import annotations
 

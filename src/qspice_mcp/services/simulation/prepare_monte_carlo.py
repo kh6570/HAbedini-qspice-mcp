@@ -483,7 +483,7 @@ def prepare_monte_carlo(
                     *(
                         (
                             "Staged an optional native Monte Carlo schematic that uses "
-                            "QSPICE mc(...) expressions for inspection."
+                            "QSpice mc(...) expressions for inspection."
                         )
                         if native_mc_stage is not None
                         else ()

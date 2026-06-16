@@ -91,6 +91,7 @@ def quality(session: nox.Session) -> None:
         "check-tool-reference-drift",
         "check-mcp-env-drift",
         "check-markdown-docs",
+        "check-tool-metadata-casing",
     ):
         session.run("pre-commit", "run", hook_id, "--all-files", "--show-diff-on-failure")
     session.run("python", "-m", "mypy", "--strict", "src/")

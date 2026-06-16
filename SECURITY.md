@@ -31,7 +31,7 @@ will credit reporters in the changelog unless they request otherwise.
 
 For the threat model, workspace-sandboxing rules, subprocess-execution
 controls, and the path/suffix validation that protects callers from
-arbitrary `QSPICE.exe` or `QUX.exe` invocations, see the in-tree security
+arbitrary `QSPICE64.exe` or `QUX.exe` invocations, see the in-tree security
 posture document at `docs/security.md`.
 
 The published [error taxonomy](docs/errors.md) also exposes

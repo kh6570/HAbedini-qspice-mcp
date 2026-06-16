@@ -21,7 +21,7 @@ from qspice_mcp.services.service_spec import ServiceSpec
 if TYPE_CHECKING:
     from qspice_mcp.infra.config import QSpiceSettings  # noqa: F401
 
-_DLL_FROM_SYMBOL_TEMPLATE = r"""// QSPICE custom device DLL scaffold
+_DLL_FROM_SYMBOL_TEMPLATE = r"""// QSpice custom device DLL scaffold
 // derived from {reference} in {schematic_name}
 // Device name: {device_name}
 // Exported entry point: {export_name}
@@ -74,7 +74,7 @@ extern "C" __declspec(dllexport) void {export_name}(
 }}
 """
 
-_DLL_FROM_SYMBOL_CMAKE_TEMPLATE = r"""# CMakeLists.txt for {device_name} QSPICE custom device DLL
+_DLL_FROM_SYMBOL_CMAKE_TEMPLATE = r"""# CMakeLists.txt for {device_name} QSpice custom device DLL
 cmake_minimum_required(VERSION 3.16)
 project({safe_name} LANGUAGES CXX)
 
@@ -92,7 +92,7 @@ if(WIN32)
     )
 endif()
 
-# Place the compiled DLL where QSPICE can find it, then point the schematic
+# Place the compiled DLL where QSpice can find it, then point the schematic
 # block value at {device_name}.
 """
 
