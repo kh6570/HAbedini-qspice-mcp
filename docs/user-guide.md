@@ -178,6 +178,23 @@ Set `QSPICE_EXE` in your MCP server environment so `build_dll_device` and
 required for typical QSpice-generated C++98 blocks). Use `toolchain="msvc"` when you
 need modern C++.
 
+### `write_workspace_text_file` auto-build
+
+When you write a `.c`/`.cpp`/`.cc`/`.cxx` file, the tool can compile the sibling
+`.dll` in the same call (default on; pass `build_dll_after_write=false` to skip).
+
+| Outcome | Response fields | What to do |
+| --- | --- | --- |
+| Write + compile OK | `output_path`, `dll_build` | Simulate or validate as needed |
+| Write OK, compile failed, no `.dll` | `output_path`, `dll_build_error` | Set `QSPICE_EXE`, install MSVC/CMake, or run `build_dll_device` manually — see [C-Block Build Guide](cblock_build_guide.md) |
+| Write OK, `.dll` already present | `output_path`, `dll_build` with `skipped_rebuild: true` | Rebuild with `build_dll_device` if the source changed |
+| Write + optional validation | `dll_validation` when `schematic_path` and `dll_reference` are both set | Fix pin/export mismatches if the tool raises `ValidationError` |
+
+`dll_toolchain=auto` prefers bundled DMC when `QSPICE_EXE` resolves, then MSVC, then
+CMake. IDE-spawned MCP often lacks `cl` on PATH even when Visual Studio is installed;
+configure `QSPICE_EXE` or build from a Developer Prompt / explicit `build_dll_device`
+call. Full field list: [Tool reference — write_workspace_text_file](tool_reference.md#write_workspace_text_file).
+
 **Buck example — two workflows:**
 
 | Track | Use when | MCP discovery | MCP workflow |

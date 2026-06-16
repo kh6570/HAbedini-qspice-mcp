@@ -79,7 +79,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `add_wire` | implemented | Insert one wire segment into a schematic. |
 | `add_junction` | implemented | Insert one junction node into a schematic wire graph. |
 | `add_net_label` | implemented | Insert one net label into a schematic. |
-| `write_workspace_text_file` | implemented | Write a sandboxed UTF-8 text file; auto-builds sibling `.dll` for C/C++ via bundled DMC when `QSPICE_EXE` is set. |
+| `write_workspace_text_file` | implemented | Write a sandboxed UTF-8 text file; for `.c`/`.cpp`/`.cc`/`.cxx` sources, auto-invokes `build_dll_device` on the sibling `.dll` unless opted out (see detailed section). |
 | `describe_topology_authoring_support` | implemented | Report scratch topology authoring capabilities (Track A readiness map). |
 | `list_workflow_instructions` | implemented | List bundled workflow build instructions (for example buck-converter-cpp). |
 | `read_workflow_instruction` | implemented | Read one bundled workflow instruction document with build steps and coordinate tables. |
@@ -770,26 +770,71 @@ Expected outputs:
 
 Purpose:
 Write one UTF-8 text file under the workspace root (for example a C-block `.cpp`).
-For `.c`/`.cpp` sources, optionally compiles the sibling `.dll` via `build_dll_device`
-and can validate the DLL symbol when `schematic_path` and `dll_reference` are set.
+For C/C++ custom-device sources (`.c`, `.cpp`, `.cc`, `.cxx`), the handler can
+compile the sibling `.dll` in the same call via `build_dll_device`, and optionally
+cross-check the DLL block symbol when `schematic_path` and `dll_reference` are both
+set.
 
 Typical inputs:
-- `relative_path`
-- `content`
-- `overwrite` (optional)
-- `build_dll_after_write` (optional; default true for C/C++ sources)
-- `schematic_path` (optional)
-- `dll_reference` (optional)
-- `dll_toolchain` (optional: `auto`, `dmc`, `msvc`, `cmake`; auto prefers bundled DMC)
-- `dll_timeout_s` (optional)
+- `relative_path` — workspace-relative destination (required)
+- `content` — UTF-8 file body (required)
+- `overwrite` — allow replacing an existing file (default `false`)
+- `build_dll_after_write` — when omitted, auto-build runs for `.c`/`.cpp`/`.cc`/`.cxx`
+  sources; set `false` to write only
+- `schematic_path` — optional `.qsch` for post-build symbol validation (requires
+  `dll_reference`)
+- `dll_reference` — DLL block reference such as `X1` (requires `schematic_path`)
+- `dll_toolchain` — forwarded to `build_dll_device`: `auto` (default), `dmc`, `msvc`,
+  or `cmake`
+- `dll_timeout_s` — compiler timeout in seconds (default `120`)
 
-Expected outputs:
+Expected outputs (always):
 - `output_path`
 - `overwritten`
 - `byte_count`
 - `line_count`
-- `dll_build` or `dll_build_error` (when auto-build runs)
-- `dll_validation` (when schematic_path + dll_reference provided)
+
+Expected outputs (C/C++ auto-build path):
+- `dll_build` — `build_dll_device` result object when compilation succeeds, or a
+  degraded summary when rebuild was skipped (see Notes)
+- `dll_build_error` — string message when compilation failed and no usable sibling
+  `.dll` exists (the text file write still succeeded)
+- `dll_validation` — `validate_dll_symbol_signature` result when both
+  `schematic_path` and `dll_reference` were provided
+
+Notes:
+**Auto-build trigger.** After a successful write, auto-build runs when the file
+suffix is one of `.c`, `.cpp`, `.cc`, or `.cxx` and `build_dll_after_write` is not
+`false`. The output DLL path is always the source path with a `.dll` suffix in the
+same directory.
+
+**Toolchain selection (`dll_toolchain=auto`).** Matches `build_dll_device`: bundled
+DMC beside `QSPICE_EXE` when configured, else MSVC (`cl` on PATH or via discovered
+`vcvars64.bat`), else CMake when `CMakeLists.txt` sits beside the source. When
+`QSPICE_EXE` is unset and `cl` is not on PATH (typical for IDE-spawned MCP without a
+Developer Prompt), auto-build returns `dll_build_error` with a message such as
+`No supported DLL build toolchain found…` rather than failing the write.
+
+**Degraded success (`dll_build_error`).** A failed compile does not roll back the
+written source file. The response includes `dll_build_error` and omits `dll_build`
+when no sibling `.dll` exists. Callers can fix the source and retry, invoke
+`build_dll_device` directly, or follow the [C-Block Build Guide](cblock_build_guide.md).
+
+**Existing sibling `.dll`.** When `buck_controller.dll` already exists next to the
+source, the server skips recompilation and returns `dll_build` with
+`toolchain: "existing"` and `skipped_rebuild: true`. If compilation then fails but
+the sibling DLL is still present, the same skipped summary is returned with an
+optional `note` carrying the build error text.
+
+**Optional symbol validation.** Pass both `schematic_path` and `dll_reference` to run
+`validate_dll_symbol_signature` after the write/build step. The validation object is
+always returned in `dll_validation`. When validation fails (`is_valid: false`), the
+tool raises `ValidationError` — the source file (and any compiled DLL) remain on disk.
+
+**MSVC not on PATH.** IDE-launched MCP often lacks `cl` even when Visual Studio is
+installed. Set `QSPICE_EXE` so `auto` can use bundled DMC, pass `dll_toolchain="msvc"`
+only from an environment where `cl` or `vcvars64.bat` is discoverable, or build
+manually with `build_dll_device` / the cblock guide.
 
 ## describe_topology_authoring_support
 

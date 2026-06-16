@@ -13,6 +13,12 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Changed
 
+- **Docs** — documented the public `write_workspace_text_file` auto-DLL contract:
+  post-write `build_dll_device`, `dll_build` / `dll_build_error` degradation,
+  optional `schematic_path` + `dll_reference` validation, existing-DLL skip, and
+  MSVC-not-on-PATH behavior ([tool reference](docs/tool_reference.md),
+  [user guide](docs/user-guide.md)).
+
 - **Docs** — expanded MCP `connected=false` troubleshooting in the [user guide](docs/user-guide.md)
   and [AGENTS.md](AGENTS.md): absolute user-level paths, stale child processes,
   prefer `python -u -m qspice_mcp` over locked `.exe` launchers, editable-install
