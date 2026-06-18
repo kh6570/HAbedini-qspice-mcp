@@ -1,0 +1,20 @@
+schema_version: 1
+license: MIT
+scope: cross-product
+version: "1.0"
+human-description: Drive the QSpice MCP server end to end — discover or author a circuit, simulate, and read or measure waveforms.
+requires-tools:
+  - describe_server_capabilities
+  - list_reference_circuit_recipes
+  - describe_reference_circuit_recipe
+  - materialize_reference_circuit
+  - inspect_schematic
+  - generate_netlist
+  - run_simulation
+  - read_log
+  - list_signals
+  - measure_waveform
+  - read_waveform
+requires-skills: []
+requires-products: []
+toolkit: qspice-mcp

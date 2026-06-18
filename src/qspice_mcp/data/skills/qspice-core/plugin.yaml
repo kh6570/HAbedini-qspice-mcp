@@ -1,0 +1,11 @@
+description: >
+  Core QSpice workflow skills: discover or author circuits, generate netlists,
+  run simulations, read and measure waveforms, and debug non-convergence.
+  Every QSpice MCP user needs these.
+keywords:
+  - qspice
+  - spice
+  - circuit-simulation
+  - waveforms
+  - convergence
+  - netlist

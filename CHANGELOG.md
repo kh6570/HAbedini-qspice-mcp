@@ -34,6 +34,14 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Added
 
+- **Agent skills catalog** — bundled client-side skills under
+  `qspice_mcp/data/skills/` (`qspice-core`: `qspice-getting-started`,
+  `qspice-convergence-debugging`), shipped as package data and installed into an
+  agent's skills directory via `scripts/install_skills.ps1`. Skills are loaded by
+  the agent (not the MCP server), adding no per-request server cost. Each skill's
+  `manifest.yaml` `requires-tools` is validated against the live tool registry
+  ([user guide](docs/user-guide.md)).
+
 - **MCP server** — FastMCP stdio server (`qspice-mcp`) with runtime capability
   discovery (`describe_server_capabilities`), a stable error taxonomy
   ([docs/errors.md](docs/errors.md)), a `trace_id` on every response, and

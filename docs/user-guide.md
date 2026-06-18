@@ -212,6 +212,29 @@ Every tool response includes `trace_id`. OpenTelemetry spans need `[telemetry]`,
 
 ---
 
+## Agent skills (optional)
+
+The package bundles a small catalog of **agent skills** — client-side `SKILL.md`
+guides that teach an AI agent how to drive QSpice well (the core workflow, and
+convergence debugging). Skills are loaded by your *agent*, not the MCP server, so
+they add no per-request cost to the server and only enter context when a relevant
+task triggers them.
+
+They ship inside the package (`qspice_mcp/data/skills/`) and install into your
+agent's skills directory:
+
+```powershell
+pwsh -File scripts/install_skills.ps1
+```
+
+By default this copies each skill into `~/.agents/skills/` (discovered by most
+MCP-aware agents). Use `-SkillsRoot <path>` for a different location, `-Groups`
+to pick groups (default `qspice-core`), and `-Force` to overwrite. Restart the
+agent afterward. Install only the groups you need — agents trigger the right
+skill more reliably when fewer are loaded.
+
+---
+
 ## Further reference
 
 | Doc | Contents |

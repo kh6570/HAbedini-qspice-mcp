@@ -1,0 +1,20 @@
+schema_version: 1
+license: MIT
+scope: cross-product
+version: "1.0"
+human-description: Diagnose and fix QSpice simulations that fail to converge, stop early, or produce no usable waveform.
+requires-tools:
+  - read_log
+  - inspect_schematic
+  - list_components
+  - run_simulation
+  - generate_netlist
+  - set_component_value
+  - set_component_parameters
+  - add_component
+  - list_signals
+  - measure_waveform
+requires-skills:
+  - qspice-getting-started
+requires-products: []
+toolkit: qspice-mcp
