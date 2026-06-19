@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import importlib
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pytest
 
 from qspice_mcp.services.waveform.measure_step_response import measure_step_response
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 waveform_backend = importlib.import_module("qspice_mcp.services._backends.waveform")
 

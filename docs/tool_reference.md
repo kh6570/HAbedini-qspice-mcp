@@ -68,6 +68,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `scaffold_i2c_device` | implemented | Generate a C++ DLL scaffold using QSpice's built-in I2C bus helper functions. |
 | `scaffold_spi_device` | implemented | Generate a C++ DLL scaffold using QSpice's built-in SPI bus helper functions. |
 | `materialize_reference_circuit` | implemented | Write server-bundled recipe artifacts into the workspace (for example `buck_converter_cpp`). |
+| `import_circuit_bundle` | implemented | Copy a workspace-local `.qsch` schematic and sibling sidecars into a destination folder. |
 | `list_reference_circuit_recipes` | implemented | List bundled reference-circuit recipe ids and short summaries (Track B discovery). |
 | `describe_reference_circuit_recipe` | implemented | Return one bundled recipe manifest, workflow entries, file list, and topology digest. |
 | `create_schematic` | implemented | Create a blank `.qsch` file so later schematic tools can build from scratch. |
@@ -114,6 +115,8 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `add_instruction` | implemented | Append one analysis instruction line using `instruction=`. |
 | `remove_instruction` | implemented | Remove one exact or regex-matched directive from a schematic. |
 | `generate_netlist` | implemented | Resolve or stage a derived netlist artifact for execution. |
+| `list_includes` | implemented | List `.include`, `.inc`, and `.lib` directives reachable from one netlist. |
+| `resolve_model_libraries` | implemented | Resolve `.lib` model-library paths referenced by one netlist. |
 | `save_netlist_copy` | implemented | Resolve or generate a derived netlist artifact at an explicit destination path. |
 | `prepare_bode_analysis` | implemented | Stage a source with a documented `.bode` directive for closed-loop SMPS analysis. |
 | `prepare_ac` | implemented | Stage a source with a documented `.ac` directive for small-signal frequency analysis. |
@@ -952,6 +955,27 @@ Notes:
 Bundled recipes ship inside the `qspice-mcp` package. The Buck C++ recipe
 materializes `Buck-converter.qsch` and `buck_controller.cpp` as siblings;
 follow with `build_dll_device` when `build_required` is true.
+
+## import_circuit_bundle
+
+Purpose:
+Copy one workspace-local `.qsch` schematic and sibling sidecar files into a
+destination folder.
+
+Typical inputs:
+- `schematic_path`
+- `output_dir` (optional; defaults to the schematic's parent folder)
+- `overwrite` (optional boolean)
+
+Expected outputs:
+- `source_schematic`
+- `output_dir`
+- `files` (each with `relative_path`, `output_path`, `overwritten`, `encoding`)
+
+Notes:
+Simulation artifacts such as `.net`, `.log`, and `.qraw` in the source folder
+are skipped. Use this for importing user-authored bundles already present in the
+workspace, distinct from `materialize_reference_circuit`.
 
 ## create_schematic
 
@@ -1899,6 +1923,39 @@ Verilog, or C-block components prefer companion `QUX.exe -Netlist` when
 parser (which omits DLL blocks and may warn) and then an installed
 `QschEditor` backend for broader coverage. Existing sidecars that omit required
 DLL instance lines are treated as stale and refreshed when QUX is available.
+
+## list_includes
+
+Purpose:
+List `.include`, `.inc`, and `.lib` directives reachable from one netlist root.
+
+Typical inputs:
+- `netlist_path`
+
+Expected outputs:
+- `netlist_path`
+- `include_count`
+- `missing_count`
+- `includes` (each with `kind`, `directive`, `raw_path`, `resolved_path`, `exists`, `source_netlist`)
+
+## resolve_model_libraries
+
+Purpose:
+Resolve `.lib` model-library paths referenced by one netlist graph.
+
+Typical inputs:
+- `netlist_path`
+
+Expected outputs:
+- `netlist_path`
+- `library_count`
+- `missing_count`
+- `libraries` (each with `raw_path`, `resolved_path`, `exists`, `source_netlist`)
+- `warnings`
+
+Notes:
+Missing libraries are summarized in `warnings`. Resolved include files also
+participate in simulation cache key hashing during `run_simulation`.
 
 ## save_netlist_copy
 

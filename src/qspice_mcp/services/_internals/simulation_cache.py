@@ -74,6 +74,7 @@ class SimulationArtifactCache:
         executable_mtime: float | None = None,
         extra_switches: Sequence[str],
         ascii_raw: bool,
+        include_hashes: Sequence[tuple[str, str, float]] = (),
     ) -> str:
         netlist_hash = hashlib.sha256(netlist_path.read_bytes()).hexdigest()
         payload = json.dumps(
@@ -84,6 +85,7 @@ class SimulationArtifactCache:
                 "executable_mtime": executable_mtime,
                 "executable_version": executable_version,
                 "extra_switches": list(extra_switches),
+                "include_hashes": list(include_hashes),
                 "netlist_hash": netlist_hash,
             },
             sort_keys=True,

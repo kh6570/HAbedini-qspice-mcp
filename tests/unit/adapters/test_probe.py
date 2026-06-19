@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from qspice_mcp.adapters.probe import build_summary, clear_probe_cache, probe_qspice
@@ -161,6 +162,8 @@ def test_probe_cache_invalidates_when_executable_mtime_changes(
     settings = QSpiceSettings(exe=executable)
     first = probe_qspice(settings)
     executable.write_text("updated", encoding="utf-8")
+    bumped_mtime = executable.stat().st_mtime + 2.0
+    os.utime(executable, (bumped_mtime, bumped_mtime))
     second = probe_qspice(settings)
 
     assert first.version == "v1"

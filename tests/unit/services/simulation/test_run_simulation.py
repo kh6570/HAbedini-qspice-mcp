@@ -67,8 +67,8 @@ def test_run_simulation_executes_via_subprocess_wrapper(
     log_path = tmp_path / "artifacts" / "demo.log"
     raw_path = tmp_path / "artifacts" / "demo.qraw"
 
-    def fake_run_subprocess(
-        command: tuple[str, ...], *, cwd: Path, timeout_s: float | None
+    def fake_run_subprocess_with_log_progress(
+        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
     ) -> SubprocessResult:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_path.write_text("ok", encoding="utf-8")
@@ -84,7 +84,11 @@ def test_run_simulation_executes_via_subprocess_wrapper(
             stderr="",
         )
 
-    monkeypatch.setattr(run_simulation_service, "run_subprocess", fake_run_subprocess)
+    monkeypatch.setattr(
+        run_simulation_service,
+        "run_subprocess_with_log_progress",
+        fake_run_subprocess_with_log_progress,
+    )
 
     result = run_simulation(
         netlist,
@@ -113,8 +117,8 @@ def test_run_simulation_uses_settings_default_timeout(
     netlist.write_text("* demo\n", encoding="utf-8")
     observed: dict[str, float | None] = {}
 
-    def fake_run_subprocess(
-        command: tuple[str, ...], *, cwd: Path, timeout_s: float | None
+    def fake_run_subprocess_with_log_progress(
+        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
     ) -> SubprocessResult:
         del command, cwd
         observed["timeout_s"] = timeout_s
@@ -131,7 +135,11 @@ def test_run_simulation_uses_settings_default_timeout(
             stderr="",
         )
 
-    monkeypatch.setattr(run_simulation_service, "run_subprocess", fake_run_subprocess)
+    monkeypatch.setattr(
+        run_simulation_service,
+        "run_subprocess_with_log_progress",
+        fake_run_subprocess_with_log_progress,
+    )
 
     run_simulation(
         netlist,
@@ -160,8 +168,8 @@ def test_run_simulation_reuses_cached_artifacts_without_rerunning_subprocess(
         cache_dir=tmp_path / ".cache",
     )
 
-    def fake_run_subprocess(
-        command: tuple[str, ...], *, cwd: Path, timeout_s: float | None
+    def fake_run_subprocess_with_log_progress(
+        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
     ) -> SubprocessResult:
         del command, cwd, timeout_s
         first_log.parent.mkdir(parents=True, exist_ok=True)
@@ -176,7 +184,11 @@ def test_run_simulation_reuses_cached_artifacts_without_rerunning_subprocess(
             stderr="",
         )
 
-    monkeypatch.setattr(run_simulation_service, "run_subprocess", fake_run_subprocess)
+    monkeypatch.setattr(
+        run_simulation_service,
+        "run_subprocess_with_log_progress",
+        fake_run_subprocess_with_log_progress,
+    )
 
     first = run_simulation(
         netlist,
@@ -188,7 +200,7 @@ def test_run_simulation_reuses_cached_artifacts_without_rerunning_subprocess(
 
     monkeypatch.setattr(
         run_simulation_service,
-        "run_subprocess",
+        "run_subprocess_with_log_progress",
         lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("cache miss")),
     )
 
@@ -226,8 +238,8 @@ def test_run_simulation_invalidates_stale_cache_entry_and_reruns(
     )
     call_count = 0
 
-    def fake_run_subprocess(
-        command: tuple[str, ...], *, cwd: Path, timeout_s: float | None
+    def fake_run_subprocess_with_log_progress(
+        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
     ) -> SubprocessResult:
         nonlocal call_count
         del command, cwd, timeout_s
@@ -244,7 +256,11 @@ def test_run_simulation_invalidates_stale_cache_entry_and_reruns(
             stderr="",
         )
 
-    monkeypatch.setattr(run_simulation_service, "run_subprocess", fake_run_subprocess)
+    monkeypatch.setattr(
+        run_simulation_service,
+        "run_subprocess_with_log_progress",
+        fake_run_subprocess_with_log_progress,
+    )
 
     first = run_simulation(
         netlist,
@@ -306,8 +322,8 @@ def test_run_simulation_maps_nonzero_exit_to_domain_error(
 
     monkeypatch.setattr(
         run_simulation_service,
-        "run_subprocess",
-        lambda command, *, cwd, timeout_s: SubprocessResult(
+        "run_subprocess_with_log_progress",
+        lambda command, *, cwd, log_path, timeout_s: SubprocessResult(
             command=command,
             working_directory=cwd,
             exit_code=7,
@@ -336,11 +352,11 @@ def test_run_simulation_raises_convergence_error_from_log_signature(
     executable.write_text("", encoding="utf-8")
     netlist = tmp_path / "demo.net"
     netlist.write_text("* demo\n", encoding="utf-8")
-    log_path = netlist.with_suffix(".log")
 
-    def fake_run_subprocess(
-        command: tuple[str, ...], *, cwd: Path, timeout_s: float | None
+    def fake_run_subprocess_with_log_progress(
+        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
     ) -> SubprocessResult:
+        assert log_path is not None
         log_path.write_text("Transient analysis failed: time step too small\n", encoding="utf-8")
         return SubprocessResult(
             command=command,
@@ -351,7 +367,11 @@ def test_run_simulation_raises_convergence_error_from_log_signature(
             stderr="",
         )
 
-    monkeypatch.setattr(run_simulation_service, "run_subprocess", fake_run_subprocess)
+    monkeypatch.setattr(
+        run_simulation_service,
+        "run_subprocess_with_log_progress",
+        fake_run_subprocess_with_log_progress,
+    )
 
     with pytest.raises(ConvergenceError) as exc_info:
         run_simulation(
@@ -373,11 +393,11 @@ def test_run_simulation_raises_simulation_error_from_fatal_log_signature(
     executable.write_text("", encoding="utf-8")
     netlist = tmp_path / "demo.net"
     netlist.write_text("* demo\n", encoding="utf-8")
-    log_path = netlist.with_suffix(".log")
 
-    def fake_run_subprocess(
-        command: tuple[str, ...], *, cwd: Path, timeout_s: float | None
+    def fake_run_subprocess_with_log_progress(
+        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
     ) -> SubprocessResult:
+        assert log_path is not None
         log_path.write_text("Fatal error: missing model definition\n", encoding="utf-8")
         return SubprocessResult(
             command=command,
@@ -388,7 +408,11 @@ def test_run_simulation_raises_simulation_error_from_fatal_log_signature(
             stderr="",
         )
 
-    monkeypatch.setattr(run_simulation_service, "run_subprocess", fake_run_subprocess)
+    monkeypatch.setattr(
+        run_simulation_service,
+        "run_subprocess_with_log_progress",
+        fake_run_subprocess_with_log_progress,
+    )
 
     with pytest.raises(SimulationError) as exc_info:
         run_simulation(
@@ -416,14 +440,14 @@ def test_run_simulation_maps_timeout_to_domain_error(
     raw_path.write_text("previous raw\n", encoding="utf-8")
 
     def raise_timeout(
-        command: tuple[str, ...], *, cwd: Path, timeout_s: float | None
+        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
     ) -> SubprocessResult:
         del cwd
         log_path.write_text("partial log\n", encoding="utf-8")
         raw_path.write_text("partial raw\n", encoding="utf-8")
         raise subprocess.TimeoutExpired(command, timeout_s or 0.0, stderr="timed out")
 
-    monkeypatch.setattr(run_simulation_service, "run_subprocess", raise_timeout)
+    monkeypatch.setattr(run_simulation_service, "run_subprocess_with_log_progress", raise_timeout)
 
     with pytest.raises(SimulationTimeoutError) as exc_info:
         run_simulation(
@@ -451,7 +475,7 @@ def test_run_simulation_restores_previous_outputs_after_nonzero_exit(
     raw_path.write_text("previous raw\n", encoding="utf-8")
 
     def fail_with_partial_outputs(
-        command: tuple[str, ...], *, cwd: Path, timeout_s: float | None
+        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
     ) -> SubprocessResult:
         del command, cwd, timeout_s
         log_path.write_text("new partial log\n", encoding="utf-8")
@@ -465,7 +489,11 @@ def test_run_simulation_restores_previous_outputs_after_nonzero_exit(
             stderr="fatal",
         )
 
-    monkeypatch.setattr(run_simulation_service, "run_subprocess", fail_with_partial_outputs)
+    monkeypatch.setattr(
+        run_simulation_service,
+        "run_subprocess_with_log_progress",
+        fail_with_partial_outputs,
+    )
 
     with pytest.raises(SimulationError) as exc_info:
         run_simulation(

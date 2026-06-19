@@ -13,15 +13,15 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 _LOG_SUFFIXES = (".log",)
-_FLOAT_TOKEN = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
+_FLOAT_PATTERN = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
 _INTEGRATED_NOISE = re.compile(
     rf"(?P<label>Total(?:\s+(?:RMS|Integrated))?\s+Noise(?:\s+Voltage|\s+Current)?"
-    rf"(?:\s+at\s+(?P<node>[^\s=]+))?)\s*=?\s*(?P<value>{_FLOAT_TOKEN})\s*(?P<unit>\S+)?",
+    rf"(?:\s+at\s+(?P<node>[^\s=]+))?)\s*=?\s*(?P<value>{_FLOAT_PATTERN})\s*(?P<unit>\S+)?",
     re.IGNORECASE,
 )
 _SPECTRAL_NOISE = re.compile(
-    rf"(?P<label>(?:Output|Input\s+Referred)\s+noise(?:\s+at\s+(?P<frequency>{_FLOAT_TOKEN}\s*\S+))?)"
-    rf"\s*=?\s*(?P<value>{_FLOAT_TOKEN})\s*(?P<unit>\S+)?",
+    rf"(?P<label>(?:Output|Input\s+Referred)\s+noise(?:\s+at\s+(?P<frequency>{_FLOAT_PATTERN}\s*\S+))?)"
+    rf"\s*=?\s*(?P<value>{_FLOAT_PATTERN})\s*(?P<unit>\S+)?",
     re.IGNORECASE,
 )
 

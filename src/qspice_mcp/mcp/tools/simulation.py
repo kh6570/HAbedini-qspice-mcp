@@ -8,6 +8,9 @@ from qspice_mcp.services._shared.paths import resolve_workspace_path
 from qspice_mcp.services.simulation.generate_netlist import (
     generate_netlist as generate_netlist_service,
 )
+from qspice_mcp.services.simulation.list_includes import (
+    list_includes as list_includes_service,
+)
 from qspice_mcp.services.simulation.list_plot_suggestions import (
     list_plot_suggestions as list_plot_suggestions_service,
 )
@@ -43,6 +46,9 @@ from qspice_mcp.services.simulation.prepare_transient import (
 )
 from qspice_mcp.services.simulation.prepare_worst_case import (
     prepare_worst_case as prepare_worst_case_service,
+)
+from qspice_mcp.services.simulation.resolve_model_libraries import (
+    resolve_model_libraries as resolve_model_libraries_service,
 )
 from qspice_mcp.services.simulation.run_model_sweep import (
     run_model_sweep as run_model_sweep_service,
@@ -91,6 +97,8 @@ SIMULATION_HANDLER_NAMES = (
     "prepare_monte_carlo",
     "prepare_worst_case",
     "list_plot_suggestions",
+    "list_includes",
+    "resolve_model_libraries",
     "run_simulation",
     "run_value_sweep",
     "run_param_sweep",
@@ -374,6 +382,26 @@ class SimulationToolMixin:
             source_path,
             workspace_root=self.settings.workspace_root,
             netlist_output_path=netlist_output_path,
+        )
+        return to_json_object(inspection)
+
+    def list_includes(
+        self: _RuntimeWithSettings,
+        netlist_path: str,
+    ) -> dict[str, object]:
+        inspection = list_includes_service(
+            netlist_path,
+            workspace_root=self.settings.workspace_root,
+        )
+        return to_json_object(inspection)
+
+    def resolve_model_libraries(
+        self: _RuntimeWithSettings,
+        netlist_path: str,
+    ) -> dict[str, object]:
+        inspection = resolve_model_libraries_service(
+            netlist_path,
+            workspace_root=self.settings.workspace_root,
         )
         return to_json_object(inspection)
 

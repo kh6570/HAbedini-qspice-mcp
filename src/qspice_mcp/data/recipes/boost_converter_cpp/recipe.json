@@ -1,0 +1,28 @@
+{
+  "recipe_id": "boost_converter_cpp",
+  "title": "Boost Converter (C++ DLL)",
+  "description": "Modular catalog entry for a mixed-signal boost converter with PWM control via a C-block DLL (catalog modularity demo; reuses the buck bundle layout).",
+  "files": [
+    {
+      "relative_path": "Buck-converter.qsch",
+      "bundle_name": "Buck-converter.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "buck_controller.cpp",
+      "bundle_name": "buck_controller.cpp",
+      "encoding": "text"
+    }
+  ],
+  "build_required": true,
+  "build_hint": "build_dll_device(source_path=\"buck_controller.cpp\")",
+  "workflows": [
+    {
+      "instruction_id": "boost-converter-cpp-catalog",
+      "title": "Boost converter (C++ DLL) — materialize recipe",
+      "summary": "Copy bundled files into the workspace and simulate (Track B catalog modularity demo).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ]
+}

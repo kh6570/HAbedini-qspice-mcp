@@ -34,6 +34,16 @@ class ProgressBridge:
             return
         await self.context.report_progress(progress, total=total, message=message)
 
+    async def _info_async(self, message: str) -> None:
+        if self.context is None:
+            return
+        info = getattr(self.context, "info", None)
+        if info is None:
+            return
+        result = info(message)
+        if hasattr(result, "__await__"):
+            await result
+
     def report(
         self,
         progress: float,
@@ -47,6 +57,16 @@ class ProgressBridge:
             return
         try:
             anyio.from_thread.run(self._report_async, progress, total, message)
+        except RuntimeError:
+            return
+
+    def info(self, message: str) -> None:
+        """Mirror one informational line to the MCP client when supported."""
+
+        if self.context is None:
+            return
+        try:
+            anyio.from_thread.run(self._info_async, message)
         except RuntimeError:
             return
 
@@ -81,6 +101,14 @@ def report_progress(
         bridge.report(progress, total=total, message=message)
 
 
+def report_info(message: str) -> None:
+    """Mirror one informational line to the MCP client when supported."""
+
+    bridge = get_progress_bridge()
+    if bridge is not None:
+        bridge.info(message)
+
+
 def bind_context(context: Any) -> contextvars.Token[ProgressBridge | None]:
     """Bind a FastMCP context for progress reporting (used by the server)."""
 
@@ -98,6 +126,7 @@ __all__ = [
     "bind_context",
     "get_progress_bridge",
     "progress_scope",
+    "report_info",
     "report_progress",
     "reset_context",
 ]

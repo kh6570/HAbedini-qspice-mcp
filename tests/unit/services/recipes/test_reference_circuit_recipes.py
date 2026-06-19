@@ -18,6 +18,7 @@ def test_list_reference_circuit_recipes_includes_buck_converter() -> None:
 
     recipe_ids = {entry.recipe_id for entry in result.recipes}
     assert "buck_converter_cpp" in recipe_ids
+    assert "boost_converter_cpp" in recipe_ids
 
     buck = next(entry for entry in result.recipes if entry.recipe_id == "buck_converter_cpp")
     assert buck.title == "Buck Converter (C++ DLL)"

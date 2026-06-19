@@ -43,8 +43,7 @@ SERVICE_SPEC = ServiceSpec(
     name="measure_step_response",
     title="Measure Step Response",
     summary=(
-        "Compute rise time, delay, overshoot, and settling time from one "
-        "transient waveform trace."
+        "Compute rise time, delay, overshoot, and settling time from one transient waveform trace."
     ),
     phase="implemented",
 )
@@ -147,16 +146,16 @@ def measure_step_response(
     axis = np.asarray(waveform.x, dtype=np.float64)
     values = np.asarray(waveform.y, dtype=np.float64)
     resolved_initial = (
-        float(initial_value) if initial_value is not None else _estimate_endpoint(values, tail=False)
+        float(initial_value)
+        if initial_value is not None
+        else _estimate_endpoint(values, tail=False)
     )
     resolved_final = (
         float(final_value) if final_value is not None else _estimate_endpoint(values, tail=True)
     )
     step_span = resolved_final - resolved_initial
     if abs(step_span) < np.finfo(np.float64).eps:
-        raise ValueError(
-            "Step response measurement requires distinct initial and final values."
-        )
+        raise ValueError("Step response measurement requires distinct initial and final values.")
 
     rising = step_span > 0.0
     lower_threshold = resolved_initial + (lower_pct / 100.0) * step_span

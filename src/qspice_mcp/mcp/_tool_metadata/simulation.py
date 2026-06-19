@@ -388,6 +388,28 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(read_only=True, idempotent=True),
     },
+    "list_includes": {
+        "title": "List Netlist Includes",
+        "description": (
+            "List `.include`, `.inc`, and `.lib` directives reachable from one netlist."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["netlist_path"],
+            "properties": {"netlist_path": {"type": "string"}},
+        },
+        "annotations": _ann(read_only=True, idempotent=True),
+    },
+    "resolve_model_libraries": {
+        "title": "Resolve Model Libraries",
+        "description": "Resolve `.lib` model-library paths referenced by one netlist.",
+        "input_schema": {
+            "type": "object",
+            "required": ["netlist_path"],
+            "properties": {"netlist_path": {"type": "string"}},
+        },
+        "annotations": _ann(read_only=True, idempotent=True),
+    },
     "run_simulation": {
         "title": "Run Simulation",
         "description": "Plan or run QSpice for a .qsch, .cir, or .net source path.",

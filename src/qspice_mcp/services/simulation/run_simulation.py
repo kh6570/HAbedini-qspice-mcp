@@ -11,7 +11,7 @@ from qspice_mcp.adapters import select_adapter
 from qspice_mcp.adapters.probe import probe_qspice
 from qspice_mcp.core.exceptions import SimulationError, SimulationTimeoutError
 from qspice_mcp.infra.config import QSpiceSettings
-from qspice_mcp.infra.subprocess import run_subprocess
+from qspice_mcp.infra.simulation_subprocess import run_subprocess_with_log_progress
 from qspice_mcp.services._internals.managed_outputs import (
     discard_output_backups,
     prepare_output_backups,
@@ -20,6 +20,10 @@ from qspice_mcp.services._internals.managed_outputs import (
 from qspice_mcp.services._internals.simulation_cache import SimulationArtifactCache
 from qspice_mcp.services._shared.paths import resolve_workspace_path, validate_existing_file
 from qspice_mcp.services.service_spec import ServiceSpec
+from qspice_mcp.services.simulation._netlist_includes import (
+    collect_netlist_includes,
+    hash_include_dependencies,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -216,6 +220,9 @@ def run_simulation(
         ),
         extra_switches=extra_switches,
         ascii_raw=ascii_raw,
+        include_hashes=hash_include_dependencies(
+            collect_netlist_includes(resolved_netlist, workspace_root=normalized_workspace)
+        ),
     )
     cached_entry = cache.get(cache_key)
     if cached_entry is not None:
@@ -248,9 +255,10 @@ def run_simulation(
 
     try:
         try:
-            process = run_subprocess(
+            process = run_subprocess_with_log_progress(
                 plan.command,
                 cwd=plan.working_directory,
+                log_path=plan.log_file,
                 timeout_s=effective_timeout_s,
             )
         except subprocess.TimeoutExpired as exc:

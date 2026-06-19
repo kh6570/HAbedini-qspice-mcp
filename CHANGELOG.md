@@ -34,6 +34,11 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`measure_efficiency` tool** — average Pout/Pin from transient SAVEPOWERS-style power traces.
 - **`read_fourier` tool** — parse native QSpice `.four` Fourier summaries from simulation logs.
 - **`read_noise` tool** — parse integrated and spot `.noise` summary lines from simulation logs.
+- **`list_includes` / `resolve_model_libraries` tools** — discover and resolve netlist include/library dependencies.
+- **`import_circuit_bundle` tool** — copy a workspace-local `.qsch` and sibling sidecars into a destination folder.
+- **Second bundled recipe** — `boost_converter_cpp` catalog entry proving `data/recipes/{recipe_id}/` modularity.
+- **Include-aware simulation cache** — cache keys now hash resolved `.include`/`.lib` file contents.
+- **Simulation phase progress** — `run_simulation` polls the `.log` for percent-complete lines and mirrors them via MCP progress + `ctx.info` when supported.
 
 ### Changed
 

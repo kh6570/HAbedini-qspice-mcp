@@ -78,9 +78,7 @@ def measure_efficiency(
         t_end=t_end,
     )
     if input_waveform.x_unit != "s" or output_waveform.x_unit != "s":
-        raise ValueError(
-            "Efficiency measurement requires transient waveforms with a time axis."
-        )
+        raise ValueError("Efficiency measurement requires transient waveforms with a time axis.")
     if input_waveform.y.shape[0] < _MIN_EFFICIENCY_SAMPLES:
         raise ValueError("Efficiency measurement requires at least one sample.")
 

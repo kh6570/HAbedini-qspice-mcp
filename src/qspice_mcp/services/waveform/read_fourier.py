@@ -13,23 +13,23 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 _LOG_SUFFIXES = (".log",)
-_FLOAT_TOKEN = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
+_FLOAT_PATTERN = r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?"
 _SECTION_HEADER = re.compile(
     r"Fourier\s+(?:components?\s+of\s+(?:output\s+)?|analysis\s+(?:of\s+)?)?"
     r"(?:transient\s+response\s+of\s+)?(?P<node>[^\n:]+)",
     re.IGNORECASE,
 )
 _DC_COMPONENT = re.compile(
-    rf"DC\s+component\s*=?\s*(?P<value>{_FLOAT_TOKEN})",
+    rf"DC\s+component\s*=?\s*(?P<value>{_FLOAT_PATTERN})",
     re.IGNORECASE,
 )
 _THD_LINE = re.compile(
-    rf"Total\s+Harmonic\s+Distortion\s*:?\s*(?P<value>{_FLOAT_TOKEN})\s*%?",
+    rf"Total\s+Harmonic\s+Distortion\s*:?\s*(?P<value>{_FLOAT_PATTERN})\s*%?",
     re.IGNORECASE,
 )
 _HARMONIC_ROW = re.compile(
-    rf"^\s*(?P<harmonic>\d+)\s+(?P<frequency>{_FLOAT_TOKEN})\s+"
-    rf"(?P<magnitude>{_FLOAT_TOKEN})\s+(?P<phase>{_FLOAT_TOKEN})",
+    rf"^\s*(?P<harmonic>\d+)\s+(?P<frequency>{_FLOAT_PATTERN})\s+"
+    rf"(?P<magnitude>{_FLOAT_PATTERN})\s+(?P<phase>{_FLOAT_PATTERN})",
     re.IGNORECASE,
 )
 
@@ -133,9 +133,7 @@ def parse_fourier_log_text(
         if current_node is None:
             current_lines = []
             return
-        analyses.append(
-            _parse_section(log_path, node=current_node, lines=tuple(current_lines))
-        )
+        analyses.append(_parse_section(log_path, node=current_node, lines=tuple(current_lines)))
         current_node = None
         current_lines = []
 

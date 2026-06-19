@@ -23,6 +23,23 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(),
     },
+    "import_circuit_bundle": {
+        "title": "Import Circuit Bundle",
+        "description": (
+            "Copy one workspace-local `.qsch` schematic and sibling sidecar files "
+            "into a destination folder."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "output_dir": {"type": "string"},
+                "overwrite": {"type": "boolean"},
+            },
+        },
+        "annotations": _ann(),
+    },
     "create_schematic": {
         "title": "Create Schematic",
         "description": (

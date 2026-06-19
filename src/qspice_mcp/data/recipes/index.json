@@ -4,6 +4,10 @@
     {
       "recipe_id": "buck_converter_cpp",
       "title": "Buck Converter (C++ DLL)"
+    },
+    {
+      "recipe_id": "boost_converter_cpp",
+      "title": "Boost Converter (C++ DLL)"
     }
   ]
 }

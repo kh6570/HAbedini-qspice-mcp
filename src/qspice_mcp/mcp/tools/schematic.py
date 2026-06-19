@@ -41,6 +41,9 @@ from qspice_mcp.services.schematic.describe_edit_capability import (
 from qspice_mcp.services.schematic.describe_schematic_edit_support import (
     describe_schematic_edit_support as describe_schematic_edit_support_service,
 )
+from qspice_mcp.services.schematic.import_circuit_bundle import (
+    import_circuit_bundle as import_circuit_bundle_service,
+)
 from qspice_mcp.services.schematic.inspect_schematic import (
     inspect_schematic as inspect_schematic_service,
 )
@@ -115,6 +118,7 @@ else:
 
 SCHEMATIC_HANDLER_NAMES = (
     "materialize_reference_circuit",
+    "import_circuit_bundle",
     "create_schematic",
     "create_starter_schematic",
     "describe_edit_capability",
@@ -164,6 +168,20 @@ class SchematicToolMixin:
     ) -> dict[str, object]:
         result = materialize_reference_circuit_service(
             recipe_id,
+            workspace_root=self.settings.workspace_root,
+            output_dir=output_dir,
+            overwrite=overwrite,
+        )
+        return to_json_object(result)
+
+    def import_circuit_bundle(
+        self: _RuntimeWithSettings,
+        schematic_path: str,
+        output_dir: str | None = None,
+        overwrite: bool = False,
+    ) -> dict[str, object]:
+        result = import_circuit_bundle_service(
+            schematic_path,
             workspace_root=self.settings.workspace_root,
             output_dir=output_dir,
             overwrite=overwrite,

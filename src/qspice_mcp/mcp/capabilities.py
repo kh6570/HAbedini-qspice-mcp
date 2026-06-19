@@ -98,6 +98,7 @@ _SCHEMATIC_EDITING_TOOLS = frozenset(
         "describe_edit_capability",
         "describe_schematic_edit_support",
         "inspect_schematic",
+        "import_circuit_bundle",
         "list_components",
         "materialize_reference_circuit",
         "read_component",
