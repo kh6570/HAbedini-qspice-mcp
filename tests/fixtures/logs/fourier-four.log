@@ -1,0 +1,8 @@
+Fourier components of V(out):
+
+DC component = 5.000000e+00
+Harmonic  Frequency  Magnitude  Phase
+    1     1.000e+03  5.000e-01  -9.000e+01
+    2     2.000e+03  2.500e-02  -1.800e+02
+
+Total Harmonic Distortion: 5.000000e+00%

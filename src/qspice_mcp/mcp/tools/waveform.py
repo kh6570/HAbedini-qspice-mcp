@@ -17,8 +17,14 @@ from qspice_mcp.services.waveform.list_steps import list_steps as list_steps_ser
 from qspice_mcp.services.waveform.measure_bode_response import (
     measure_bode_response as measure_bode_response_service,
 )
+from qspice_mcp.services.waveform.measure_efficiency import (
+    measure_efficiency as measure_efficiency_service,
+)
 from qspice_mcp.services.waveform.measure_stability_margins import (
     measure_stability_margins as measure_stability_margins_service,
+)
+from qspice_mcp.services.waveform.measure_step_response import (
+    measure_step_response as measure_step_response_service,
 )
 from qspice_mcp.services.waveform.measure_waveform import (
     measure_waveform as measure_waveform_service,
@@ -27,8 +33,10 @@ from qspice_mcp.services.waveform.plot_waveforms import plot_waveforms as plot_w
 from qspice_mcp.services.waveform.read_device_operating_points import (
     read_device_operating_points as read_device_operating_points_service,
 )
+from qspice_mcp.services.waveform.read_fourier import read_fourier as read_fourier_service
 from qspice_mcp.services.waveform.read_log import read_log as read_log_service
 from qspice_mcp.services.waveform.read_measures import read_measures as read_measures_service
+from qspice_mcp.services.waveform.read_noise import read_noise as read_noise_service
 from qspice_mcp.services.waveform.read_waveform import read_waveform as read_waveform_service
 from qspice_mcp.services.waveform.summarize_device_operating_points import (
     summarize_device_operating_points as summarize_device_operating_points_service,
@@ -64,12 +72,16 @@ WAVEFORM_HANDLER_NAMES = (
     "measure_waveform",
     "measure_bode_response",
     "measure_stability_margins",
+    "measure_step_response",
+    "measure_efficiency",
     "compute_thd",
     "export_fft_spectrum",
     "plot_waveforms",
     "list_measures",
     "read_measures",
     "read_log",
+    "read_fourier",
+    "read_noise",
 )
 
 
@@ -224,6 +236,60 @@ class WaveformToolMixin:
             signal=signal,
             step=step,
             step_filters=step_filters,
+        )
+        return to_json_object(inspection)
+
+    def measure_step_response(
+        self: _RuntimeWithSettings,
+        raw_path: str,
+        signal: str,
+        step: int | None = None,
+        step_filters: dict[str, object] | None = None,
+        component: WaveformComponent = "auto",
+        t_start: float | None = None,
+        t_end: float | None = None,
+        initial_value: float | None = None,
+        final_value: float | None = None,
+        lower_pct: float = 10.0,
+        upper_pct: float = 90.0,
+        settling_band_pct: float = 2.0,
+    ) -> dict[str, object]:
+        inspection = measure_step_response_service(
+            raw_path,
+            workspace_root=self.settings.workspace_root,
+            signal=signal,
+            step=step,
+            step_filters=step_filters,
+            component=component,
+            t_start=t_start,
+            t_end=t_end,
+            initial_value=initial_value,
+            final_value=final_value,
+            lower_pct=lower_pct,
+            upper_pct=upper_pct,
+            settling_band_pct=settling_band_pct,
+        )
+        return to_json_object(inspection)
+
+    def measure_efficiency(
+        self: _RuntimeWithSettings,
+        raw_path: str,
+        input_power_signal: str,
+        output_power_signal: str,
+        step: int | None = None,
+        step_filters: dict[str, object] | None = None,
+        t_start: float | None = None,
+        t_end: float | None = None,
+    ) -> dict[str, object]:
+        inspection = measure_efficiency_service(
+            raw_path,
+            workspace_root=self.settings.workspace_root,
+            input_power_signal=input_power_signal,
+            output_power_signal=output_power_signal,
+            step=step,
+            step_filters=step_filters,
+            t_start=t_start,
+            t_end=t_end,
         )
         return to_json_object(inspection)
 
@@ -408,6 +474,26 @@ class WaveformToolMixin:
             )
         return to_json_object(inspection)
 
+    def read_fourier(
+        self: _RuntimeWithSettings,
+        log_path: str,
+    ) -> dict[str, object]:
+        inspection = read_fourier_service(
+            log_path,
+            workspace_root=self.settings.workspace_root,
+        )
+        return to_json_object(inspection)
+
+    def read_noise(
+        self: _RuntimeWithSettings,
+        log_path: str,
+    ) -> dict[str, object]:
+        inspection = read_noise_service(
+            log_path,
+            workspace_root=self.settings.workspace_root,
+        )
+        return to_json_object(inspection)
+
 
 __all__ = [
     "WAVEFORM_HANDLER_NAMES",
@@ -419,12 +505,16 @@ __all__ = [
     "list_signals_service",
     "list_steps_service",
     "measure_bode_response_service",
+    "measure_efficiency_service",
     "measure_stability_margins_service",
+    "measure_step_response_service",
     "measure_waveform_service",
     "plot_waveforms_service",
     "read_device_operating_points_service",
+    "read_fourier_service",
     "read_log_service",
     "read_measures_service",
+    "read_noise_service",
     "read_waveform_service",
     "summarize_device_operating_points_service",
 ]

@@ -98,6 +98,30 @@ Then run without `dry_run`, `list_signals` on the `.qraw`, and `read_waveform` w
 
 ---
 
+## MCP Prompts
+
+The server exposes **MCP Prompts** — slash-command workflow templates that clients
+can insert into chat. They are read-only guidance messages; the AI still calls
+tools explicitly.
+
+| Prompt | Purpose |
+| --- | --- |
+| `qspice_buck_converter_from_scratch` | Author a buck converter, netlist, simulate, measure |
+| `qspice_debug_convergence` | Diagnose a failed or non-converging simulation from a log |
+| `qspice_run_and_measure` | Run a simulation and read bounded waveform measurements |
+| `qspice_author_dll_device` | Scaffold and build a mixed-signal C-block/DLL device |
+| `qspice_sweep_design` | Plan and execute a parameter sweep on a schematic |
+
+In **Cursor** or **VS Code**, open the MCP prompts picker (when supported) or ask
+the assistant to use a prompt by name. Prompt arguments (`vin`, `log_path`,
+`schematic_path`, etc.) are filled by the client when invoking the prompt.
+
+Prompts complement bundled **workflow instructions** (`list_workflow_instructions`,
+`read_workflow_instruction`) and **recipe resources** (`recipe://{recipe_id}/…`).
+Prefer `list_reference_circuit_recipes` before materializing a bundled example.
+
+---
+
 ## Typical workflow
 
 1. **Inspect** — `inspect_schematic`, `list_components`, `read_component`, or `read_subcircuit`.

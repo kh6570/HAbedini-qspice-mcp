@@ -184,6 +184,53 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(read_only=True, idempotent=True),
     },
+    "measure_step_response": {
+        "title": "Measure Step Response",
+        "description": (
+            "Compute rise time, delay, overshoot, and settling time from one "
+            "transient waveform trace."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["raw_path", "signal"],
+            "properties": {
+                "raw_path": {"type": "string"},
+                "signal": {"type": "string"},
+                "step": {"type": "integer", "minimum": 0},
+                "step_filters": _STEP_FILTERS,
+                "component": _COMPONENT,
+                "t_start": {"type": "number"},
+                "t_end": {"type": "number"},
+                "initial_value": {"type": "number"},
+                "final_value": {"type": "number"},
+                "lower_pct": {"type": "number", "minimum": 0, "maximum": 100},
+                "upper_pct": {"type": "number", "minimum": 0, "maximum": 100},
+                "settling_band_pct": {"type": "number", "exclusiveMinimum": 0},
+            },
+        },
+        "annotations": _ann(read_only=True, idempotent=True),
+    },
+    "measure_efficiency": {
+        "title": "Measure Efficiency",
+        "description": (
+            "Compute average input power, output power, and Pout/Pin efficiency "
+            "from transient power traces such as SAVEPOWERS `p(...)` signals."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["raw_path", "input_power_signal", "output_power_signal"],
+            "properties": {
+                "raw_path": {"type": "string"},
+                "input_power_signal": {"type": "string"},
+                "output_power_signal": {"type": "string"},
+                "step": {"type": "integer", "minimum": 0},
+                "step_filters": _STEP_FILTERS,
+                "t_start": {"type": "number"},
+                "t_end": {"type": "number"},
+            },
+        },
+        "annotations": _ann(read_only=True, idempotent=True),
+    },
     "compute_thd": {
         "title": "Compute THD",
         "description": (
@@ -311,6 +358,31 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "refresh_measures": {"type": "boolean"},
                 "meas_path": {"type": "string"},
             },
+        },
+        "annotations": _ann(read_only=True, idempotent=True),
+    },
+    "read_fourier": {
+        "title": "Read Fourier Analysis",
+        "description": (
+            "Parse native QSpice `.four` Fourier summaries from a simulation `.log` file. "
+            "Distinct from recomputed FFT tools such as `compute_thd`."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["log_path"],
+            "properties": {"log_path": {"type": "string"}},
+        },
+        "annotations": _ann(read_only=True, idempotent=True),
+    },
+    "read_noise": {
+        "title": "Read Noise Analysis",
+        "description": (
+            "Parse integrated and spot `.noise` summary lines from a simulation `.log` file."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["log_path"],
+            "properties": {"log_path": {"type": "string"}},
         },
         "annotations": _ann(read_only=True, idempotent=True),
     },

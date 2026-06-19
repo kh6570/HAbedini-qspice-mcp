@@ -143,10 +143,14 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `measure_waveform` | implemented | Compute scalar measurements from one signal component. |
 | `measure_bode_response` | implemented | Sample magnitude and phase from a frequency-domain waveform trace. |
 | `measure_stability_margins` | implemented | Compute crossover frequency, phase margin, and gain margin from a loop-gain trace. |
+| `measure_step_response` | implemented | Compute rise time, delay, overshoot, and settling time from a transient trace. |
+| `measure_efficiency` | implemented | Compute average input/output power and Pout/Pin from transient power traces. |
 | `compute_thd` | implemented | Estimate total harmonic distortion over a trailing integer-cycle waveform window. |
 | `export_fft_spectrum` | implemented | Export a derived single-sided FFT spectrum as CSV. |
 | `plot_waveforms` | implemented | Generate a derived plot artifact for selected signals. |
 | `read_log` | implemented | Return a concise diagnostic excerpt and optional QPOST-derived measures. |
+| `read_fourier` | implemented | Parse native `.four` Fourier summaries from a simulation log. |
+| `read_noise` | implemented | Parse integrated and spot `.noise` summary lines from a simulation log. |
 | `list_measures` | implemented | Enumerate QPOST-derived measurement blocks for one simulation log. |
 | `read_measures` | implemented | Return structured measurement rows with optional measure and step filtering. |
 
@@ -2523,6 +2527,42 @@ QSpice companion-tool path by invoking `QPOST.exe` next to `QSPICE64.exe`,
 staging refreshed `.meas` output through a temporary file so failed refreshes
 do not replace the last known artifact in place.
 
+## read_fourier
+
+Purpose:
+Parse native QSpice `.four` Fourier summaries from a simulation `.log` file.
+Distinct from recomputed FFT tools such as `compute_thd` and `export_fft_spectrum`.
+
+Typical inputs:
+- `log_path`
+
+Expected outputs:
+- `log_path`
+- `analyses` (list of `{ node, dc_component, total_harmonic_distortion_pct, harmonics }`)
+- `warnings`
+
+Notes:
+Returns one analysis block per `.four` node/expression found in the log. Harmonic
+rows include frequency, magnitude, and phase in degrees.
+
+## read_noise
+
+Purpose:
+Parse integrated and spot `.noise` summary lines from a simulation `.log` file.
+
+Typical inputs:
+- `log_path`
+
+Expected outputs:
+- `log_path`
+- `summaries` (list of `{ label, value, unit, node?, frequency? }`)
+- `warnings`
+
+Notes:
+Captures common integrated RMS noise and spot noise density lines emitted by
+QSpice after a `.noise` analysis. Spectral `.qraw` plots remain available via
+`list_signals` and `read_waveform`.
+
 ## list_measures
 
 Purpose:
@@ -3306,6 +3346,55 @@ produced by `.ac`, `.bode`, or loop-gain post-processing). Crossings are
 interpolated in log-frequency space when all axis samples are positive.
 Margin fields are `null` when the corresponding crossover cannot be found in
 the swept range.
+
+## measure_step_response
+
+Purpose:
+Compute rise time, delay, overshoot, and settling time from one transient
+waveform trace.
+
+Typical inputs:
+- `raw_path`
+- `signal`
+- `step` (optional)
+- `step_filters` (optional mapping such as `{ "vin": 12 }`)
+- `component` (optional: `auto`, `real`, `imag`, `magnitude`, `phase`)
+- `t_start`, `t_end` (optional axis window)
+- `initial_value`, `final_value` (optional; auto-estimated from window edges)
+- `lower_pct`, `upper_pct` (rise thresholds, default 10 and 90)
+- `settling_band_pct` (default 2)
+
+Expected outputs:
+- `raw_path`, `plot_name`, `axis_name`, `signal`, `step`, `sample_count`
+- `x_unit`, `y_unit`
+- `initial_value`, `final_value`, `peak_value`
+- `rise_time_s`, `delay_time_s`, `overshoot_pct`, `settling_time_s`
+
+Notes:
+Requires a transient `.qraw` with a time axis. Metric fields are `null` when
+the corresponding threshold crossing or settling band cannot be resolved.
+
+## measure_efficiency
+
+Purpose:
+Compute average input power, average output power, and Pout/Pin efficiency from
+two transient power traces (for example SAVEPOWERS `p(...)` signals).
+
+Typical inputs:
+- `raw_path`
+- `input_power_signal`
+- `output_power_signal`
+- `step`, `step_filters` (optional)
+- `t_start`, `t_end` (optional averaging window)
+
+Expected outputs:
+- `raw_path`, `plot_name`, `input_power_signal`, `output_power_signal`
+- `step`, `sample_count`, `t_start`, `t_end`
+- `average_input_power_w`, `average_output_power_w`, `efficiency`
+
+Notes:
+Requires a transient `.qraw` with a time axis. `efficiency` is `null` when
+average input power is zero. Power traces are averaged using absolute values.
 
 ## compute_thd
 

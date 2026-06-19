@@ -30,6 +30,10 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **MCP argument completions** — autocomplete for recipe IDs, instruction IDs, recipe documents, and workspace artifact paths.
 - **`workspace-artifact://{relpath}` resource template** — sandbox-validated workspace artifact pull (`~` encodes `/` in nested paths).
 - **MCP resource templates** — `recipe://{recipe_id}/manifest`, `/schematic`, and `/{document}` for pull-based recipe browsing.
+- **`measure_step_response` tool** — rise time, delay, overshoot, and settling time from transient `.qraw` traces.
+- **`measure_efficiency` tool** — average Pout/Pin from transient SAVEPOWERS-style power traces.
+- **`read_fourier` tool** — parse native QSpice `.four` Fourier summaries from simulation logs.
+- **`read_noise` tool** — parse integrated and spot `.noise` summary lines from simulation logs.
 
 ### Changed
 

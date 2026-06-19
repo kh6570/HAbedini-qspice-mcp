@@ -30,6 +30,8 @@ from qspice_mcp.services.simulation.prepare_transfer_function import (
 )
 from qspice_mcp.services.waveform.compute_thd import ThdAnalysis, ThdHarmonic
 from qspice_mcp.services.waveform.measure_stability_margins import StabilityMargins
+from qspice_mcp.services.waveform.measure_step_response import StepResponseMeasurement
+from qspice_mcp.services.waveform.read_fourier import FourierLogInspection
 
 mcp_artifact_tools = importlib.import_module("qspice_mcp.mcp.tools.artifacts")
 mcp_capabilities = importlib.import_module("qspice_mcp.mcp.capabilities")
@@ -931,3 +933,68 @@ def test_mcp_set_component_position_is_invokable(monkeypatch, tmp_path) -> None:
 
     assert result["position_x"] == 320
     assert result["position_y"] == 240
+
+
+def test_mcp_measure_step_response_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_measure_step_response(
+        raw_path: str,
+        *,
+        workspace_root,
+        signal: str,
+        **kwargs: object,
+    ):
+        del kwargs, workspace_root
+        return StepResponseMeasurement(
+            raw_path=(tmp_path / raw_path).resolve(strict=False),
+            plot_name="Transient Analysis",
+            axis_name="time",
+            signal=signal,
+            step=0,
+            sample_count=8,
+            x_unit="s",
+            y_unit="V",
+            initial_value=0.0,
+            final_value=1.0,
+            rise_time_s=1.42,
+            delay_time_s=2.0,
+            overshoot_pct=15.0,
+            settling_time_s=5.0,
+            peak_value=1.15,
+        )
+
+    monkeypatch.setattr(
+        mcp_waveform_tools,
+        "measure_step_response_service",
+        fake_measure_step_response,
+    )
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "measure_step_response",
+        raw_path="step.qraw",
+        signal="V(out)",
+    )
+
+    assert result["rise_time_s"] == 1.42
+
+
+def test_mcp_read_fourier_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_read_fourier(log_path: str, *, workspace_root):
+        del workspace_root
+        return FourierLogInspection(
+            log_path=(tmp_path / log_path).resolve(strict=False),
+            analyses=(),
+        )
+
+    monkeypatch.setattr(mcp_waveform_tools, "read_fourier_service", fake_read_fourier)
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool("read_fourier", log_path="demo.log")
+
+    assert result["analyses"] == []

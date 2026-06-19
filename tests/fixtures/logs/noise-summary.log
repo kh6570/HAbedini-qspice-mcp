@@ -1,0 +1,4 @@
+Noise analysis summary
+Total RMS Noise Voltage at v(out) = 1.234567e-06 V
+Output noise at 1 MHz = 2.500000e-09 V/sqrt(Hz)
+Input referred noise at 1 MHz = 5.000000e-10 V/sqrt(Hz)
