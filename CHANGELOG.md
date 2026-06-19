@@ -20,7 +20,13 @@ drive the QSpice circuit simulator through stable JSON tools.
   `qspice_debug_convergence`, `qspice_run_and_measure`, `qspice_author_dll_device`,
   `qspice_sweep_design`).
 - **`remove_wire` tool** — remove one wire segment by coordinates or pin selectors (mirrors `add_wire`).
+- **`remove_net_label` / `remove_junction` tools** — schematic edit symmetry for labels and junctions.
 - **`prepare_transient` tool** — stage a schematic or netlist with a documented `.tran` directive.
+- **`prepare_ac` tool** — stage a schematic or netlist with a documented `.ac` directive.
+- **`prepare_dc_sweep` tool** — stage a schematic or netlist with a documented `.dc` directive.
+- **`prepare_loop_gain_analysis` tool** — stage `.ac` plus Tian/Middlebrook loop-gain guidance.
+- **`measure_stability_margins` tool** — compute crossover frequency, phase margin, and gain margin from a loop-gain trace.
+- **MCP resource templates** — `recipe://{recipe_id}/manifest`, `/schematic`, and `/{document}` for pull-based recipe browsing.
 
 ### Changed
 
@@ -35,7 +41,7 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **Child process lifecycle** — subprocess wrapper tracks PIDs; `atexit` + `SIGTERM`/`SIGINT` hooks
   terminate tracked QSpice/QUX children on shutdown.
 - **MCP progress notifications (foundation)** — progress bridge bound per tool call; long-running tools
-  report start/end progress; sequential sweeps report per-run progress.
+  report start/end progress; sequential and parallel sweeps report per-run progress.
 
 - **Docs** — documented the public `write_workspace_text_file` auto-DLL contract:
   post-write `build_dll_device`, `dll_build` / `dll_build_error` degradation,

@@ -1706,6 +1706,63 @@ def remove_wire(
     raise QSpiceError("No matching wire segment was found for the requested endpoints.")
 
 
+def remove_net_label(
+    editor: _QschEditorProtocol,
+    *,
+    position: tuple[int, int],
+    net_name: str | None = None,
+) -> str:
+    """Remove one net label at the given position and optional net name."""
+
+    normalized_net_name = _normalize_net_name(net_name) if net_name is not None else None
+    if editor.schematic is None:
+        raise QSpiceError("Editor does not expose a root schematic tree.")
+    schematic_obj: Any = editor.schematic
+    items = cast("list[Any]", schematic_obj.items)
+    for index, tag in enumerate(list(items)):
+        if getattr(tag, "tag", None) != "net":
+            continue
+        tokens = list(getattr(tag, "tokens", ()))
+        if len(tokens) < 6:  # noqa: PLR2004
+            continue
+        label_position = _parse_qsch_point(str(tokens[1]))
+        if label_position != position:
+            continue
+        label_net = _unquote_qsch_string(str(tokens[5]))
+        if normalized_net_name is not None and label_net != normalized_net_name:
+            continue
+        items.pop(index)
+        editor.updated = True
+        return label_net or normalized_net_name or ""
+    raise QSpiceError("No matching net label was found for the requested position.")
+
+
+def remove_junction(
+    editor: _QschEditorProtocol,
+    *,
+    position: tuple[int, int],
+) -> tuple[int, int]:
+    """Remove one junction node at the given position."""
+
+    if editor.schematic is None:
+        raise QSpiceError("Editor does not expose a root schematic tree.")
+    schematic_obj: Any = editor.schematic
+    items = cast("list[Any]", schematic_obj.items)
+    for index, tag in enumerate(list(items)):
+        if getattr(tag, "tag", None) != "junction":
+            continue
+        tokens = list(getattr(tag, "tokens", ()))
+        if len(tokens) < 2:  # noqa: PLR2004
+            continue
+        junction_position = _parse_qsch_point(str(tokens[1]))
+        if junction_position != position:
+            continue
+        items.pop(index)
+        editor.updated = True
+        return junction_position
+    raise QSpiceError("No matching junction was found for the requested position.")
+
+
 def create_blank_schematic_file(
     output_path: str | Path,
     *,

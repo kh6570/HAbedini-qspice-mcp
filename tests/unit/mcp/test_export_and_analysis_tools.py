@@ -19,7 +19,10 @@ from qspice_mcp.services.simulation.list_plot_suggestions import (
     PlotSuggestionCatalog,
 )
 from qspice_mcp.services.simulation.prepare_bode_analysis import PreparedBodeAnalysis
+from qspice_mcp.services.simulation.prepare_dc_sweep import PreparedDcSweep
+from qspice_mcp.services.simulation.prepare_loop_gain_analysis import PreparedLoopGainAnalysis
 from qspice_mcp.services.waveform.compute_thd import ThdAnalysis, ThdHarmonic
+from qspice_mcp.services.waveform.measure_stability_margins import StabilityMargins
 
 mcp_artifact_tools = importlib.import_module("qspice_mcp.mcp.tools.artifacts")
 mcp_capabilities = importlib.import_module("qspice_mcp.mcp.capabilities")
@@ -575,3 +578,155 @@ def test_mcp_compute_thd_is_invokable(monkeypatch, tmp_path) -> None:
 
     assert result["thd_percent"] == 10.0
     assert result["contributions"][0]["harmonic"] == 1
+
+
+def test_mcp_prepare_loop_gain_analysis_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_prepare_loop_gain_analysis(
+        source_path: str,
+        *,
+        workspace_root,
+        method: str,
+        sweep_type: str,
+        points: str,
+        start: str,
+        stop: str,
+        expected_loop_gain_signal: str = "OpenLoopGain",
+        output_path: str | None = None,
+    ) -> PreparedLoopGainAnalysis:
+        assert workspace_root == tmp_path.resolve(strict=False)
+        assert source_path == "loop.qsch"
+        assert method == "middlebrook"
+        assert sweep_type == "dec"
+        assert points == "100"
+        assert start == "1"
+        assert stop == "1Meg"
+        assert expected_loop_gain_signal == "LoopGain"
+        return PreparedLoopGainAnalysis(
+            source_path=(tmp_path / source_path).resolve(strict=False),
+            output_path=(tmp_path / (output_path or "loop-loop-gain.qsch")).resolve(strict=False),
+            source_kind="schematic",
+            method="middlebrook",
+            instruction=".ac dec 100 1 1Meg",
+            reference_example="MiddleBrook.qsch",
+            method_notes=("note",),
+            expected_loop_gain_signal="LoopGain",
+        )
+
+    monkeypatch.setattr(
+        mcp_simulation_tools,
+        "prepare_loop_gain_analysis_service",
+        fake_prepare_loop_gain_analysis,
+    )
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "prepare_loop_gain_analysis",
+        source_path="loop.qsch",
+        method="middlebrook",
+        sweep_type="dec",
+        points="100",
+        start="1",
+        stop="1Meg",
+        expected_loop_gain_signal="LoopGain",
+        output_path="loop-loop-gain.qsch",
+    )
+
+    assert result["method"] == "middlebrook"
+    assert result["instruction"] == ".ac dec 100 1 1Meg"
+
+
+def test_mcp_prepare_dc_sweep_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_prepare_dc_sweep(
+        source_path: str,
+        *,
+        workspace_root,
+        source: str,
+        start: str,
+        stop: str,
+        step: str,
+        output_path: str | None = None,
+    ) -> PreparedDcSweep:
+        assert workspace_root == tmp_path.resolve(strict=False)
+        assert source_path == "divider.qsch"
+        assert source == "V1"
+        assert start == "0"
+        assert stop == "5"
+        assert step == "0.1"
+        return PreparedDcSweep(
+            source_path=(tmp_path / source_path).resolve(strict=False),
+            output_path=(tmp_path / (output_path or "divider-dc.qsch")).resolve(strict=False),
+            source_kind="schematic",
+            instruction=".dc V1 0 5 0.1",
+        )
+
+    monkeypatch.setattr(
+        mcp_simulation_tools,
+        "prepare_dc_sweep_service",
+        fake_prepare_dc_sweep,
+    )
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "prepare_dc_sweep",
+        source_path="divider.qsch",
+        source="V1",
+        start="0",
+        stop="5",
+        step="0.1",
+        output_path="divider-dc.qsch",
+    )
+
+    assert result["instruction"] == ".dc V1 0 5 0.1"
+
+
+def test_mcp_measure_stability_margins_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_measure_stability_margins(
+        raw_path: str,
+        *,
+        workspace_root,
+        signal: str,
+        step: int | None = None,
+        step_filters=None,
+    ) -> StabilityMargins:
+        assert workspace_root == tmp_path.resolve(strict=False)
+        assert raw_path == "loop.qraw"
+        assert signal == "OpenLoopGain"
+        assert step is None
+        return StabilityMargins(
+            raw_path=(tmp_path / raw_path).resolve(strict=False),
+            plot_name="AC Analysis",
+            axis_name="Frequency",
+            signal="OpenLoopGain",
+            step=0,
+            sample_count=100,
+            gain_crossover_hz=1000.0,
+            phase_margin_deg=60.0,
+            phase_crossover_hz=5000.0,
+            gain_margin_db=12.0,
+            stable_at_unity=True,
+        )
+
+    monkeypatch.setattr(
+        mcp_waveform_tools,
+        "measure_stability_margins_service",
+        fake_measure_stability_margins,
+    )
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "measure_stability_margins",
+        raw_path="loop.qraw",
+        signal="OpenLoopGain",
+    )
+
+    assert result["phase_margin_deg"] == 60.0
+    assert result["stable_at_unity"] is True

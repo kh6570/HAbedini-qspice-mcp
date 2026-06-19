@@ -233,6 +233,37 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(),
     },
+    "remove_net_label": {
+        "title": "Remove Net Label",
+        "description": "Remove one net label from a schematic by position and optional net name.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "position_x", "position_y"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "position_x": {"type": "integer"},
+                "position_y": {"type": "integer"},
+                "net_name": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+        },
+        "annotations": _ann(),
+    },
+    "remove_junction": {
+        "title": "Remove Junction",
+        "description": "Remove one junction node from a schematic by position.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "position_x", "position_y"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "position_x": {"type": "integer"},
+                "position_y": {"type": "integer"},
+                "output_path": {"type": "string"},
+            },
+        },
+        "annotations": _ann(),
+    },
     "add_junction": {
         "title": "Add Junction",
         "description": "Insert one junction node into a schematic wire graph.",

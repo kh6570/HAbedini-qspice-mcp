@@ -78,6 +78,8 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `add_component_symbol_drawing` | implemented | Insert one embedded symbol drawing item from a raw tag name and argument list. |
 | `add_wire` | implemented | Insert one wire segment into a schematic. |
 | `remove_wire` | implemented | Remove one wire segment from a schematic. |
+| `remove_net_label` | implemented | Remove one net label from a schematic. |
+| `remove_junction` | implemented | Remove one junction node from a schematic. |
 | `add_junction` | implemented | Insert one junction node into a schematic wire graph. |
 | `add_net_label` | implemented | Insert one net label into a schematic. |
 | `write_workspace_text_file` | implemented | Write a sandboxed UTF-8 text file; for `.c`/`.cpp`/`.cc`/`.cxx` sources, auto-invokes `build_dll_device` on the sibling `.dll` unless opted out (see detailed section). |
@@ -113,6 +115,9 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `generate_netlist` | implemented | Resolve or stage a derived netlist artifact for execution. |
 | `save_netlist_copy` | implemented | Resolve or generate a derived netlist artifact at an explicit destination path. |
 | `prepare_bode_analysis` | implemented | Stage a source with a documented `.bode` directive for closed-loop SMPS analysis. |
+| `prepare_ac` | implemented | Stage a source with a documented `.ac` directive for small-signal frequency analysis. |
+| `prepare_dc_sweep` | implemented | Stage a source with a documented `.dc` directive for DC sweep analysis. |
+| `prepare_loop_gain_analysis` | implemented | Stage a source with `.ac` plus Tian or Middlebrook loop-gain guidance. |
 | `prepare_transient` | implemented | Stage a source with a documented `.tran` directive for transient simulation. |
 | `prepare_monte_carlo` | implemented | Persist explicit Monte Carlo parameter and component-value samples, with optional native `mc(...)` schematic staging and per-prefix component presets. |
 | `prepare_worst_case` | implemented | Persist explicit worst-case corner assignments with shared component preset expansion. |
@@ -132,6 +137,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `read_waveform` | implemented | Return bounded samples for one signal and selected component. |
 | `measure_waveform` | implemented | Compute scalar measurements from one signal component. |
 | `measure_bode_response` | implemented | Sample magnitude and phase from a frequency-domain waveform trace. |
+| `measure_stability_margins` | implemented | Compute crossover frequency, phase margin, and gain margin from a loop-gain trace. |
 | `compute_thd` | implemented | Estimate total harmonic distortion over a trailing integer-cycle waveform window. |
 | `export_fft_spectrum` | implemented | Export a derived single-sided FFT spectrum as CSV. |
 | `plot_waveforms` | implemented | Generate a derived plot artifact for selected signals. |
@@ -1140,6 +1146,49 @@ Expected outputs:
 Notes:
 Mirrors `add_wire` endpoint resolution. When multiple wires share endpoints,
 pass `net_name` to select the intended segment.
+
+## remove_net_label
+
+Purpose:
+Remove one net label from a schematic and persist the edited `.qsch` file.
+
+Typical inputs:
+- `schematic_path`
+- `position_x`
+- `position_y`
+- `net_name` (optional disambiguator)
+- `output_path` (optional)
+
+Expected outputs:
+- `schematic_path`
+- `output_path`
+- `position_x`
+- `position_y`
+- `net_name`
+
+Notes:
+Mirrors `add_net_label`. When multiple labels share a position, pass `net_name`
+to select the intended label.
+
+## remove_junction
+
+Purpose:
+Remove one junction node from a schematic and persist the edited `.qsch` file.
+
+Typical inputs:
+- `schematic_path`
+- `position_x`
+- `position_y`
+- `output_path` (optional)
+
+Expected outputs:
+- `schematic_path`
+- `output_path`
+- `position_x`
+- `position_y`
+
+Notes:
+Mirrors `add_junction`.
 
 ## add_net_label
 
@@ -2771,6 +2820,90 @@ server reformatting them. For `.qsch` sources the tool stages a schematic copy
 with the added directive; for `.net` and `.cir` sources it appends the
 directive to the staged netlist artifact.
 
+## prepare_ac
+
+Purpose:
+Stage a schematic or netlist with one documented `.ac` directive so the result
+can be simulated as a dedicated AC analysis artifact.
+
+Typical inputs:
+- `source_path`
+- `sweep_type` (`dec`, `oct`, or `lin`)
+- `points`
+- `start`
+- `stop`
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+Notes:
+Frequency parameters are accepted as strings so the caller can use QSpice-friendly
+engineering suffixes such as `1`, `1k`, or `1Meg` without server-side reformatting.
+
+## prepare_dc_sweep
+
+Purpose:
+Stage a schematic or netlist with one documented `.dc` directive so the result
+can be simulated as a dedicated DC sweep artifact.
+
+Typical inputs:
+- `source_path`
+- `source` (independent source or element name to sweep)
+- `start`
+- `stop`
+- `step`
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+Notes:
+Sweep parameters are accepted as strings so the caller can use QSpice-friendly
+engineering suffixes without server-side reformatting.
+
+## prepare_loop_gain_analysis
+
+Purpose:
+Stage a schematic or netlist with one documented `.ac` directive plus
+method-specific loop-gain guidance for Tian or Middlebrook small-signal analysis.
+
+Typical inputs:
+- `source_path`
+- `method` (`tian` or `middlebrook`)
+- `sweep_type` (`dec`, `oct`, or `lin`)
+- `points`
+- `start`
+- `stop`
+- `expected_loop_gain_signal` (optional, defaults to `OpenLoopGain`)
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `method`
+- `instruction`
+- `reference_example`
+- `method_notes`
+- `expected_loop_gain_signal`
+- `warnings`
+
+Notes:
+The circuit must already include the probe infrastructure for the chosen method
+(see QSpice Examples/Tian.qsch or Examples/MiddleBrook.qsch). For switched-mode
+power supplies prefer `prepare_bode_analysis` (`.bode`) instead of small-signal
+`.ac` loop gain. After simulation, pass the loop-gain trace to
+`measure_stability_margins` or `measure_bode_response`.
+
 ## prepare_transient
 
 Purpose:
@@ -3033,6 +3166,38 @@ Notes:
 This tool requires a frequency-domain `.qraw` artifact with a frequency axis.
 When all frequencies are positive, interpolation is performed in log-frequency
 space so the result matches Bode-style expectations across decades.
+
+## measure_stability_margins
+
+Purpose:
+Compute gain crossover frequency, phase margin, phase crossover frequency, and
+gain margin from one loop-gain frequency-domain waveform trace.
+
+Typical inputs:
+- `raw_path`
+- `signal`
+- `step` (optional)
+- `step_filters` (optional mapping such as `{ "vin": 12 }`)
+
+Expected outputs:
+- `raw_path`
+- `plot_name`
+- `axis_name`
+- `signal`
+- `step`
+- `sample_count`
+- `gain_crossover_hz`
+- `phase_margin_deg`
+- `phase_crossover_hz`
+- `gain_margin_db`
+- `stable_at_unity`
+
+Notes:
+Requires a frequency-domain `.qraw` artifact with a frequency axis (typically
+produced by `.ac`, `.bode`, or loop-gain post-processing). Crossings are
+interpolated in log-frequency space when all axis samples are positive.
+Margin fields are `null` when the corresponding crossover cannot be found in
+the swept range.
 
 ## compute_thd
 

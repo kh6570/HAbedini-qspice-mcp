@@ -21,6 +21,7 @@ from qspice_mcp.services._backends.schematic_editor import (
     add_component_symbol_drawing_metadata,
     add_dll_block,
     add_dll_block_pin_metadata,
+    add_junction,
     add_net_label,
     add_simple_component,
     add_wire,
@@ -30,6 +31,8 @@ from qspice_mcp.services._backends.schematic_editor import (
     read_component_symbol_metadata,
     remove_component_symbol_drawing_metadata,
     remove_dll_block_pin_metadata,
+    remove_junction,
+    remove_net_label,
     remove_wire,
     resolve_component_pin_position,
     set_component_rotation,
@@ -376,6 +379,23 @@ def test_remove_wire_persists_to_blank_schematic(tmp_path: Path) -> None:
 
     wire_tokens = [item.tokens for item in reopened.schematic.items if item.tag == "wire"]
     assert wire_tokens == []
+
+
+def test_remove_net_label_and_junction_persist_to_blank_schematic(tmp_path: Path) -> None:
+    output_path, _ = create_blank_schematic_file(tmp_path / "blank.qsch", workspace_root=tmp_path)
+    editor, _, _ = open_schematic_editor(output_path, workspace_root=tmp_path)
+
+    add_net_label(editor, net_name="VIN", position=(0, 0))
+    add_junction(editor, position=(200, 0))
+    remove_net_label(editor, position=(0, 0), net_name="VIN")
+    remove_junction(editor, position=(200, 0))
+    editor.save_as(output_path)
+    reopened, _, _ = open_schematic_editor(output_path, workspace_root=tmp_path)
+
+    net_tokens = [item.tokens for item in reopened.schematic.items if item.tag == "net"]
+    junction_tokens = [item.tokens for item in reopened.schematic.items if item.tag == "junction"]
+    assert net_tokens == []
+    assert junction_tokens == []
 
 
 def test_add_wire_can_snap_to_component_pins(tmp_path: Path) -> None:

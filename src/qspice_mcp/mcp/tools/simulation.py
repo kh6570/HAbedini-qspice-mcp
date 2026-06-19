@@ -11,8 +11,17 @@ from qspice_mcp.services.simulation.generate_netlist import (
 from qspice_mcp.services.simulation.list_plot_suggestions import (
     list_plot_suggestions as list_plot_suggestions_service,
 )
+from qspice_mcp.services.simulation.prepare_ac import (
+    prepare_ac as prepare_ac_service,
+)
 from qspice_mcp.services.simulation.prepare_bode_analysis import (
     prepare_bode_analysis as prepare_bode_analysis_service,
+)
+from qspice_mcp.services.simulation.prepare_dc_sweep import (
+    prepare_dc_sweep as prepare_dc_sweep_service,
+)
+from qspice_mcp.services.simulation.prepare_loop_gain_analysis import (
+    prepare_loop_gain_analysis as prepare_loop_gain_analysis_service,
 )
 from qspice_mcp.services.simulation.prepare_monte_carlo import (
     prepare_monte_carlo as prepare_monte_carlo_service,
@@ -59,6 +68,9 @@ SIMULATION_HANDLER_NAMES = (
     "generate_netlist",
     "save_netlist_copy",
     "prepare_bode_analysis",
+    "prepare_ac",
+    "prepare_dc_sweep",
+    "prepare_loop_gain_analysis",
     "prepare_transient",
     "prepare_monte_carlo",
     "prepare_worst_case",
@@ -125,6 +137,70 @@ class SimulationToolMixin:
             debug=debug,
             skip_bias_point=skip_bias_point,
             use_initial_conditions=use_initial_conditions,
+            output_path=output_path,
+        )
+        return to_json_object(prepared)
+
+    def prepare_ac(
+        self: _RuntimeWithSettings,
+        source_path: str,
+        sweep_type: str,
+        points: str,
+        start: str,
+        stop: str,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        prepared = prepare_ac_service(
+            source_path,
+            workspace_root=self.settings.workspace_root,
+            sweep_type=sweep_type,
+            points=points,
+            start=start,
+            stop=stop,
+            output_path=output_path,
+        )
+        return to_json_object(prepared)
+
+    def prepare_dc_sweep(
+        self: _RuntimeWithSettings,
+        source_path: str,
+        source: str,
+        start: str,
+        stop: str,
+        step: str,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        prepared = prepare_dc_sweep_service(
+            source_path,
+            workspace_root=self.settings.workspace_root,
+            source=source,
+            start=start,
+            stop=stop,
+            step=step,
+            output_path=output_path,
+        )
+        return to_json_object(prepared)
+
+    def prepare_loop_gain_analysis(
+        self: _RuntimeWithSettings,
+        source_path: str,
+        method: Literal["tian", "middlebrook"],
+        sweep_type: str,
+        points: str,
+        start: str,
+        stop: str,
+        expected_loop_gain_signal: str = "OpenLoopGain",
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        prepared = prepare_loop_gain_analysis_service(
+            source_path,
+            workspace_root=self.settings.workspace_root,
+            method=method,
+            sweep_type=sweep_type,
+            points=points,
+            start=start,
+            stop=stop,
+            expected_loop_gain_signal=expected_loop_gain_signal,
             output_path=output_path,
         )
         return to_json_object(prepared)

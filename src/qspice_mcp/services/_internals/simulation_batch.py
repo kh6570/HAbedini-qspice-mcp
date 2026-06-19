@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import threading
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -158,6 +159,22 @@ def _execute_pending_runs_in_parallel(
     record_run: Callable[[SimulationBatchRun], None],
     warnings: list[str],
 ) -> None:
+    total_runs = len(pending_run_defs)
+    completed_lock = threading.Lock()
+    completed_count = 0
+
+    def record_run_with_progress(run: SimulationBatchRun) -> None:
+        nonlocal completed_count
+        record_run(run)
+        with completed_lock:
+            completed_count += 1
+            step_index = completed_count
+        report_progress(
+            step_index,
+            total=total_runs,
+            message=f"sweep run {step_index}/{total_runs}: {run.label}",
+        )
+
     _, parallel_warnings = execute_sweep_runs_in_parallel(
         source_path=source_path,
         workspace_root=workspace_root,
@@ -170,7 +187,7 @@ def _execute_pending_runs_in_parallel(
         extra_switches=extra_switches,
         ascii_raw=ascii_raw,
         should_cancel=should_cancel,
-        on_run_complete=record_run,
+        on_run_complete=record_run_with_progress,
     )
     warnings.extend(parallel_warnings)
 

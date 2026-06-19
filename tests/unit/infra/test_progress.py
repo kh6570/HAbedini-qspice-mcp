@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import pytest
 
-from qspice_mcp.infra.progress import ProgressBridge, progress_scope, report_progress
+from qspice_mcp.infra.progress import (
+    ProgressBridge,
+    bind_context,
+    progress_scope,
+    report_progress,
+    reset_context,
+)
 
 
 class _FakeContext:
@@ -49,8 +53,6 @@ def test_progress_bridge_report_swallows_missing_async_portal() -> None:
 
 
 def test_bind_context_accepts_fastmcp_context_shape() -> None:
-    from qspice_mcp.infra.progress import bind_context, reset_context
-
     token = bind_context(_FakeContext())
     try:
         report_progress(1.0, total=1.0, message="bound")

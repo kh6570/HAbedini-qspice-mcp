@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import atexit
+import contextlib
 import signal
 import subprocess
 import threading
@@ -52,10 +53,8 @@ def terminate_active_processes(*, reason: str = "shutdown") -> tuple[int, ...]:
         try:
             process.wait(timeout=2.0)
         except subprocess.TimeoutExpired:
-            try:
+            with contextlib.suppress(OSError):
                 process.kill()
-            except OSError:
-                pass
         finally:
             unregister_process(pid)
     return tuple(terminated)

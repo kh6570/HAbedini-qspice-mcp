@@ -99,6 +99,92 @@ def recipe_bundle_path(recipe_id: str, bundle_name: str) -> Traversable:
     return _recipes_root() / recipe_id.strip() / bundle_name
 
 
+def read_recipe_manifest_text(recipe_id: str) -> str:
+    """Return one recipe manifest as formatted JSON text."""
+
+    manifest = load_recipe_manifest(recipe_id)
+    return json.dumps(manifest, indent=2, sort_keys=True)
+
+
+def _resolve_schematic_bundle_name(manifest: dict[str, Any], *, recipe_id: str) -> str:
+    raw_files = manifest.get("files")
+    if not isinstance(raw_files, list):
+        raise ValidationError(f"Recipe {recipe_id!r} files must be an array.")
+    for raw_entry in raw_files:
+        if not isinstance(raw_entry, dict):
+            continue
+        relative_path = str(raw_entry.get("relative_path", "")).strip()
+        if not relative_path.lower().endswith(".qsch"):
+            continue
+        bundle_name = str(raw_entry.get("bundle_name", relative_path)).strip()
+        if bundle_name:
+            return bundle_name
+    raise ValidationError(f"Recipe {recipe_id!r} does not declare a bundled schematic.")
+
+
+def read_recipe_schematic_bytes(recipe_id: str) -> bytes:
+    """Return the bundled schematic bytes for one recipe."""
+
+    manifest = load_recipe_manifest(recipe_id)
+    normalized_recipe_id = str(manifest["recipe_id"])
+    bundle_name = _resolve_schematic_bundle_name(manifest, recipe_id=normalized_recipe_id)
+    bundle_path = recipe_bundle_path(normalized_recipe_id, bundle_name)
+    try:
+        return bundle_path.read_bytes()
+    except FileNotFoundError as exc:
+        raise ValidationError(
+            f"Bundled schematic missing for recipe {normalized_recipe_id!r}: {bundle_name!r}"
+        ) from exc
+
+
+def _allowed_recipe_documents(manifest: dict[str, Any]) -> set[str]:
+    allowed: set[str] = set()
+    raw_files = manifest.get("files")
+    if isinstance(raw_files, list):
+        for raw_entry in raw_files:
+            if not isinstance(raw_entry, dict):
+                continue
+            for key in ("relative_path", "bundle_name"):
+                value = str(raw_entry.get(key, "")).strip()
+                if value:
+                    allowed.add(value)
+    raw_workflows = manifest.get("workflows")
+    if isinstance(raw_workflows, list):
+        for raw_workflow in raw_workflows:
+            if not isinstance(raw_workflow, dict):
+                continue
+            document = str(raw_workflow.get("document", "")).strip()
+            if document:
+                allowed.add(document)
+    return allowed
+
+
+def read_recipe_document(recipe_id: str, document: str) -> str:
+    """Read one bundled recipe document such as a workflow markdown file."""
+
+    normalized_document = document.strip()
+    if not normalized_document:
+        raise ValidationError("document must not be empty.")
+    if "/" in normalized_document or "\\" in normalized_document:
+        raise ValidationError("document must be a bundle file name without path separators.")
+    manifest = load_recipe_manifest(recipe_id)
+    normalized_recipe_id = str(manifest["recipe_id"])
+    allowed_documents = _allowed_recipe_documents(manifest)
+    if normalized_document not in allowed_documents:
+        known = ", ".join(sorted(allowed_documents))
+        raise ValidationError(
+            f"Unknown recipe document {normalized_document!r} for {normalized_recipe_id!r}. "
+            f"Known documents: {known or '(none)'}"
+        )
+    document_path = recipe_bundle_path(normalized_recipe_id, normalized_document)
+    try:
+        return document_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        raise ValidationError(
+            f"Recipe document missing for {normalized_recipe_id!r}: {normalized_document!r}"
+        ) from exc
+
+
 def list_workflow_instruction_entries() -> tuple[WorkflowInstructionEntry, ...]:
     """Return every workflow instruction declared across all recipes."""
 
@@ -174,6 +260,9 @@ __all__ = [
     "list_recipe_index_entries",
     "list_workflow_instruction_entries",
     "load_recipe_manifest",
+    "read_recipe_document",
+    "read_recipe_manifest_text",
+    "read_recipe_schematic_bytes",
     "read_workflow_instruction_markdown",
     "recipe_bundle_path",
     "resolve_workflow_instruction_entry",

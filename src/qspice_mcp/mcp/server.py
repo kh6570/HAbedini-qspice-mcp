@@ -30,6 +30,7 @@ from .definition import ServerDefinition, build_server_definition
 from .prompts import get_prompt_definitions
 from .prompts.registration import register_prompts
 from .resources import ResourceDefinition, get_resource_content, get_resource_definitions
+from .resources.registration import register_resource_templates
 from .tool_registry import (
     ToolAnnotations,
     ToolDefinition,
@@ -195,6 +196,7 @@ def _build_app(
             structured_output=True,
         )(runtime.get_handler(tool.name))
     _register_resources(app, resources)
+    register_resource_templates(app, workspace_root=settings.workspace_root)
     register_prompts(app, get_prompt_definitions())
     return app
 

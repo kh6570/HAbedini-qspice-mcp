@@ -166,6 +166,24 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(read_only=True, idempotent=True),
     },
+    "measure_stability_margins": {
+        "title": "Measure Stability Margins",
+        "description": (
+            "Compute crossover frequency, phase margin, and gain margin from one "
+            "loop-gain frequency-domain waveform trace."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["raw_path", "signal"],
+            "properties": {
+                "raw_path": {"type": "string"},
+                "signal": {"type": "string"},
+                "step": {"type": "integer", "minimum": 0},
+                "step_filters": _STEP_FILTERS,
+            },
+        },
+        "annotations": _ann(read_only=True, idempotent=True),
+    },
     "compute_thd": {
         "title": "Compute THD",
         "description": (

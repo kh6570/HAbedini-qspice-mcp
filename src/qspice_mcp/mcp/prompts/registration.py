@@ -43,7 +43,9 @@ def register_prompts(app: FastMCP, definitions: tuple[PromptDefinition, ...]) ->
         description="Structured workflow for diagnosing a non-converging QSpice simulation.",
     )
     def debug_prompt(log_path: str) -> list[dict[str, object]]:
-        return _messages_from_text(render_prompt_message("qspice_debug_convergence", log_path=log_path))
+        return _messages_from_text(
+            render_prompt_message("qspice_debug_convergence", log_path=log_path)
+        )
 
     @app.prompt(
         name="qspice_run_and_measure",

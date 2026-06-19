@@ -65,6 +65,69 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(),
     },
+    "prepare_ac": {
+        "title": "Prepare AC Analysis",
+        "description": "Stage a schematic or netlist with a documented `.ac` directive.",
+        "input_schema": {
+            "type": "object",
+            "required": ["source_path", "sweep_type", "points", "start", "stop"],
+            "properties": {
+                "source_path": {"type": "string"},
+                "sweep_type": {"type": "string", "enum": ["dec", "oct", "lin"]},
+                "points": {"type": "string"},
+                "start": {"type": "string"},
+                "stop": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+        },
+        "annotations": _ann(),
+    },
+    "prepare_dc_sweep": {
+        "title": "Prepare DC Sweep",
+        "description": "Stage a schematic or netlist with a documented `.dc` directive.",
+        "input_schema": {
+            "type": "object",
+            "required": ["source_path", "source", "start", "stop", "step"],
+            "properties": {
+                "source_path": {"type": "string"},
+                "source": {"type": "string"},
+                "start": {"type": "string"},
+                "stop": {"type": "string"},
+                "step": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+        },
+        "annotations": _ann(),
+    },
+    "prepare_loop_gain_analysis": {
+        "title": "Prepare Loop Gain Analysis",
+        "description": (
+            "Stage a schematic or netlist with a documented `.ac` directive and "
+            "Tian or Middlebrook loop-gain guidance."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": [
+                "source_path",
+                "method",
+                "sweep_type",
+                "points",
+                "start",
+                "stop",
+            ],
+            "properties": {
+                "source_path": {"type": "string"},
+                "method": {"type": "string", "enum": ["tian", "middlebrook"]},
+                "sweep_type": {"type": "string", "enum": ["dec", "oct", "lin"]},
+                "points": {"type": "string"},
+                "start": {"type": "string"},
+                "stop": {"type": "string"},
+                "expected_loop_gain_signal": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+        },
+        "annotations": _ann(),
+    },
     "prepare_transient": {
         "title": "Prepare Transient Analysis",
         "description": "Stage a schematic or netlist with a documented `.tran` directive.",

@@ -64,6 +64,12 @@ from qspice_mcp.services.schematic.remove_dll_block_pin import (
 from qspice_mcp.services.schematic.remove_instruction import (
     remove_instruction as remove_instruction_service,
 )
+from qspice_mcp.services.schematic.remove_junction import (
+    remove_junction as remove_junction_service,
+)
+from qspice_mcp.services.schematic.remove_net_label import (
+    remove_net_label as remove_net_label_service,
+)
 from qspice_mcp.services.schematic.remove_wire import remove_wire as remove_wire_service
 from qspice_mcp.services.schematic.rename_component_reference import (
     rename_component_reference as rename_component_reference_service,
@@ -116,6 +122,8 @@ SCHEMATIC_HANDLER_NAMES = (
     "add_component_symbol_drawing",
     "add_wire",
     "remove_wire",
+    "remove_net_label",
+    "remove_junction",
     "add_junction",
     "add_net_label",
     "inspect_schematic",
@@ -365,6 +373,41 @@ class SchematicToolMixin:
             output_path=output_path,
         )
         return to_json_object(inspection)
+
+    def remove_net_label(
+        self: _RuntimeWithSettings,
+        schematic_path: str,
+        position_x: int,
+        position_y: int,
+        *,
+        net_name: str | None = None,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        inspection = remove_net_label_service(
+            schematic_path,
+            workspace_root=self.settings.workspace_root,
+            position_x=position_x,
+            position_y=position_y,
+            net_name=net_name,
+            output_path=output_path,
+        )
+        return to_json_object(inspection)
+
+    def remove_junction(
+        self: _RuntimeWithSettings,
+        schematic_path: str,
+        position_x: int,
+        position_y: int,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        result = remove_junction_service(
+            schematic_path,
+            workspace_root=self.settings.workspace_root,
+            position_x=position_x,
+            position_y=position_y,
+            output_path=output_path,
+        )
+        return to_json_object(result)
 
     def add_junction(
         self: _RuntimeWithSettings,

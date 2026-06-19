@@ -17,6 +17,9 @@ from qspice_mcp.services.waveform.list_steps import list_steps as list_steps_ser
 from qspice_mcp.services.waveform.measure_bode_response import (
     measure_bode_response as measure_bode_response_service,
 )
+from qspice_mcp.services.waveform.measure_stability_margins import (
+    measure_stability_margins as measure_stability_margins_service,
+)
 from qspice_mcp.services.waveform.measure_waveform import (
     measure_waveform as measure_waveform_service,
 )
@@ -60,6 +63,7 @@ WAVEFORM_HANDLER_NAMES = (
     "read_waveform",
     "measure_waveform",
     "measure_bode_response",
+    "measure_stability_margins",
     "compute_thd",
     "export_fft_spectrum",
     "plot_waveforms",
@@ -202,6 +206,22 @@ class WaveformToolMixin:
             workspace_root=self.settings.workspace_root,
             signal=signal,
             frequencies_hz=frequencies_hz,
+            step=step,
+            step_filters=step_filters,
+        )
+        return to_json_object(inspection)
+
+    def measure_stability_margins(
+        self: _RuntimeWithSettings,
+        raw_path: str,
+        signal: str,
+        step: int | None = None,
+        step_filters: dict[str, object] | None = None,
+    ) -> dict[str, object]:
+        inspection = measure_stability_margins_service(
+            raw_path,
+            workspace_root=self.settings.workspace_root,
+            signal=signal,
             step=step,
             step_filters=step_filters,
         )
@@ -399,6 +419,7 @@ __all__ = [
     "list_signals_service",
     "list_steps_service",
     "measure_bode_response_service",
+    "measure_stability_margins_service",
     "measure_waveform_service",
     "plot_waveforms_service",
     "read_device_operating_points_service",
