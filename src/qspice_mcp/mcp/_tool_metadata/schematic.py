@@ -625,6 +625,25 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(),
     },
+    "set_component_position": {
+        "title": "Set Component Position",
+        "description": (
+            "Move one placed schematic component to new coordinates, optionally updating rotation."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "reference", "position_x", "position_y"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "reference": {"type": "string"},
+                "position_x": {"type": "integer"},
+                "position_y": {"type": "integer"},
+                "rotation_degrees": {"type": "integer"},
+                "output_path": {"type": "string"},
+            },
+        },
+        "annotations": _ann(),
+    },
     "set_component_parameters": {
         "title": "Set Component Parameters",
         "description": "Update one or more component-local parameters in a schematic.",

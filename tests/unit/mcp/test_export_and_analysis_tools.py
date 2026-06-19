@@ -14,6 +14,7 @@ from qspice_mcp.infra.config import QSpiceSettings
 from qspice_mcp.mcp.server import create_server
 from qspice_mcp.services.artifacts._qux_export import DllVariableExport, QuxWaveformExport
 from qspice_mcp.services.artifacts.describe_qux_export_support import QuxExportSupport
+from qspice_mcp.services.schematic.set_component_position import ComponentPositionUpdate
 from qspice_mcp.services.simulation.list_plot_suggestions import (
     PlotSuggestion,
     PlotSuggestionCatalog,
@@ -21,11 +22,18 @@ from qspice_mcp.services.simulation.list_plot_suggestions import (
 from qspice_mcp.services.simulation.prepare_bode_analysis import PreparedBodeAnalysis
 from qspice_mcp.services.simulation.prepare_dc_sweep import PreparedDcSweep
 from qspice_mcp.services.simulation.prepare_loop_gain_analysis import PreparedLoopGainAnalysis
+from qspice_mcp.services.simulation.prepare_noise import PreparedNoiseAnalysis
+from qspice_mcp.services.simulation.prepare_sensitivity import PreparedSensitivityAnalysis
+from qspice_mcp.services.simulation.prepare_temperature_sweep import PreparedTemperatureSweep
+from qspice_mcp.services.simulation.prepare_transfer_function import (
+    PreparedTransferFunctionAnalysis,
+)
 from qspice_mcp.services.waveform.compute_thd import ThdAnalysis, ThdHarmonic
 from qspice_mcp.services.waveform.measure_stability_margins import StabilityMargins
 
 mcp_artifact_tools = importlib.import_module("qspice_mcp.mcp.tools.artifacts")
 mcp_capabilities = importlib.import_module("qspice_mcp.mcp.capabilities")
+mcp_schematic_tools = importlib.import_module("qspice_mcp.mcp.tools.schematic")
 mcp_simulation_tools = importlib.import_module("qspice_mcp.mcp.tools.simulation")
 mcp_waveform_tools = importlib.import_module("qspice_mcp.mcp.tools.waveform")
 
@@ -730,3 +738,196 @@ def test_mcp_measure_stability_margins_is_invokable(monkeypatch, tmp_path) -> No
 
     assert result["phase_margin_deg"] == 60.0
     assert result["stable_at_unity"] is True
+
+
+def test_mcp_prepare_noise_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_prepare_noise(
+        source_path: str,
+        *,
+        workspace_root,
+        output_node: str,
+        input_source: str,
+        sweep_type: str,
+        points: str,
+        start: str,
+        stop: str,
+        output_path: str | None = None,
+    ):
+        assert output_node == "V(out)"
+        return PreparedNoiseAnalysis(
+            source_path=(tmp_path / source_path).resolve(strict=False),
+            output_path=(tmp_path / "amp-noise.net").resolve(strict=False),
+            source_kind="netlist",
+            instruction=".noise V(out) VIN dec 100 1 1Meg",
+        )
+
+    monkeypatch.setattr(mcp_simulation_tools, "prepare_noise_service", fake_prepare_noise)
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "prepare_noise",
+        source_path="amp.net",
+        output_node="V(out)",
+        input_source="VIN",
+        sweep_type="dec",
+        points="100",
+        start="1",
+        stop="1Meg",
+    )
+
+    assert result["instruction"].startswith(".noise")
+
+
+def test_mcp_prepare_temperature_sweep_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_prepare_temperature_sweep(
+        source_path: str,
+        *,
+        workspace_root,
+        start: str,
+        stop: str,
+        step: str,
+        output_path: str | None = None,
+    ):
+        return PreparedTemperatureSweep(
+            source_path=(tmp_path / source_path).resolve(strict=False),
+            output_path=(tmp_path / "amp-temp.net").resolve(strict=False),
+            source_kind="netlist",
+            instruction=".step temp -40 125 25",
+        )
+
+    monkeypatch.setattr(
+        mcp_simulation_tools,
+        "prepare_temperature_sweep_service",
+        fake_prepare_temperature_sweep,
+    )
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "prepare_temperature_sweep",
+        source_path="amp.net",
+        start="-40",
+        stop="125",
+        step="25",
+    )
+
+    assert result["instruction"] == ".step temp -40 125 25"
+
+
+def test_mcp_prepare_transfer_function_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_prepare_transfer_function(
+        source_path: str,
+        *,
+        workspace_root,
+        output_node: str,
+        input_source: str,
+        output_path: str | None = None,
+    ):
+        return PreparedTransferFunctionAnalysis(
+            source_path=(tmp_path / source_path).resolve(strict=False),
+            output_path=(tmp_path / "amp-tf.net").resolve(strict=False),
+            source_kind="netlist",
+            instruction=".tf V(out) VIN",
+        )
+
+    monkeypatch.setattr(
+        mcp_simulation_tools,
+        "prepare_transfer_function_service",
+        fake_prepare_transfer_function,
+    )
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "prepare_transfer_function",
+        source_path="amp.net",
+        output_node="V(out)",
+        input_source="VIN",
+    )
+
+    assert result["instruction"] == ".tf V(out) VIN"
+
+
+def test_mcp_prepare_sensitivity_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_prepare_sensitivity(
+        source_path: str,
+        *,
+        workspace_root,
+        analysis_type: str,
+        output_node: str,
+        output_path: str | None = None,
+    ):
+        return PreparedSensitivityAnalysis(
+            source_path=(tmp_path / source_path).resolve(strict=False),
+            output_path=(tmp_path / "amp-sens.net").resolve(strict=False),
+            source_kind="netlist",
+            instruction=".sens ac V(out)",
+        )
+
+    monkeypatch.setattr(
+        mcp_simulation_tools,
+        "prepare_sensitivity_service",
+        fake_prepare_sensitivity,
+    )
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "prepare_sensitivity",
+        source_path="amp.net",
+        analysis_type="ac",
+        output_node="V(out)",
+    )
+
+    assert result["instruction"] == ".sens ac V(out)"
+
+
+def test_mcp_set_component_position_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+
+    def fake_set_component_position(
+        schematic_path: str,
+        *,
+        workspace_root,
+        reference: str,
+        position_x: int,
+        position_y: int,
+        rotation_degrees: int | None = None,
+        output_path: str | None = None,
+    ):
+        return ComponentPositionUpdate(
+            schematic_path=(tmp_path / schematic_path).resolve(strict=False),
+            output_path=(tmp_path / "demo-moved.qsch").resolve(strict=False),
+            reference=reference,
+            position_x=position_x,
+            position_y=position_y,
+            rotation_degrees=rotation_degrees or 0,
+        )
+
+    monkeypatch.setattr(
+        mcp_schematic_tools,
+        "set_component_position_service",
+        fake_set_component_position,
+    )
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "set_component_position",
+        schematic_path="demo.qsch",
+        reference="R1",
+        position_x=320,
+        position_y=240,
+    )
+
+    assert result["position_x"] == 320
+    assert result["position_y"] == 240

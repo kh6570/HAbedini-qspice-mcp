@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from qspice_mcp.services._shared.paths import resolve_workspace_path
 from qspice_mcp.services.recipes._catalog import (
     read_recipe_document,
     read_recipe_manifest_text,
@@ -15,11 +16,45 @@ if TYPE_CHECKING:
 
     from mcp.server.fastmcp import FastMCP
 
+_WORKSPACE_ARTIFACT_SUFFIXES = (
+    ".qsch",
+    ".net",
+    ".cir",
+    ".log",
+    ".qraw",
+    ".csv",
+    ".json",
+    ".md",
+    ".txt",
+)
+
+
+def _decode_workspace_relpath(relpath: str) -> str:
+    normalized = relpath.strip().replace("~", "/")
+    if not normalized or normalized.startswith("/") or ".." in normalized.split("/"):
+        raise ValueError("relpath must be a safe workspace-relative path.")
+    return normalized
+
+
+def read_workspace_artifact_bytes(relpath: str, *, workspace_root: Path) -> bytes:
+    """Return one sandbox-validated workspace artifact as bytes."""
+
+    resolved = resolve_workspace_path(
+        _decode_workspace_relpath(relpath),
+        workspace_root=workspace_root.resolve(strict=False),
+    )
+    if not resolved.is_file():
+        raise FileNotFoundError(f"Workspace artifact not found: {relpath!r}")
+    if resolved.suffix.lower() not in _WORKSPACE_ARTIFACT_SUFFIXES:
+        allowed = ", ".join(_WORKSPACE_ARTIFACT_SUFFIXES)
+        raise ValueError(f"Workspace artifact suffix must be one of: {allowed}")
+    return resolved.read_bytes()
+
 
 def register_resource_templates(app: FastMCP, *, workspace_root: Path) -> None:
     """Bind recipe and workspace artifact resource templates."""
 
-    del workspace_root
+    normalized_root = workspace_root.resolve(strict=False)
 
     @app.resource(
         "recipe://{recipe_id}/manifest",
@@ -54,5 +89,18 @@ def register_resource_templates(app: FastMCP, *, workspace_root: Path) -> None:
     def recipe_document(recipe_id: str, document: str) -> str:
         return read_recipe_document(recipe_id, document)
 
+    @app.resource(
+        "workspace-artifact://{relpath}",
+        name="workspace_artifact",
+        title="Workspace Artifact",
+        description=(
+            "Return one sandbox-validated workspace artifact. Nested paths use `~` "
+            "instead of `/` (for example `artifacts~run1~out.qraw`)."
+        ),
+        mime_type="application/octet-stream",
+    )
+    def workspace_artifact(relpath: str) -> bytes:
+        return read_workspace_artifact_bytes(relpath, workspace_root=normalized_root)
 
-__all__ = ["register_resource_templates"]
+
+__all__ = ["read_workspace_artifact_bytes", "register_resource_templates"]

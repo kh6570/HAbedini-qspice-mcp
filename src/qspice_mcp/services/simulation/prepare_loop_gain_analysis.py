@@ -239,8 +239,8 @@ def prepare_loop_gain_analysis(
 
 
 __all__ = [
+    "SERVICE_SPEC",
     "LoopGainMethod",
     "PreparedLoopGainAnalysis",
-    "SERVICE_SPEC",
     "prepare_loop_gain_analysis",
 ]

@@ -26,6 +26,7 @@ from qspice_mcp.infra.logging import get_logger
 from qspice_mcp.infra.progress import bind_context, reset_context
 from qspice_mcp.infra.telemetry import get_exception_trace_id
 
+from .completions.registration import register_completions
 from .definition import ServerDefinition, build_server_definition
 from .prompts import get_prompt_definitions
 from .prompts.registration import register_prompts
@@ -198,6 +199,7 @@ def _build_app(
     _register_resources(app, resources)
     register_resource_templates(app, workspace_root=settings.workspace_root)
     register_prompts(app, get_prompt_definitions())
+    register_completions(app, workspace_root=settings.workspace_root)
     return app
 
 

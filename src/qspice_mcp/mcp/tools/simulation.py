@@ -26,6 +26,18 @@ from qspice_mcp.services.simulation.prepare_loop_gain_analysis import (
 from qspice_mcp.services.simulation.prepare_monte_carlo import (
     prepare_monte_carlo as prepare_monte_carlo_service,
 )
+from qspice_mcp.services.simulation.prepare_noise import (
+    prepare_noise as prepare_noise_service,
+)
+from qspice_mcp.services.simulation.prepare_sensitivity import (
+    prepare_sensitivity as prepare_sensitivity_service,
+)
+from qspice_mcp.services.simulation.prepare_temperature_sweep import (
+    prepare_temperature_sweep as prepare_temperature_sweep_service,
+)
+from qspice_mcp.services.simulation.prepare_transfer_function import (
+    prepare_transfer_function as prepare_transfer_function_service,
+)
 from qspice_mcp.services.simulation.prepare_transient import (
     prepare_transient as prepare_transient_service,
 )
@@ -71,6 +83,10 @@ SIMULATION_HANDLER_NAMES = (
     "prepare_ac",
     "prepare_dc_sweep",
     "prepare_loop_gain_analysis",
+    "prepare_noise",
+    "prepare_sensitivity",
+    "prepare_temperature_sweep",
+    "prepare_transfer_function",
     "prepare_transient",
     "prepare_monte_carlo",
     "prepare_worst_case",
@@ -201,6 +217,80 @@ class SimulationToolMixin:
             start=start,
             stop=stop,
             expected_loop_gain_signal=expected_loop_gain_signal,
+            output_path=output_path,
+        )
+        return to_json_object(prepared)
+
+    def prepare_noise(
+        self: _RuntimeWithSettings,
+        source_path: str,
+        output_node: str,
+        input_source: str,
+        sweep_type: str,
+        points: str,
+        start: str,
+        stop: str,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        prepared = prepare_noise_service(
+            source_path,
+            workspace_root=self.settings.workspace_root,
+            output_node=output_node,
+            input_source=input_source,
+            sweep_type=sweep_type,
+            points=points,
+            start=start,
+            stop=stop,
+            output_path=output_path,
+        )
+        return to_json_object(prepared)
+
+    def prepare_transfer_function(
+        self: _RuntimeWithSettings,
+        source_path: str,
+        output_node: str,
+        input_source: str,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        prepared = prepare_transfer_function_service(
+            source_path,
+            workspace_root=self.settings.workspace_root,
+            output_node=output_node,
+            input_source=input_source,
+            output_path=output_path,
+        )
+        return to_json_object(prepared)
+
+    def prepare_sensitivity(
+        self: _RuntimeWithSettings,
+        source_path: str,
+        analysis_type: str,
+        output_node: str,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        prepared = prepare_sensitivity_service(
+            source_path,
+            workspace_root=self.settings.workspace_root,
+            analysis_type=analysis_type,
+            output_node=output_node,
+            output_path=output_path,
+        )
+        return to_json_object(prepared)
+
+    def prepare_temperature_sweep(
+        self: _RuntimeWithSettings,
+        source_path: str,
+        start: str,
+        stop: str,
+        step: str,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        prepared = prepare_temperature_sweep_service(
+            source_path,
+            workspace_root=self.settings.workspace_root,
+            start=start,
+            stop=stop,
+            step=step,
             output_path=output_path,
         )
         return to_json_object(prepared)

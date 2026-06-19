@@ -25,7 +25,10 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`prepare_ac` tool** — stage a schematic or netlist with a documented `.ac` directive.
 - **`prepare_dc_sweep` tool** — stage a schematic or netlist with a documented `.dc` directive.
 - **`prepare_loop_gain_analysis` tool** — stage `.ac` plus Tian/Middlebrook loop-gain guidance.
-- **`measure_stability_margins` tool** — compute crossover frequency, phase margin, and gain margin from a loop-gain trace.
+- **`set_component_position` tool** — move one placed schematic component to new coordinates.
+- **`prepare_noise` / `prepare_transfer_function` / `prepare_sensitivity` / `prepare_temperature_sweep` tools** — analysis-prep helpers for remaining directive types.
+- **MCP argument completions** — autocomplete for recipe IDs, instruction IDs, recipe documents, and workspace artifact paths.
+- **`workspace-artifact://{relpath}` resource template** — sandbox-validated workspace artifact pull (`~` encodes `/` in nested paths).
 - **MCP resource templates** — `recipe://{recipe_id}/manifest`, `/schematic`, and `/{document}` for pull-based recipe browsing.
 
 ### Changed

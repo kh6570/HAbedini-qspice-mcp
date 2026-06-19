@@ -95,6 +95,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `save_schematic_as` | implemented | Write a `.qsch` file to a requested destination path. |
 | `set_component_value` | implemented | Update the value field of one schematic component. |
 | `set_component_rotation` | implemented | Rotate one placed component in 45-degree steps without moving it. |
+| `set_component_position` | implemented | Move one placed component to new coordinates, optionally updating rotation. |
 | `set_component_parameters` | implemented | Update one or more component-local parameters. |
 | `set_component_symbol_drawing` | implemented | Update one embedded symbol drawing item by replacing its raw tag name or arguments. |
 | `set_component_symbol_text` | implemented | Update one embedded symbol text item, including safe layout/style attributes. |
@@ -118,6 +119,10 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `prepare_ac` | implemented | Stage a source with a documented `.ac` directive for small-signal frequency analysis. |
 | `prepare_dc_sweep` | implemented | Stage a source with a documented `.dc` directive for DC sweep analysis. |
 | `prepare_loop_gain_analysis` | implemented | Stage a source with `.ac` plus Tian or Middlebrook loop-gain guidance. |
+| `prepare_noise` | implemented | Stage a source with a documented `.noise` directive. |
+| `prepare_sensitivity` | implemented | Stage a source with a documented `.sens` directive. |
+| `prepare_temperature_sweep` | implemented | Stage a source with a documented `.step temp` directive. |
+| `prepare_transfer_function` | implemented | Stage a source with a documented `.tf` directive. |
 | `prepare_transient` | implemented | Stage a source with a documented `.tran` directive for transient simulation. |
 | `prepare_monte_carlo` | implemented | Persist explicit Monte Carlo parameter and component-value samples, with optional native `mc(...)` schematic staging and per-prefix component presets. |
 | `prepare_worst_case` | implemented | Persist explicit worst-case corner assignments with shared component preset expansion. |
@@ -1637,6 +1642,32 @@ Notes:
 Pin world coordinates depend on rotation; re-check wire endpoints after rotating.
 `read_component` reports `rotation_degrees` in human-friendly degrees, not the raw QSpice rotation index.
 
+## set_component_position
+
+Purpose:
+Move one placed schematic component to new grid coordinates, optionally updating
+its rotation in the same edit.
+
+Typical inputs:
+- `schematic_path`
+- `reference`
+- `position_x`
+- `position_y`
+- `rotation_degrees` (optional; multiple of 45)
+- `output_path` (optional)
+
+Expected outputs:
+- `schematic_path`
+- `output_path`
+- `reference`
+- `position_x`
+- `position_y`
+- `rotation_degrees`
+
+Notes:
+Re-check wire endpoints after moving a component. When `rotation_degrees` is
+omitted the existing rotation is preserved.
+
 ## set_component_parameters
 
 Purpose:
@@ -2903,6 +2934,83 @@ The circuit must already include the probe infrastructure for the chosen method
 power supplies prefer `prepare_bode_analysis` (`.bode`) instead of small-signal
 `.ac` loop gain. After simulation, pass the loop-gain trace to
 `measure_stability_margins` or `measure_bode_response`.
+
+## prepare_noise
+
+Purpose:
+Stage a schematic or netlist with one documented `.noise` directive.
+
+Typical inputs:
+- `source_path`
+- `output_node`
+- `input_source`
+- `sweep_type` (`dec`, `oct`, or `lin`)
+- `points`
+- `start`
+- `stop`
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+## prepare_transfer_function
+
+Purpose:
+Stage a schematic or netlist with one documented `.tf` directive.
+
+Typical inputs:
+- `source_path`
+- `output_node`
+- `input_source`
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+## prepare_sensitivity
+
+Purpose:
+Stage a schematic or netlist with one documented `.sens` directive.
+
+Typical inputs:
+- `source_path`
+- `analysis_type` (`dc` or `ac`)
+- `output_node`
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+## prepare_temperature_sweep
+
+Purpose:
+Stage a schematic or netlist with one documented `.step temp` temperature sweep.
+
+Typical inputs:
+- `source_path`
+- `start`
+- `stop`
+- `step`
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
 
 ## prepare_transient
 

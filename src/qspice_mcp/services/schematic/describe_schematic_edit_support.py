@@ -12,6 +12,7 @@ EditIntentName = Literal[
     "change_value",
     "change_model",
     "edit_parameters",
+    "move_component",
     "rotate_component",
     "edit_symbol_text",
     "edit_symbol_pin",
@@ -79,6 +80,15 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         requires_backend=False,
         preconditions=(),
         limitations=("parameters are component-local, not schematic-level",),
+    ),
+    IntentEntry(
+        intent="move_component",
+        label="Move placed component",
+        tool="set_component_position",
+        supported=True,
+        requires_backend=False,
+        preconditions=("component reference must exist in the schematic",),
+        limitations=("Re-check wire connectivity after moving a component.",),
     ),
     IntentEntry(
         intent="rotate_component",

@@ -80,6 +80,9 @@ from qspice_mcp.services.schematic.save_schematic_as import (
 from qspice_mcp.services.schematic.set_component_parameters import (
     set_component_parameters as set_component_parameters_service,
 )
+from qspice_mcp.services.schematic.set_component_position import (
+    set_component_position as set_component_position_service,
+)
 from qspice_mcp.services.schematic.set_component_rotation import (
     set_component_rotation as set_component_rotation_service,
 )
@@ -135,6 +138,7 @@ SCHEMATIC_HANDLER_NAMES = (
     "set_component_symbol_drawing",
     "set_component_symbol_text",
     "set_component_symbol_pin",
+    "set_component_position",
     "set_component_rotation",
     "set_component_value",
     "set_component_parameters",
@@ -510,6 +514,26 @@ class SchematicToolMixin:
         )
         return to_json_object(inspection)
 
+    def set_component_position(
+        self: _RuntimeWithSettings,
+        schematic_path: str,
+        reference: str,
+        position_x: int,
+        position_y: int,
+        rotation_degrees: int | None = None,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        inspection = set_component_position_service(
+            schematic_path,
+            workspace_root=self.settings.workspace_root,
+            reference=reference,
+            position_x=position_x,
+            position_y=position_y,
+            rotation_degrees=rotation_degrees,
+            output_path=output_path,
+        )
+        return to_json_object(inspection)
+
     def set_component_rotation(
         self: _RuntimeWithSettings,
         schematic_path: str,
@@ -804,6 +828,7 @@ __all__ = [
     "rename_component_reference_service",
     "save_schematic_as_service",
     "set_component_parameters_service",
+    "set_component_position_service",
     "set_component_rotation_service",
     "set_component_symbol_drawing_service",
     "set_component_symbol_pin_service",

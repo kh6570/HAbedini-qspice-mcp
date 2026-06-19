@@ -47,6 +47,7 @@ from .schematic_editor_backend import (
     _SchematicComponentProtocol,
     _unquote_qsch_string,
     component_rotation_degrees_to_index,
+    component_rotation_index_to_degrees,
     load_qsch_editor_factory,
     normalize_component_position,
     resolve_schematic_output_path,
@@ -1939,3 +1940,37 @@ def set_component_rotation(
     editor.set_component_position(normalized_reference, position, rotation_index)
     editor.updated = True
     return rotation_degrees
+
+
+def set_component_position(
+    editor: _QschEditorProtocol,
+    *,
+    reference: str,
+    position_x: int,
+    position_y: int,
+    rotation_degrees: int | None = None,
+) -> tuple[int, int, int]:
+    """Move one placed component and optionally update its rotation."""
+
+    normalized_reference = reference.strip()
+    if not normalized_reference:
+        raise ValueError("reference must not be empty.")
+
+    _position, rotation_index_raw = editor.get_component_position(normalized_reference)
+    if not isinstance(rotation_index_raw, int):
+        raise TypeError(f"Unsupported component rotation index: {rotation_index_raw!r}")
+    rotation_index = rotation_index_raw
+    if rotation_degrees is not None:
+        if rotation_degrees % 45 != 0:
+            raise ValueError("rotation_degrees must be a multiple of 45.")
+        rotation_index = component_rotation_degrees_to_index(rotation_degrees)
+    else:
+        rotation_degrees = component_rotation_index_to_degrees(rotation_index)
+
+    editor.set_component_position(
+        normalized_reference,
+        (int(position_x), int(position_y)),
+        rotation_index,
+    )
+    editor.updated = True
+    return int(position_x), int(position_y), rotation_degrees
