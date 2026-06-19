@@ -27,6 +27,7 @@ class QSpiceSettings(BaseSettings):
     workspace_root: Path = Path.cwd()
     cache_dir: Path | None = None
     log_level: Literal["debug", "info", "warning", "error"] = "info"
+    timeout_s: float | None = 120.0
     initialize_qspice_on_startup: bool = False
     telemetry_enabled: bool = False
 
@@ -56,6 +57,19 @@ class QSpiceSettings(BaseSettings):
                 "cache_dir": cache_dir.resolve(strict=False),
             }
         )
+
+    def resolve_timeout_s(self, explicit: float | None) -> float | None:
+        """Return an explicit per-call timeout or the configured default.
+
+        Non-positive values disable the timeout for that resolution path.
+        """
+
+        if explicit is not None:
+            return None if explicit <= 0 else explicit
+        configured = self.timeout_s
+        if configured is not None and configured <= 0:
+            return None
+        return configured
 
     def with_cli_overrides(
         self,

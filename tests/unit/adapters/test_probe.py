@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from qspice_mcp.adapters.probe import build_summary, probe_qspice
+from qspice_mcp.adapters.probe import build_summary, clear_probe_cache, probe_qspice
 from qspice_mcp.infra.config import QSpiceSettings
 
 if TYPE_CHECKING:
@@ -107,3 +107,62 @@ def test_build_summary_is_json_ready(tmp_path: Path) -> None:
     assert summary["configured"] is True
     assert summary["executable"] == str(executable.resolve())
     assert summary["exists"] is True
+
+
+def test_probe_is_memoized_for_same_executable(monkeypatch: object, tmp_path: Path) -> None:
+    clear_probe_cache()
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+    calls: list[str] = []
+    typed_monkeypatch = monkeypatch
+
+    def fake_metadata(path: Path) -> tuple[str | None, str]:
+        del path
+        calls.append("metadata")
+        return "1.2.3.4", "metadata"
+
+    typed_monkeypatch.setattr("qspice_mcp.adapters.probe.sys.platform", "win32")
+    typed_monkeypatch.setattr("qspice_mcp.adapters.probe._detect_version_metadata", fake_metadata)
+    typed_monkeypatch.setattr(
+        "qspice_mcp.adapters.probe._detect_version_cli",
+        lambda _path: (_ for _ in ()).throw(AssertionError("cli should not run")),
+    )
+
+    settings = QSpiceSettings(exe=executable)
+    first = probe_qspice(settings)
+    second = probe_qspice(settings)
+
+    assert first.version == second.version == "1.2.3.4"
+    assert calls == ["metadata"]
+
+
+def test_probe_cache_invalidates_when_executable_mtime_changes(
+    monkeypatch: object,
+    tmp_path: Path,
+) -> None:
+    clear_probe_cache()
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+    calls: list[str] = []
+    typed_monkeypatch = monkeypatch
+
+    def fake_metadata(path: Path) -> tuple[str | None, str]:
+        del path
+        calls.append("metadata")
+        return f"v{len(calls)}", "metadata"
+
+    typed_monkeypatch.setattr("qspice_mcp.adapters.probe.sys.platform", "win32")
+    typed_monkeypatch.setattr("qspice_mcp.adapters.probe._detect_version_metadata", fake_metadata)
+    typed_monkeypatch.setattr(
+        "qspice_mcp.adapters.probe._detect_version_cli",
+        lambda _path: (_ for _ in ()).throw(AssertionError("cli should not run")),
+    )
+
+    settings = QSpiceSettings(exe=executable)
+    first = probe_qspice(settings)
+    executable.write_text("updated", encoding="utf-8")
+    second = probe_qspice(settings)
+
+    assert first.version == "v1"
+    assert second.version == "v2"
+    assert calls == ["metadata", "metadata"]

@@ -103,6 +103,45 @@ def test_run_simulation_executes_via_subprocess_wrapper(
     assert result.raw_exists is True
 
 
+def test_run_simulation_uses_settings_default_timeout(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+    netlist = tmp_path / "demo.cir"
+    netlist.write_text("* demo\n", encoding="utf-8")
+    observed: dict[str, float | None] = {}
+
+    def fake_run_subprocess(
+        command: tuple[str, ...], *, cwd: Path, timeout_s: float | None
+    ) -> SubprocessResult:
+        del command, cwd
+        observed["timeout_s"] = timeout_s
+        log_path = netlist.with_suffix(".log")
+        raw_path = netlist.with_suffix(".qraw")
+        log_path.write_text("ok", encoding="utf-8")
+        raw_path.write_text("raw", encoding="utf-8")
+        return SubprocessResult(
+            command=(),
+            working_directory=netlist.parent,
+            exit_code=0,
+            duration_s=0.1,
+            stdout="",
+            stderr="",
+        )
+
+    monkeypatch.setattr(run_simulation_service, "run_subprocess", fake_run_subprocess)
+
+    run_simulation(
+        netlist,
+        workspace_root=tmp_path,
+        settings=QSpiceSettings(exe=executable, workspace_root=tmp_path, timeout_s=77.0),
+    )
+
+    assert observed["timeout_s"] == 77.0
+
+
 def test_run_simulation_reuses_cached_artifacts_without_rerunning_subprocess(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

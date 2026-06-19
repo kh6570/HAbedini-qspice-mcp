@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from importlib.metadata import version
 from pathlib import Path
 
 from qspice_mcp.infra import build_settings, configure_logging
@@ -25,6 +26,11 @@ def _configure_stdio_utf8() -> None:
 def main() -> None:
     """Parse CLI arguments and run the MCP server."""
     parser = argparse.ArgumentParser(description="QSpice MCP server")
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"qspice-mcp {version('qspice-mcp')}",
+    )
     parser.add_argument("--transport", choices=("stdio", "sse"), default="stdio")
     parser.add_argument("--qspice-exe", type=Path, default=None)
     parser.add_argument("--workspace-root", type=Path, default=None)

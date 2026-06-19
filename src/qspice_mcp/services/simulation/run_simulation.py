@@ -168,6 +168,7 @@ def run_simulation(
 
     normalized_workspace = workspace_root.resolve(strict=False)
     effective_settings = _build_settings(workspace_root=normalized_workspace, settings=settings)
+    effective_timeout_s = effective_settings.resolve_timeout_s(timeout_s)
     probe = probe_qspice(effective_settings)
     adapter = select_adapter(probe)
     resolved_netlist = validate_existing_file(
@@ -204,6 +205,12 @@ def run_simulation(
         netlist_path=resolved_netlist,
         adapter_key=adapter.key,
         executable=plan.command[0],
+        executable_version=probe.version,
+        executable_mtime=(
+            probe.executable.stat().st_mtime
+            if probe.executable is not None and probe.executable.is_file()
+            else None
+        ),
         extra_switches=extra_switches,
         ascii_raw=ascii_raw,
     )
@@ -238,7 +245,11 @@ def run_simulation(
 
     try:
         try:
-            process = run_subprocess(plan.command, cwd=plan.working_directory, timeout_s=timeout_s)
+            process = run_subprocess(
+                plan.command,
+                cwd=plan.working_directory,
+                timeout_s=effective_timeout_s,
+            )
         except subprocess.TimeoutExpired as exc:
             stderr = (
                 exc.stderr.decode("utf-8", errors="replace")
@@ -246,7 +257,7 @@ def run_simulation(
                 else exc.stderr
             )
             raise SimulationTimeoutError(
-                f"QSpice timed out after {timeout_s} seconds.",
+                f"QSpice timed out after {effective_timeout_s} seconds.",
                 stderr=stderr,
             ) from exc
 

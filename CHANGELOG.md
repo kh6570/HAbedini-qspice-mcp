@@ -11,7 +11,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial public release — a Model Context Protocol server that lets AI assistants
 drive the QSpice circuit simulator through stable JSON tools.
 
+### Added
+
+- **Default simulation timeout** — `QSPICE_TIMEOUT_S` (default 120s) in settings;
+  applies when tools omit `timeout_s`; set to `0` to disable.
+- **CLI `--version`** — `python -m qspice_mcp --version` prints the installed package version.
+
 ### Changed
+
+- **Long-running MCP tools** — handlers flagged `ServiceSpec.long_running` now run on a
+  worker thread (`anyio.to_thread`) so the async event loop stays responsive during sims/sweeps.
+- **QSpice probe memoization** — `probe_qspice()` caches results per executable path + mtime
+  (invalidates when the binary is replaced/upgraded).
+- **Simulation cache key** — includes probed executable version and mtime so in-place QSpice
+  upgrades cannot return stale cached artifacts.
 
 - **Docs** — documented the public `write_workspace_text_file` auto-DLL contract:
   post-write `build_dll_device`, `dll_build` / `dll_build_error` degradation,

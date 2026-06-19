@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 from dataclasses import dataclass
 from datetime import datetime
@@ -296,6 +297,16 @@ class TestQSpiceToolRuntime:
 
         assert captured["workspace_root"] == client_root.resolve(strict=False)
         assert result["output_path"] == str((client_root / "override.qsch").resolve(strict=False))
+
+    def test_long_running_handlers_are_async(self, tmp_path: Path) -> None:
+        tools = build_runtime_tool_registry()
+        runtime = QSpiceToolRuntime(QSpiceSettings(workspace_root=tmp_path), tools)
+
+        run_simulation_handler = runtime.get_handler("run_simulation")
+        inspect_handler = runtime.get_handler("inspect_schematic")
+
+        assert asyncio.iscoroutinefunction(run_simulation_handler)
+        assert not asyncio.iscoroutinefunction(inspect_handler)
 
 
 import pytest  # noqa: E402

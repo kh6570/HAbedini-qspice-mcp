@@ -94,3 +94,36 @@ def test_build_settings_applies_cli_overrides(tmp_path: Path) -> None:
     assert settings.exe == executable.resolve()
     assert settings.workspace_root == workspace_root.resolve()
     assert settings.telemetry_enabled is True
+
+
+def test_settings_default_simulation_timeout() -> None:
+    settings = QSpiceSettings().normalized()
+
+    assert settings.timeout_s == 120.0
+    assert settings.resolve_timeout_s(None) == 120.0
+
+
+def test_settings_read_timeout_from_environment(monkeypatch: object) -> None:
+    typed_monkeypatch = monkeypatch
+    typed_monkeypatch.setenv("QSPICE_TIMEOUT_S", "45")
+
+    settings = QSpiceSettings().normalized()
+
+    assert settings.timeout_s == 45.0
+    assert settings.resolve_timeout_s(None) == 45.0
+
+
+def test_resolve_timeout_prefers_explicit_value() -> None:
+    settings = QSpiceSettings(timeout_s=120.0).normalized()
+
+    assert settings.resolve_timeout_s(30.0) == 30.0
+
+
+def test_resolve_timeout_disables_on_non_positive_values() -> None:
+    settings = QSpiceSettings(timeout_s=120.0).normalized()
+
+    assert settings.resolve_timeout_s(0) is None
+    assert settings.resolve_timeout_s(-1) is None
+
+    disabled = QSpiceSettings(timeout_s=0).normalized()
+    assert disabled.resolve_timeout_s(None) is None

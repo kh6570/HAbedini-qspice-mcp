@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
+import inspect
 from functools import wraps
 from time import perf_counter
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
+
+import anyio
 
 from qspice_mcp.infra.logging import get_logger
 from qspice_mcp.infra.telemetry import attach_trace_id, request_scope
@@ -33,11 +37,15 @@ from .workspace import (
 from .workspace_files import WORKSPACE_FILES_HANDLER_NAMES, WorkspaceFilesToolMixin
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     from qspice_mcp.infra.config import QSpiceSettings
 
     from ..tool_registry import ToolDefinition
+
+    ToolHandler = Callable[..., dict[str, object] | Awaitable[dict[str, object]]]
+else:
+    ToolHandler = Any
 
 HANDLER_NAMES = (
     *SERVER_INFO_HANDLER_NAMES,
@@ -80,7 +88,7 @@ class QSpiceToolRuntime(
         self._live_gui_manager = LiveGuiSessionManager(self.settings)
         self._remote_manager = RemoteSimulationManager(self.settings)
         self._tool_definitions = {tool.name: tool for tool in tools}
-        self._handlers: dict[str, Callable[..., dict[str, object]]] = {
+        self._handlers: dict[str, ToolHandler] = {
             name: self._wrap_handler(self._tool_definitions[name], getattr(self, name))
             for name in HANDLER_NAMES
         }
@@ -89,11 +97,10 @@ class QSpiceToolRuntime(
         self,
         tool: ToolDefinition,
         handler: Callable[..., dict[str, object]],
-    ) -> Callable[..., dict[str, object]]:
+    ) -> ToolHandler:
         logger = get_logger(component="mcp.tool", tool=tool.name)
 
-        @wraps(handler)
-        def wrapped_handler(**kwargs: object) -> dict[str, object]:
+        def _execute(**kwargs: object) -> dict[str, object]:
             workspace_override = resolve_workspace_override(kwargs.pop("workspace_root", None))
             if workspace_override is None:
                 workspace_override = get_pending_workspace_root()
@@ -136,9 +143,21 @@ class QSpiceToolRuntime(
                 result.setdefault("trace_id", trace_id)
                 return result
 
-        return wrapped_handler
+        if tool.service.long_running:
 
-    def get_handler(self, name: str) -> Callable[..., dict[str, object]]:
+            @wraps(handler)
+            async def async_wrapped_handler(**kwargs: object) -> dict[str, object]:
+                return await anyio.to_thread.run_sync(lambda: _execute(**kwargs))
+
+            return async_wrapped_handler
+
+        @wraps(handler)
+        def sync_wrapped_handler(**kwargs: object) -> dict[str, object]:
+            return _execute(**kwargs)
+
+        return sync_wrapped_handler
+
+    def get_handler(self, name: str) -> ToolHandler:
         """Return the bound handler for one registered tool."""
 
         return self._handlers[name]
@@ -147,7 +166,9 @@ class QSpiceToolRuntime(
         """Invoke one tool handler directly for tests and local orchestration."""
 
         handler = self.get_handler(name)
-        return handler(**kwargs)
+        if inspect.iscoroutinefunction(handler):
+            return asyncio.run(handler(**kwargs))
+        return cast("Callable[..., dict[str, object]]", handler)(**kwargs)
 
 
 __all__ = ["QSpiceToolRuntime", "to_jsonable"]

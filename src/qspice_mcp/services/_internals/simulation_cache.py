@@ -53,6 +53,8 @@ class SimulationArtifactCache:
         netlist_path: Path,
         adapter_key: str,
         executable: str,
+        executable_version: str | None = None,
+        executable_mtime: float | None = None,
         extra_switches: Sequence[str],
         ascii_raw: bool,
     ) -> str:
@@ -62,6 +64,8 @@ class SimulationArtifactCache:
                 "adapter_key": adapter_key,
                 "ascii_raw": ascii_raw,
                 "executable": executable,
+                "executable_mtime": executable_mtime,
+                "executable_version": executable_version,
                 "extra_switches": list(extra_switches),
                 "netlist_hash": netlist_hash,
             },

@@ -183,6 +183,19 @@ def _detect_executable_version(executable: Path) -> tuple[str | None, VersionSou
 # Public probe entry points
 # ---------------------------------------------------------------------------
 
+_PROBE_CACHE: dict[tuple[str, float], ProbeResult] = {}
+
+
+def clear_probe_cache() -> None:
+    """Clear the in-process probe memoization cache (primarily for tests)."""
+
+    _PROBE_CACHE.clear()
+
+
+def _probe_cache_key(executable: Path) -> tuple[str, float]:
+    stat = executable.stat()
+    return (str(executable.resolve(strict=False)), stat.st_mtime)
+
 
 def probe_qspice(settings: QSpiceSettings | None = None) -> ProbeResult:
     """Inspect the configured or discoverable QSpice executable."""
@@ -191,6 +204,20 @@ def probe_qspice(settings: QSpiceSettings | None = None) -> ProbeResult:
         settings.normalized() if settings is not None else QSpiceSettings().normalized()
     )
     executable, source = discover_executable(effective_settings.exe)
+
+    if executable is not None and executable.is_file():
+        cache_key = _probe_cache_key(executable)
+        cached = _PROBE_CACHE.get(cache_key)
+        if cached is not None:
+            return ProbeResult(
+                configured=effective_settings.exe is not None,
+                executable=cached.executable,
+                exists=cached.exists,
+                source=source,
+                version=cached.version,
+                version_source=cached.version_source,
+                note=cached.note,
+            )
 
     version: str | None = None
     version_source: VersionSource = "unavailable"
@@ -207,7 +234,7 @@ def probe_qspice(settings: QSpiceSettings | None = None) -> ProbeResult:
                 "and PE metadata were unavailable."
             )
 
-    return ProbeResult(
+    result = ProbeResult(
         configured=effective_settings.exe is not None,
         executable=executable,
         exists=executable.is_file() if executable is not None else False,
@@ -216,6 +243,9 @@ def probe_qspice(settings: QSpiceSettings | None = None) -> ProbeResult:
         version_source=version_source,
         note=" | ".join(note_parts) if note_parts else "",
     )
+    if executable is not None and executable.is_file():
+        _PROBE_CACHE[_probe_cache_key(executable)] = result
+    return result
 
 
 def build_summary(settings: QSpiceSettings | None = None) -> dict[str, object]:

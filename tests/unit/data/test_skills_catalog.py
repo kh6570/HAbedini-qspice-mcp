@@ -9,11 +9,14 @@ shipped skill must declare valid frontmatter and a manifest whose
 from __future__ import annotations
 
 from importlib.resources import files
-from importlib.resources.abc import Traversable
+from typing import TYPE_CHECKING
 
 import pytest
 
 from qspice_mcp.mcp.tool_registry import build_runtime_tool_registry
+
+if TYPE_CHECKING:
+    from importlib.resources.abc import Traversable
 
 _SKILLS_ROOT = "qspice_mcp.data.skills"
 

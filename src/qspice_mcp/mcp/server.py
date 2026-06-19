@@ -220,6 +220,7 @@ class QSpiceMCPServer:
                 "workspace_root": str(self.settings.workspace_root),
                 "cache_dir": str(self.settings.cache_dir),
                 "log_level": self.settings.log_level,
+                "timeout_s": self.settings.timeout_s,
                 "telemetry_enabled": self.settings.telemetry_enabled,
             },
             "probe": {
