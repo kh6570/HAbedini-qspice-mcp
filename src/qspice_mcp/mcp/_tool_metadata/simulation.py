@@ -65,6 +65,25 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(),
     },
+    "prepare_transient": {
+        "title": "Prepare Transient Analysis",
+        "description": "Stage a schematic or netlist with a documented `.tran` directive.",
+        "input_schema": {
+            "type": "object",
+            "required": ["source_path", "step", "stop"],
+            "properties": {
+                "source_path": {"type": "string"},
+                "step": {"type": "string"},
+                "stop": {"type": "string"},
+                "start": {"type": "string"},
+                "max_step": {"type": "string"},
+                "use_initial_conditions": {"type": "boolean"},
+                "skip_bias_point": {"type": "boolean"},
+                "output_path": {"type": "string"},
+            },
+        },
+        "annotations": _ann(),
+    },
     "prepare_monte_carlo": {
         "title": "Prepare Monte Carlo",
         "description": (

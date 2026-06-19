@@ -20,11 +20,15 @@ from qspice_mcp.core.exceptions import (
     QSpiceError,
     SimulationError,
 )
+from qspice_mcp.infra.child_processes import install_shutdown_hooks
 from qspice_mcp.infra.config import QSpiceSettings, build_settings
 from qspice_mcp.infra.logging import get_logger
+from qspice_mcp.infra.progress import bind_context, reset_context
 from qspice_mcp.infra.telemetry import get_exception_trace_id
 
 from .definition import ServerDefinition, build_server_definition
+from .prompts import get_prompt_definitions
+from .prompts.registration import register_prompts
 from .resources import ResourceDefinition, get_resource_content, get_resource_definitions
 from .tool_registry import (
     ToolAnnotations,
@@ -139,6 +143,7 @@ class _QSpiceFastMCP(FastMCP):
         workspace_token = set_pending_workspace_root(
             resolve_workspace_override(effective_arguments.pop("workspace_root", None))
         )
+        progress_token = bind_context(context)
         try:
             result = await tool.fn_metadata.call_fn_with_arg_validation(
                 tool.fn,
@@ -162,6 +167,7 @@ class _QSpiceFastMCP(FastMCP):
                 raise ToolError(f"Error executing tool {name}: {exc}") from exc
             raise ToolError(f"Error executing tool {name} [trace_id={trace_id}]: {exc}") from exc
         finally:
+            reset_context(progress_token)
             reset_pending_workspace_root(workspace_token)
 
 
@@ -189,6 +195,7 @@ def _build_app(
             structured_output=True,
         )(runtime.get_handler(tool.name))
     _register_resources(app, resources)
+    register_prompts(app, get_prompt_definitions())
     return app
 
 
@@ -221,6 +228,7 @@ class QSpiceMCPServer:
                 "cache_dir": str(self.settings.cache_dir),
                 "log_level": self.settings.log_level,
                 "timeout_s": self.settings.timeout_s,
+                "max_cache_bytes": self.settings.max_cache_bytes,
                 "telemetry_enabled": self.settings.telemetry_enabled,
             },
             "probe": {
@@ -314,5 +322,6 @@ def run(*, settings: QSpiceSettings | None = None, describe: bool = False) -> in
         print(json.dumps(server.summary(), indent=2))
         return 0
 
+    install_shutdown_hooks()
     server.app.run(transport=server.settings.transport)
     return 0

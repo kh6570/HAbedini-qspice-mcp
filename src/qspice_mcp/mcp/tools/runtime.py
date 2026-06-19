@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any, cast
 import anyio
 
 from qspice_mcp.infra.logging import get_logger
+from qspice_mcp.infra.progress import report_progress
 from qspice_mcp.infra.telemetry import attach_trace_id, request_scope
 from qspice_mcp.services._internals.batch_manager import SimulationBatchManager
 from qspice_mcp.services._internals.live_gui_manager import LiveGuiSessionManager
@@ -121,6 +122,8 @@ class QSpiceToolRuntime(
                     read_only=tool.service.read_only,
                     long_running=tool.service.long_running,
                 )
+                if tool.service.long_running:
+                    report_progress(0, total=1, message=f"{tool.name} started")
                 try:
                     result = handler(**kwargs)
                 except Exception as exc:
@@ -140,6 +143,8 @@ class QSpiceToolRuntime(
                     duration_s=perf_counter() - started_at,
                     long_running=tool.service.long_running,
                 )
+                if tool.service.long_running:
+                    report_progress(1, total=1, message=f"{tool.name} completed")
                 result.setdefault("trace_id", trace_id)
                 return result
 

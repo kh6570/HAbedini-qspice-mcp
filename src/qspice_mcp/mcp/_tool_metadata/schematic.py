@@ -197,6 +197,42 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(),
     },
+    "remove_wire": {
+        "title": "Remove Wire",
+        "description": "Remove one wire segment using raw coordinates or component pin selectors.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "start_x": {"type": "integer"},
+                "start_y": {"type": "integer"},
+                "end_x": {"type": "integer"},
+                "end_y": {"type": "integer"},
+                "start_reference": {"type": "string"},
+                "start_pin": {"type": "string"},
+                "end_reference": {"type": "string"},
+                "end_pin": {"type": "string"},
+                "net_name": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+            "allOf": [
+                {
+                    "oneOf": [
+                        {"required": ["start_x", "start_y"]},
+                        {"required": ["start_reference", "start_pin"]},
+                    ]
+                },
+                {
+                    "oneOf": [
+                        {"required": ["end_x", "end_y"]},
+                        {"required": ["end_reference", "end_pin"]},
+                    ]
+                },
+            ],
+        },
+        "annotations": _ann(),
+    },
     "add_junction": {
         "title": "Add Junction",
         "description": "Insert one junction node into a schematic wire graph.",

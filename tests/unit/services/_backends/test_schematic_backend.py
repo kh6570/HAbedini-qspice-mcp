@@ -30,6 +30,7 @@ from qspice_mcp.services._backends.schematic_editor import (
     read_component_symbol_metadata,
     remove_component_symbol_drawing_metadata,
     remove_dll_block_pin_metadata,
+    remove_wire,
     resolve_component_pin_position,
     set_component_rotation,
     set_component_symbol_drawing_metadata,
@@ -362,6 +363,19 @@ def test_add_wire_and_net_label_persist_to_blank_schematic(tmp_path: Path) -> No
 
     assert ["net", "(0,0)", "1", "14", "0", '"VIN"'] in net_tokens
     assert ["wire", "(0,0)", "(400,0)", '"VIN"'] in wire_tokens
+
+
+def test_remove_wire_persists_to_blank_schematic(tmp_path: Path) -> None:
+    output_path, _ = create_blank_schematic_file(tmp_path / "blank.qsch", workspace_root=tmp_path)
+    editor, _, _ = open_schematic_editor(output_path, workspace_root=tmp_path)
+
+    add_wire(editor, start=(0, 0), end=(400, 0), net_name="VIN")
+    remove_wire(editor, start=(0, 0), end=(400, 0), net_name="VIN")
+    editor.save_as(output_path)
+    reopened, _, _ = open_schematic_editor(output_path, workspace_root=tmp_path)
+
+    wire_tokens = [item.tokens for item in reopened.schematic.items if item.tag == "wire"]
+    assert wire_tokens == []
 
 
 def test_add_wire_can_snap_to_component_pins(tmp_path: Path) -> None:

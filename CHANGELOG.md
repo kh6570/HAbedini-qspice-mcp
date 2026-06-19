@@ -16,6 +16,11 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **Default simulation timeout** — `QSPICE_TIMEOUT_S` (default 120s) in settings;
   applies when tools omit `timeout_s`; set to `0` to disable.
 - **CLI `--version`** — `python -m qspice_mcp --version` prints the installed package version.
+- **MCP Prompts (Phase 1)** — five bundled workflow prompts (`qspice_buck_converter_from_scratch`,
+  `qspice_debug_convergence`, `qspice_run_and_measure`, `qspice_author_dll_device`,
+  `qspice_sweep_design`).
+- **`remove_wire` tool** — remove one wire segment by coordinates or pin selectors (mirrors `add_wire`).
+- **`prepare_transient` tool** — stage a schematic or netlist with a documented `.tran` directive.
 
 ### Changed
 
@@ -25,6 +30,12 @@ drive the QSpice circuit simulator through stable JSON tools.
   (invalidates when the binary is replaced/upgraded).
 - **Simulation cache key** — includes probed executable version and mtime so in-place QSpice
   upgrades cannot return stale cached artifacts.
+- **Simulation artifact cache** — atomic staging + rename on `put()`, integrity hash verification on
+  `get()`, and optional LRU eviction via `QSPICE_MAX_CACHE_BYTES`.
+- **Child process lifecycle** — subprocess wrapper tracks PIDs; `atexit` + `SIGTERM`/`SIGINT` hooks
+  terminate tracked QSpice/QUX children on shutdown.
+- **MCP progress notifications (foundation)** — progress bridge bound per tool call; long-running tools
+  report start/end progress; sequential sweeps report per-run progress.
 
 - **Docs** — documented the public `write_workspace_text_file` auto-DLL contract:
   post-write `build_dll_device`, `dll_build` / `dll_build_error` degradation,

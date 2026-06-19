@@ -77,6 +77,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `add_dll_block_pin` | implemented | Insert one input or output pin into an existing `.DLL` block symbol. |
 | `add_component_symbol_drawing` | implemented | Insert one embedded symbol drawing item from a raw tag name and argument list. |
 | `add_wire` | implemented | Insert one wire segment into a schematic. |
+| `remove_wire` | implemented | Remove one wire segment from a schematic. |
 | `add_junction` | implemented | Insert one junction node into a schematic wire graph. |
 | `add_net_label` | implemented | Insert one net label into a schematic. |
 | `write_workspace_text_file` | implemented | Write a sandboxed UTF-8 text file; for `.c`/`.cpp`/`.cc`/`.cxx` sources, auto-invokes `build_dll_device` on the sibling `.dll` unless opted out (see detailed section). |
@@ -112,6 +113,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `generate_netlist` | implemented | Resolve or stage a derived netlist artifact for execution. |
 | `save_netlist_copy` | implemented | Resolve or generate a derived netlist artifact at an explicit destination path. |
 | `prepare_bode_analysis` | implemented | Stage a source with a documented `.bode` directive for closed-loop SMPS analysis. |
+| `prepare_transient` | implemented | Stage a source with a documented `.tran` directive for transient simulation. |
 | `prepare_monte_carlo` | implemented | Persist explicit Monte Carlo parameter and component-value samples, with optional native `mc(...)` schematic staging and per-prefix component presets. |
 | `prepare_worst_case` | implemented | Persist explicit worst-case corner assignments with shared component preset expansion. |
 | `list_plot_suggestions` | implemented | Surface `.plot`, `.print`, `.probe`, and `.abscissa` hints from a source netlist. |
@@ -1113,6 +1115,31 @@ current surface requires an explicit `net_name` so blank-start schematics can be
 assembled deterministically. Pin-snapped mode uses component references plus pin
 names such as `V1` and `+`, or `R1` and `1`, and returns the resolved absolute
 wire coordinates.
+
+## remove_wire
+
+Purpose:
+Remove one wire segment from a schematic and persist the edited `.qsch` file.
+
+Typical inputs:
+- `schematic_path`
+- either `start_x` and `start_y`, or `start_reference` and `start_pin`
+- either `end_x` and `end_y`, or `end_reference` and `end_pin`
+- `net_name` (optional disambiguator)
+- `output_path` (optional)
+
+Expected outputs:
+- `schematic_path`
+- `output_path`
+- `start_x`
+- `start_y`
+- `end_x`
+- `end_y`
+- `net_name`
+
+Notes:
+Mirrors `add_wire` endpoint resolution. When multiple wires share endpoints,
+pass `net_name` to select the intended segment.
 
 ## add_net_label
 
@@ -2743,6 +2770,33 @@ QSpice-friendly engineering suffixes such as `5m`, `1k`, or `1Meg` without the
 server reformatting them. For `.qsch` sources the tool stages a schematic copy
 with the added directive; for `.net` and `.cir` sources it appends the
 directive to the staged netlist artifact.
+
+## prepare_transient
+
+Purpose:
+Stage a schematic or netlist with one documented `.tran` directive so the
+result can be simulated as a dedicated transient-analysis artifact.
+
+Typical inputs:
+- `source_path`
+- `step`
+- `stop`
+- `start` (optional)
+- `max_step` (optional)
+- `use_initial_conditions` (optional)
+- `skip_bias_point` (optional)
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+Notes:
+Time parameters are accepted as strings so the caller can use QSpice-friendly
+engineering suffixes such as `1u`, `5m`, or `10m` without server-side reformatting.
 
 ## prepare_monte_carlo
 

@@ -28,6 +28,7 @@ class QSpiceSettings(BaseSettings):
     cache_dir: Path | None = None
     log_level: Literal["debug", "info", "warning", "error"] = "info"
     timeout_s: float | None = 120.0
+    max_cache_bytes: int | None = None
     initialize_qspice_on_startup: bool = False
     telemetry_enabled: bool = False
 

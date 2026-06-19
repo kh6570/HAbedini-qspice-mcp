@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -1630,6 +1631,79 @@ def add_wire(
     )
     _append_schematic_tag(editor, wire_tag)
     return normalized_net_name
+
+
+_QSCH_POINT_PATTERN = re.compile(r"^\((-?\d+),(-?\d+)\)$")
+
+
+def _parse_qsch_point(token: str) -> tuple[int, int]:
+    match = _QSCH_POINT_PATTERN.match(str(token).strip())
+    if match is None:
+        raise ValueError(f"Invalid QSch point token: {token!r}")
+    return int(match.group(1)), int(match.group(2))
+
+
+def _wire_endpoints_match(
+    first: tuple[int, int],
+    second: tuple[int, int],
+    *,
+    target_start: tuple[int, int],
+    target_end: tuple[int, int],
+) -> bool:
+    forward = first == target_start and second == target_end
+    reverse = first == target_end and second == target_start
+    return forward or reverse
+
+
+def remove_wire(
+    editor: _QschEditorProtocol,
+    *,
+    start: tuple[int, int] | None = None,
+    end: tuple[int, int] | None = None,
+    start_reference: str | None = None,
+    start_pin: str | None = None,
+    end_reference: str | None = None,
+    end_pin: str | None = None,
+    net_name: str | None = None,
+) -> str:
+    """Remove one wire segment matching the resolved endpoints and optional net name."""
+
+    start_position, end_position = resolve_wire_points(
+        editor,
+        start=start,
+        end=end,
+        start_reference=start_reference,
+        start_pin=start_pin,
+        end_reference=end_reference,
+        end_pin=end_pin,
+    )
+    normalized_net_name = _normalize_net_name(net_name) if net_name is not None else None
+    if editor.schematic is None:
+        raise QSpiceError("Editor does not expose a root schematic tree.")
+    schematic_obj: Any = editor.schematic
+    items = cast("list[Any]", schematic_obj.items)
+    for index, tag in enumerate(list(items)):
+        if getattr(tag, "tag", None) != "wire":
+            continue
+        tokens = list(getattr(tag, "tokens", ()))
+        if len(tokens) < 3:  # noqa: PLR2004
+            continue
+        wire_start = _parse_qsch_point(str(tokens[1]))
+        wire_end = _parse_qsch_point(str(tokens[2]))
+        wire_net = _unquote_qsch_string(str(tokens[3])) if len(tokens) >= 4 else None  # noqa: PLR2004
+        if normalized_net_name is not None and wire_net != normalized_net_name:
+            continue
+        if not _wire_endpoints_match(
+            wire_start,
+            wire_end,
+            target_start=start_position,
+            target_end=end_position,
+        ):
+            continue
+        items.pop(index)
+        editor.updated = True
+        return wire_net or normalized_net_name or ""
+    raise QSpiceError("No matching wire segment was found for the requested endpoints.")
 
 
 def create_blank_schematic_file(

@@ -17,6 +17,9 @@ from qspice_mcp.services.simulation.prepare_bode_analysis import (
 from qspice_mcp.services.simulation.prepare_monte_carlo import (
     prepare_monte_carlo as prepare_monte_carlo_service,
 )
+from qspice_mcp.services.simulation.prepare_transient import (
+    prepare_transient as prepare_transient_service,
+)
 from qspice_mcp.services.simulation.prepare_worst_case import (
     prepare_worst_case as prepare_worst_case_service,
 )
@@ -56,6 +59,7 @@ SIMULATION_HANDLER_NAMES = (
     "generate_netlist",
     "save_netlist_copy",
     "prepare_bode_analysis",
+    "prepare_transient",
     "prepare_monte_carlo",
     "prepare_worst_case",
     "list_plot_suggestions",
@@ -121,6 +125,30 @@ class SimulationToolMixin:
             debug=debug,
             skip_bias_point=skip_bias_point,
             use_initial_conditions=use_initial_conditions,
+            output_path=output_path,
+        )
+        return to_json_object(prepared)
+
+    def prepare_transient(
+        self: _RuntimeWithSettings,
+        source_path: str,
+        step: str,
+        stop: str,
+        start: str | None = None,
+        max_step: str | None = None,
+        use_initial_conditions: bool = False,
+        skip_bias_point: bool = False,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        prepared = prepare_transient_service(
+            source_path,
+            workspace_root=self.settings.workspace_root,
+            step=step,
+            stop=stop,
+            start=start,
+            max_step=max_step,
+            use_initial_conditions=use_initial_conditions,
+            skip_bias_point=skip_bias_point,
             output_path=output_path,
         )
         return to_json_object(prepared)

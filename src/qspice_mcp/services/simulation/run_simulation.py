@@ -200,7 +200,10 @@ def run_simulation(
     cache_root = effective_settings.cache_dir
     if cache_root is None:
         raise AssertionError("Normalized settings must define cache_dir.")
-    cache = SimulationArtifactCache(cache_root / "simulation")
+    cache = SimulationArtifactCache(
+        cache_root / "simulation",
+        max_cache_bytes=effective_settings.max_cache_bytes,
+    )
     cache_key = cache.build_key(
         netlist_path=resolved_netlist,
         adapter_key=adapter.key,

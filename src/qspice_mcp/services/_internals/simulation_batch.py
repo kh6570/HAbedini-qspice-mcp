@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from qspice_mcp.infra.progress import report_progress
 from qspice_mcp.services._backends.schematic_editor import open_schematic_editor
 from qspice_mcp.services._internals.schematic_edits import save_edited_schematic
 from qspice_mcp.services._shared.paths import resolve_workspace_path, validate_existing_file
@@ -107,7 +108,11 @@ def _execute_pending_runs_sequentially(
     record_run: Callable[[SimulationBatchRun], None],
     warnings: list[str],
 ) -> None:
-    for index, label, assignment, edit_kind, apply_edit in pending_run_defs:
+    total_runs = len(pending_run_defs)
+    for step_index, (index, label, assignment, edit_kind, apply_edit) in enumerate(
+        pending_run_defs,
+        start=1,
+    ):
         if should_cancel is not None and should_cancel():
             warnings.append(cancel_warning)
             break
@@ -127,6 +132,11 @@ def _execute_pending_runs_sequentially(
                 extra_switches=extra_switches,
                 ascii_raw=ascii_raw,
             )
+        )
+        report_progress(
+            step_index,
+            total=total_runs,
+            message=f"sweep run {step_index}/{total_runs}: {label}",
         )
 
 

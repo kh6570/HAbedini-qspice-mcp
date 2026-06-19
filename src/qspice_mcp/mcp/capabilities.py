@@ -87,6 +87,7 @@ _SCHEMATIC_EDITING_TOOLS = frozenset(
         "add_junction",
         "add_net_label",
         "add_wire",
+        "remove_wire",
         "create_schematic",
         "create_starter_schematic",
         "describe_edit_capability",

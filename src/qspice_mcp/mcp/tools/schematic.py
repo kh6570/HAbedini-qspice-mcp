@@ -64,6 +64,7 @@ from qspice_mcp.services.schematic.remove_dll_block_pin import (
 from qspice_mcp.services.schematic.remove_instruction import (
     remove_instruction as remove_instruction_service,
 )
+from qspice_mcp.services.schematic.remove_wire import remove_wire as remove_wire_service
 from qspice_mcp.services.schematic.rename_component_reference import (
     rename_component_reference as rename_component_reference_service,
 )
@@ -114,6 +115,7 @@ SCHEMATIC_HANDLER_NAMES = (
     "add_dll_block_pin",
     "add_component_symbol_drawing",
     "add_wire",
+    "remove_wire",
     "add_junction",
     "add_net_label",
     "inspect_schematic",
@@ -318,6 +320,37 @@ class SchematicToolMixin:
         output_path: str | None = None,
     ) -> dict[str, object]:
         inspection = add_wire_service(
+            schematic_path,
+            workspace_root=self.settings.workspace_root,
+            start_x=start_x,
+            start_y=start_y,
+            end_x=end_x,
+            end_y=end_y,
+            start_reference=start_reference,
+            start_pin=start_pin,
+            end_reference=end_reference,
+            end_pin=end_pin,
+            net_name=net_name,
+            output_path=output_path,
+        )
+        return to_json_object(inspection)
+
+    def remove_wire(
+        self: _RuntimeWithSettings,
+        schematic_path: str,
+        *,
+        start_x: int | None = None,
+        start_y: int | None = None,
+        end_x: int | None = None,
+        end_y: int | None = None,
+        start_reference: str | None = None,
+        start_pin: str | None = None,
+        end_reference: str | None = None,
+        end_pin: str | None = None,
+        net_name: str | None = None,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        inspection = remove_wire_service(
             schematic_path,
             workspace_root=self.settings.workspace_root,
             start_x=start_x,
