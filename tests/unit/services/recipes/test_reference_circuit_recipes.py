@@ -65,3 +65,20 @@ def test_describe_reference_circuit_recipe_returns_manifest_and_topology() -> No
 def test_describe_reference_circuit_recipe_rejects_unknown_id() -> None:
     with pytest.raises(ValidationError, match="Unknown recipe_id"):
         describe_reference_circuit_recipe("not-a-recipe")
+
+
+def test_describe_boost_converter_recipe_uses_boost_bundle_files() -> None:
+    result = describe_reference_circuit_recipe("boost_converter_cpp")
+
+    assert result.recipe_id == "boost_converter_cpp"
+    assert result.build_hint == 'build_dll_device(source_path="boost_controller.cpp")'
+    assert {entry.relative_path for entry in result.files} == {
+        "Boost-converter.qsch",
+        "boost_controller.cpp",
+    }
+    assert result.topology_digest is not None
+    assert result.topology_digest.schematic_file == "Boost-converter.qsch"
+    x1 = next(
+        component for component in result.topology_digest.components if component.refdes == "X1"
+    )
+    assert ".dll" in x1.kind.lower()

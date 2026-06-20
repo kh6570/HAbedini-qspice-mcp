@@ -2,7 +2,7 @@
 //
 // To build with Digital Mars C++ Compiler:
 //
-//    dmc -mn -WD buck_controller.cpp kernel32.lib
+//    dmc -mn -WD boost_controller.cpp kernel32.lib
 
 #include <cmath>
 

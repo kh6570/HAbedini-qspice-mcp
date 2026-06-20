@@ -25,6 +25,17 @@ _LEVEL_METHODS = {
     "critical": "error",
 }
 
+_STRUCTURED_LOG_FIELDS = (
+    "event",
+    "tool",
+    "component",
+    "duration_s",
+    "read_only",
+    "long_running",
+    "trace_id",
+    "error",
+)
+
 
 def bind_mcp_client_log_context(context: Any | None) -> Token[Any | None]:
     """Bind one FastMCP request context for client log mirroring."""
@@ -60,31 +71,47 @@ def mirror_client_log(level: str, message: str) -> None:
         return
 
 
+def _format_client_log_message(event_dict: MutableMapping[str, Any]) -> str:
+    event = event_dict.get("event")
+    if not isinstance(event, str):
+        return ""
+    parts = [event.replace("_", " ")]
+    for key in _STRUCTURED_LOG_FIELDS:
+        if key == "event":
+            continue
+        value = event_dict.get(key)
+        if value is None:
+            continue
+        if isinstance(value, float):
+            parts.append(f"{key}={value:.3f}")
+        else:
+            parts.append(f"{key}={value}")
+    return "; ".join(parts)
+
+
+def _should_mirror_event(level: str, event_dict: MutableMapping[str, Any]) -> bool:
+    if _MCP_CLIENT_LOG_CONTEXT.get() is None:
+        return False
+    if level in {"warning", "warn", "error", "critical"}:
+        return True
+    if level == "debug":
+        return event_dict.get("component") == "mcp.tool"
+    return True
+
+
 def mcp_client_log_processor(
     _logger: object,
     method_name: str,
     event_dict: MutableMapping[str, Any],
 ) -> MutableMapping[str, Any]:
-    """Structlog processor that forwards tool lifecycle events to MCP clients."""
+    """Structlog processor that forwards structured log events to MCP clients."""
 
-    event = event_dict.get("event")
-    if not isinstance(event, str):
+    level = str(event_dict.get("level", method_name)).lower()
+    if not _should_mirror_event(level, event_dict):
         return event_dict
-    if event not in {
-        "tool_request_started",
-        "tool_request_completed",
-        "tool_request_failed",
-    }:
-        return event_dict
-    level = str(event_dict.get("level", method_name))
-    tool_name = event_dict.get("tool")
-    duration = event_dict.get("duration_s")
-    parts = [event.replace("_", " ")]
-    if isinstance(tool_name, str):
-        parts.append(f"tool={tool_name}")
-    if isinstance(duration, (int, float)):
-        parts.append(f"duration_s={duration:.3f}")
-    mirror_client_log(level, "; ".join(parts))
+    message = _format_client_log_message(event_dict)
+    if message:
+        mirror_client_log(level, message)
     return event_dict
 
 

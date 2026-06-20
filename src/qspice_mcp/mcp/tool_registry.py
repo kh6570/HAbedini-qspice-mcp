@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import inspect
 from dataclasses import dataclass
 from functools import cache
-from importlib import import_module
-from typing import TYPE_CHECKING, Any, Literal, Union, get_args, get_origin
 
 from qspice_mcp.services._internals.service_catalog import build_service_spec_catalog
 from qspice_mcp.services.service_spec import ServiceSpec
@@ -20,8 +17,25 @@ _DESCRIBE_SERVER_CAPABILITIES_SERVICE = ServiceSpec(
     phase="implemented",
 )
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
+_OPEN_WORLD_TOOL_NAMES = frozenset(
+    {
+        "build_dll_device",
+        "close_live_gui_session",
+        "launch_live_gui_session",
+        "poll_live_gui_session",
+        "poll_live_gui_session_events",
+        "run_monte_carlo",
+        "run_model_sweep",
+        "run_param_sweep",
+        "run_simulation",
+        "run_value_sweep",
+        "run_worst_case",
+        "send_live_gui_session_command",
+        "submit_batch",
+        "submit_remote_simulation",
+        "write_workspace_text_file",
+    }
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,7 +71,7 @@ class ToolDefinition:
         }
 
 
-def _coerce_annotations(raw: object) -> ToolAnnotations:
+def _coerce_metadata_annotations(raw: object) -> ToolAnnotations:
     if isinstance(raw, ToolAnnotations):
         return raw
     if not isinstance(raw, dict):
@@ -67,6 +81,26 @@ def _coerce_annotations(raw: object) -> ToolAnnotations:
         destructive_hint=bool(raw.get("destructive_hint", False)),
         idempotent_hint=bool(raw.get("idempotent_hint", False)),
         open_world_hint=bool(raw.get("open_world_hint", False)),
+    )
+
+
+def resolve_tool_annotations(
+    spec: ServiceSpec,
+    metadata: dict[str, object] | None,
+) -> ToolAnnotations:
+    """Merge ServiceSpec classification with explicit metadata annotation hints."""
+
+    metadata_ann = _coerce_metadata_annotations(
+        metadata.get("annotations") if isinstance(metadata, dict) else None
+    )
+    open_world = metadata_ann.open_world_hint
+    if not open_world and (spec.long_running or spec.name in _OPEN_WORLD_TOOL_NAMES):
+        open_world = True
+    return ToolAnnotations(
+        read_only_hint=spec.read_only,
+        destructive_hint=metadata_ann.destructive_hint,
+        idempotent_hint=metadata_ann.idempotent_hint,
+        open_world_hint=open_world,
     )
 
 
@@ -100,11 +134,6 @@ def _load_planned_service_specs() -> tuple[ServiceSpec, ...]:
     return build_service_spec_catalog(extra_specs=(_DESCRIBE_SERVER_CAPABILITIES_SERVICE,))
 
 
-@cache
-def _service_by_name() -> dict[str, ServiceSpec]:
-    return {spec.name: spec for spec in _load_planned_service_specs()}
-
-
 def build_tool_registry(
     service_specs: tuple[ServiceSpec, ...] | None = None,
 ) -> tuple[ToolDefinition, ...]:
@@ -123,7 +152,7 @@ def build_tool_registry(
                 title=str(metadata["title"]),
                 description=str(metadata["description"]),
                 input_schema=_with_workspace_root_property(dict(input_schema)),
-                annotations=_coerce_annotations(metadata.get("annotations")),
+                annotations=resolve_tool_annotations(spec, metadata),
                 service=spec,
             )
         )
@@ -139,124 +168,10 @@ def build_runtime_tool_registry(
     return tuple(tool for tool in definitions if tool.service.phase == "implemented")
 
 
-_JSON_TYPE_MAP: dict[type, str] = {
-    str: "string",
-    int: "integer",
-    float: "number",
-    bool: "boolean",
-}
-_OPTIONAL_UNION_ARG_COUNT = 2
-
-
-def _derive_json_type(annotation: type) -> dict[str, object]:  # noqa: PLR0911
-    """Convert a Python type annotation to a JSON Schema fragment."""
-
-    origin = get_origin(annotation)
-
-    if origin is Union:
-        args = get_args(annotation)
-        non_none = [arg for arg in args if arg is not type(None)]
-        if len(non_none) == 1 and len(args) == _OPTIONAL_UNION_ARG_COUNT:
-            schema = _derive_json_type(non_none[0])
-            return {"oneOf": [schema, {"type": "null"}]}
-        return {"oneOf": [_derive_json_type(arg) for arg in args]}
-
-    if origin is Literal:
-        return {"enum": list(get_args(annotation))}
-
-    if origin in (list, tuple):
-        item_args = get_args(annotation)
-        item_type = item_args[0] if item_args else str
-        return {"type": "array", "items": _derive_json_type(item_type)}
-
-    if origin is dict:
-        dict_args = get_args(annotation)
-        value_type = dict_args[1] if len(dict_args) > 1 else str
-        return {"type": "object", "additionalProperties": _derive_json_type(value_type)}
-
-    if annotation in _JSON_TYPE_MAP:
-        return {"type": _JSON_TYPE_MAP[annotation]}
-
-    return {"type": "string"}
-
-
-def derive_input_schema(func: Callable[..., object]) -> dict[str, object]:
-    """Derive a JSON Schema from a function's type-annotated signature."""
-
-    sig = inspect.signature(func)
-    properties: dict[str, object] = {}
-    required: list[str] = []
-
-    for name, param in sig.parameters.items():
-        if name == "self":
-            continue
-        annotation = param.annotation
-        if annotation is inspect.Parameter.empty:
-            annotation = str
-
-        properties[name] = _derive_json_type(annotation)
-        if param.default is inspect.Parameter.empty:
-            required.append(name)
-
-    result: dict[str, object] = {"type": "object", "properties": properties}
-    if required:
-        result["required"] = required
-    return result
-
-
-def tool_def(
-    title: str,
-    description: str,
-    annotations: ToolAnnotations | None = None,
-    service_name: str | None = None,
-) -> Callable[..., Any]:
-    """Decorator that derives a ToolDefinition from a handler method's signature."""
-
-    def decorator(func: Callable[..., object]) -> Callable[..., object]:
-        input_schema = derive_input_schema(func)
-        name = func.__name__
-        service = _service_by_name().get(
-            service_name or name,
-            ServiceSpec(name=name, title=title, summary=description),
-        )
-        func._tool_definition = ToolDefinition(  # type: ignore[attr-defined]
-            name=name,
-            title=title,
-            description=description,
-            input_schema=input_schema,
-            annotations=annotations or ToolAnnotations(),
-            service=service,
-        )
-        return func
-
-    return decorator
-
-
-def build_tool_registry_from_runtime() -> tuple[ToolDefinition, ...]:
-    """Build the tool registry by scanning ``QSpiceToolRuntime`` for decorated methods."""
-
-    runtime_module = import_module("qspice_mcp.mcp.tools.runtime")
-    runtime_type = runtime_module.QSpiceToolRuntime
-
-    tools: list[ToolDefinition] = []
-    for name in dir(runtime_type):
-        if name.startswith("_"):
-            continue
-        method = getattr(runtime_type, name, None)
-        if method is None or not callable(method):
-            continue
-        definition = getattr(method, "_tool_definition", None)
-        if definition is not None:
-            tools.append(definition)
-    return tuple(tools)
-
-
 __all__ = [
     "ToolAnnotations",
     "ToolDefinition",
     "build_runtime_tool_registry",
     "build_tool_registry",
-    "build_tool_registry_from_runtime",
-    "derive_input_schema",
-    "tool_def",
+    "resolve_tool_annotations",
 ]

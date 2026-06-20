@@ -39,7 +39,9 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`add_library_include` / `add_model` tools** — append netlist include directives and SPICE model blocks to workspace library artifacts.
 - **Recipe catalog discovery guidance** — `list_reference_circuit_recipes` and `describe_reference_circuit_recipe` return shared `discovery_guidance` text.
 - **MCP client log mirroring** — tool lifecycle structlog events mirror to the MCP client when supported.
-- **ServiceSpec annotation drift guard** — `scripts/check_service_spec_annotation_drift.py` in pre-commit; write/scaffold services corrected to `read_only=False`.
+- **ServiceSpec-driven tool annotations** — `resolve_tool_annotations()` derives MCP hints from `ServiceSpec`; removed dead `@tool_def` registration path.
+- **Full MCP client log mirroring** — structured structlog events mirror to the MCP client for info+ (debug for `mcp.tool` only).
+- **Dedicated boost recipe bundle** — `boost_converter_cpp` manifest now references `Boost-converter.qsch` and `boost_controller.cpp`.
 - **Second bundled recipe** — `boost_converter_cpp` catalog entry proving `data/recipes/{recipe_id}/` modularity.
 - **Include-aware simulation cache** — cache keys now hash resolved `.include`/`.lib` file contents.
 - **Simulation phase progress** — `run_simulation` polls the `.log` for percent-complete lines and mirrors them via MCP progress + `ctx.info` when supported.

@@ -14,11 +14,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from qspice_mcp.mcp.tool_registry import (
-    build_runtime_tool_registry,
-    build_tool_registry,
-    build_tool_registry_from_runtime,
-)
+from qspice_mcp.mcp.tool_registry import build_runtime_tool_registry, build_tool_registry
 
 TOOL_REFERENCE = Path("docs/tool_reference.md")
 
@@ -35,12 +31,7 @@ class DriftIssue:
 
 
 def _live_tool_names() -> frozenset[str]:
-    try:
-        tools = build_tool_registry_from_runtime()
-        if not tools:
-            tools = build_tool_registry()
-    except Exception:
-        tools = build_tool_registry()
+    tools = build_tool_registry()
     registered = build_runtime_tool_registry(tools)
     return frozenset(tool.name for tool in registered)
 

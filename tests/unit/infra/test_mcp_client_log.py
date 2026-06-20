@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from qspice_mcp.infra.mcp_client_log import (
+    _emit_async,
     bind_mcp_client_log_context,
     mcp_client_log_processor,
     mirror_client_log,
@@ -29,32 +30,23 @@ def test_mcp_client_log_processor_ignores_untracked_events() -> None:
     assert event["event"] == "other"
 
 
-def test_mcp_client_log_processor_formats_tool_lifecycle_event() -> None:
-    event = mcp_client_log_processor(
-        None,
-        "info",
-        {"event": "tool_request_started", "tool": "run_simulation"},
-    )
-    assert event["event"] == "tool_request_started"
-
-
-def test_mcp_client_log_processor_mirrors_completed_event() -> None:
+def test_mcp_client_log_processor_formats_structured_tool_event() -> None:
     event = mcp_client_log_processor(
         None,
         "info",
         {
             "event": "tool_request_completed",
             "tool": "run_simulation",
+            "component": "mcp.tool",
             "duration_s": 0.25,
+            "read_only": False,
         },
     )
-    assert event["event"] == "tool_request_completed"
+    assert event["tool"] == "run_simulation"
 
 
 @pytest.mark.anyio
 async def test_emit_async_records_context_message() -> None:
-    from qspice_mcp.infra.mcp_client_log import _emit_async
-
     context = _RecordingContext()
     await _emit_async(context, "info", "hello")
     assert context.messages == [("info", "hello")]

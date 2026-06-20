@@ -7,7 +7,10 @@ import sys
 from dataclasses import dataclass
 
 from qspice_mcp.mcp.tool_metadata import TOOL_METADATA
-from qspice_mcp.mcp.tool_registry import _DESCRIBE_SERVER_CAPABILITIES_SERVICE
+from qspice_mcp.mcp.tool_registry import (
+    _DESCRIBE_SERVER_CAPABILITIES_SERVICE,
+    resolve_tool_annotations,
+)
 from qspice_mcp.services._internals.service_catalog import build_service_spec_catalog
 
 
@@ -32,16 +35,15 @@ def collect_annotation_drift_issues() -> list[AnnotationDriftIssue]:
                 )
             )
             continue
-        annotations = metadata.get("annotations")
-        if not isinstance(annotations, dict):
-            hint = False
-        else:
-            hint = bool(annotations.get("read_only_hint", False))
-        if spec.read_only != hint:
+        resolved = resolve_tool_annotations(spec, metadata)
+        if spec.read_only != resolved.read_only_hint:
             issues.append(
                 AnnotationDriftIssue(
                     tool_name=spec.name,
-                    detail=(f"service.read_only={spec.read_only} metadata.read_only_hint={hint}"),
+                    detail=(
+                        f"service.read_only={spec.read_only} "
+                        f"resolved.read_only_hint={resolved.read_only_hint}"
+                    ),
                 )
             )
     return issues

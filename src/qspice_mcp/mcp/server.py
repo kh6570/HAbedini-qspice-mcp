@@ -41,7 +41,6 @@ from .tool_registry import (
     ToolDefinition,
     build_runtime_tool_registry,
     build_tool_registry,
-    build_tool_registry_from_runtime,
 )
 from .tools import QSpiceToolRuntime
 from .tools.workspace import (
@@ -285,14 +284,7 @@ def create_server(settings: QSpiceSettings | None = None) -> QSpiceMCPServer:
     probe = probe_qspice(effective_settings)
     adapters = describe_adapters(probe)
     definition = build_server_definition()
-    _logger = get_logger(component="mcp.server")
-    try:
-        tools = build_tool_registry_from_runtime()
-        if not tools:
-            tools = build_tool_registry()
-    except Exception as exc:
-        _logger.warning("build_tool_registry_from_runtime_failed", error=str(exc))
-        tools = build_tool_registry()
+    tools = build_tool_registry()
     registered_tools = build_runtime_tool_registry(tools)
     resources = get_resource_definitions()
     runtime = QSpiceToolRuntime(effective_settings, registered_tools)
