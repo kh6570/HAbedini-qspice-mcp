@@ -16,6 +16,7 @@ from qspice_mcp.services.artifacts._raw_write import load_rawwrite_api
 from qspice_mcp.services.artifacts.describe_qux_export_support import (
     describe_qux_export_support,
 )
+from qspice_mcp.services.mixed_signal._dll_toolchain_probe import describe_dll_build_toolchain
 
 if TYPE_CHECKING:
     from qspice_mcp.adapters.probe import ProbeResult
@@ -388,6 +389,9 @@ def describe_server_capabilities(
     _, _, rawwrite_backend = load_rawwrite_api()
     qsch_editor_factory, qsch_editor_backend = load_qsch_editor_factory()
     qux_support = describe_qux_export_support(settings=effective_settings)
+    dll_toolchain = describe_dll_build_toolchain(
+        qspice_executable=probe.executable,
+    )
 
     tool_groups = _build_tool_groups(
         tools=tools,
@@ -482,6 +486,7 @@ def describe_server_capabilities(
                 "supported_switches": list(qux_support.supported_switches),
                 "notes": list(qux_support.notes),
             },
+            "dll_build_toolchain": dll_toolchain.as_dict(),
         },
         "error_taxonomy": describe_error_taxonomy(),
         "feature_flags": _feature_flags(tools),

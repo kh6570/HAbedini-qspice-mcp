@@ -5,16 +5,19 @@ from __future__ import annotations
 import os
 import sys
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path  # noqa: TC003
 from shutil import which
 from typing import Literal
 
-from qspice_mcp.adapters.probe import discover_executable
 from qspice_mcp.core.exceptions import BackendUnavailableError, ValidationError
 from qspice_mcp.infra.subprocess import SubprocessResult, run_subprocess
 from qspice_mcp.services._shared.paths import (
     resolve_workspace_output_path,
     validate_existing_file,
+)
+from qspice_mcp.services.mixed_signal._dll_toolchain_probe import (
+    find_bundled_dmc,
+    find_vcvars64_bat,
 )
 from qspice_mcp.services.service_spec import ServiceSpec
 
@@ -66,25 +69,6 @@ def _resolve_output_path(
     )
 
 
-def _resolve_qspice_executable(qspice_executable: Path | None) -> Path | None:
-    if qspice_executable is not None and qspice_executable.is_file():
-        return qspice_executable.resolve(strict=False)
-    discovered, _source = discover_executable(None)
-    if discovered is not None and discovered.is_file():
-        return discovered.resolve(strict=False)
-    return None
-
-
-def _find_bundled_dmc(qspice_executable: Path | None) -> Path | None:
-    resolved = _resolve_qspice_executable(qspice_executable)
-    if resolved is None:
-        return None
-    candidate = resolved.parent / "dm" / "bin" / "dmc.exe"
-    if candidate.is_file():
-        return candidate.resolve(strict=False)
-    return None
-
-
 def _dmc_bin_dir(dmc_exe: Path) -> Path:
     return dmc_exe.parent.resolve(strict=False)
 
@@ -116,48 +100,6 @@ def _msvc_command(source_path: Path, output_path: Path) -> tuple[str, ...]:
         str(source_path.name),
         f"/Fe{output_path.name}",
     )
-
-
-def _find_vcvars64_bat() -> Path | None:
-    """Locate MSVC environment bootstrap script on Windows when ``cl`` is not on PATH."""
-
-    if sys.platform != "win32":
-        return None
-
-    vswhere = Path(r"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe")
-    if vswhere.is_file():
-        probe = run_subprocess(
-            (
-                str(vswhere),
-                "-latest",
-                "-products",
-                "*",
-                "-requires",
-                "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
-                "-property",
-                "installationPath",
-            ),
-            cwd=Path.cwd(),
-            timeout_s=30.0,
-        )
-        install_root = probe.stdout.strip()
-        if probe.exit_code == 0 and install_root:
-            vcvars = Path(install_root) / "VC" / "Auxiliary" / "Build" / "vcvars64.bat"
-            if vcvars.is_file():
-                return vcvars
-
-    for edition in ("Community", "Professional", "Enterprise", "BuildTools"):
-        for year in ("2022", "2019"):
-            vcvars = (
-                Path(rf"C:\Program Files\Microsoft Visual Studio\{year}\{edition}")
-                / "VC"
-                / "Auxiliary"
-                / "Build"
-                / "vcvars64.bat"
-            )
-            if vcvars.is_file():
-                return vcvars
-    return None
 
 
 def _wrap_msvc_with_vcvars(
@@ -202,7 +144,7 @@ def _select_toolchain(
 
     cl_path = which("cl")
     cmake_path = which("cmake")
-    bundled_dmc = _find_bundled_dmc(qspice_executable)
+    bundled_dmc = find_bundled_dmc(qspice_executable)
 
     if requested == "dmc":
         if bundled_dmc is None:
@@ -214,7 +156,7 @@ def _select_toolchain(
         return "dmc", _dmc_command(bundled_dmc, source_path), bundled_dmc
 
     if requested == "msvc":
-        if cl_path is None and _find_vcvars64_bat() is None:
+        if cl_path is None and find_vcvars64_bat() is None:
             raise BackendUnavailableError(
                 "MSVC `cl` was not found on PATH and no Visual Studio vcvars64.bat "
                 "was discovered. Install MSVC build tools or pass toolchain='cmake' "
@@ -236,7 +178,7 @@ def _select_toolchain(
     if bundled_dmc is not None:
         return "dmc", _dmc_command(bundled_dmc, source_path), bundled_dmc
 
-    if cl_path is not None or _find_vcvars64_bat() is not None:
+    if cl_path is not None or find_vcvars64_bat() is not None:
         output_path = source_path.with_suffix(".dll")
         return "msvc", _msvc_command(source_path, output_path), None
 
@@ -302,7 +244,7 @@ def build_dll_device(
     if selected_toolchain == "msvc":
         command = _msvc_command(resolved_source, resolved_output)
         if which("cl") is None:
-            vcvars = _find_vcvars64_bat()
+            vcvars = find_vcvars64_bat()
             if vcvars is not None:
                 command = _wrap_msvc_with_vcvars(command, vcvars)
     elif selected_toolchain == "dmc" and bundled_dmc is not None:

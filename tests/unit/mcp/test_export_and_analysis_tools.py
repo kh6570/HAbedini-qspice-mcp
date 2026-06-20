@@ -196,6 +196,11 @@ def test_mcp_describe_server_capabilities_reports_backend_state(
     assert result["optional_backends"]["rawread"]["backend"] == "mock_backend"
     assert result["optional_backends"]["rawwrite"]["available"] is False
     assert result["optional_backends"]["qux_companion"]["available"] is False
+    dll_toolchain = result["optional_backends"]["dll_build_toolchain"]
+    assert "dmc_available" in dll_toolchain
+    assert "msvc_available" in dll_toolchain
+    assert "cmake_available" in dll_toolchain
+    assert "auto_toolchain" in dll_toolchain
     assert result["feature_flags"]["native_mc_staging"] is True
     assert result["feature_flags"]["local_remote_sessions"] is True
     assert result["feature_flags"]["restart_safe_batch_rehydration"] is True

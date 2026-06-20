@@ -48,6 +48,7 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **Declarative MCP handler bindings** — `build_raw_tool_handlers()` auto-wires ~85% of tools from the service catalog; mixin classes no longer drive runtime dispatch.
 - **ServiceSpec destructive/idempotent hints** — `destructive` and `idempotent` on `ServiceSpec` drive MCP annotation hints (default: read-only tools are idempotent).
 - **Service-package MCP contracts** — `services/<group>/mcp_contracts.py` rows merge onto enriched `ServiceSpec` at catalog discovery; retired `mcp/_tool_metadata/`.
+- **DLL build toolchain probe** — `describe_server_capabilities` reports `optional_backends.dll_build_toolchain` with bundled DMC, MSVC/vcvars, and CMake availability separate from simulator configuration.
 
 ### Changed
 
@@ -58,6 +59,7 @@ drive the QSpice circuit simulator through stable JSON tools.
   (invalidates when the binary is replaced/upgraded).
 - **Simulation cache key** — includes probed executable version and mtime so in-place QSpice
   upgrades cannot return stale cached artifacts.
+- Removed unused `QSPICE_INITIALIZE_QSPICE_ON_STARTUP` setting (was never read by the server).
 - **Simulation artifact cache** — atomic staging + rename on `put()`, integrity hash verification on
   `get()`, and optional LRU eviction via `QSPICE_MAX_CACHE_BYTES`.
 - **Child process lifecycle** — subprocess wrapper tracks PIDs; `atexit` + `SIGTERM`/`SIGINT` hooks

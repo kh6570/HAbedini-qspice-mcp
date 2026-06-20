@@ -17,10 +17,11 @@ from qspice_mcp.services._backends.schematic_editor import (
     SymbolPinMetadata,
 )
 from qspice_mcp.services._internals.dll_contracts import parse_dll_source_contract_text
-from qspice_mcp.services.mixed_signal.build_dll_device import (
-    _find_bundled_dmc,
-    build_dll_device,
+from qspice_mcp.services.mixed_signal._dll_toolchain_probe import (
+    describe_dll_build_toolchain,
+    find_bundled_dmc,
 )
+from qspice_mcp.services.mixed_signal.build_dll_device import build_dll_device
 from qspice_mcp.services.mixed_signal.describe_mixed_signal_support import (
     describe_mixed_signal_support,
 )
@@ -535,7 +536,7 @@ def _fake_qspice_install(root: Path) -> Path:
 
 def test_find_bundled_dmc_from_qspice_exe(tmp_path: Path) -> None:
     qspice_exe = _fake_qspice_install(tmp_path)
-    resolved = _find_bundled_dmc(qspice_exe)
+    resolved = find_bundled_dmc(qspice_exe)
     assert resolved is not None
     assert resolved.name == "dmc.exe"
     assert resolved.parent.name == "bin"
@@ -648,7 +649,7 @@ def test_explicit_dmc_errors_when_missing(
     source.write_text("// x\n", encoding="utf-8")
 
     monkeypatch.setattr(
-        "qspice_mcp.services.mixed_signal.build_dll_device.discover_executable",
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.discover_executable",
         lambda _exe: (None, "unavailable"),
     )
 
@@ -697,7 +698,7 @@ def test_build_dll_device_invokes_msvc_and_returns_output(
         fake_run,
     )
     monkeypatch.setattr(
-        "qspice_mcp.services.mixed_signal.build_dll_device._find_bundled_dmc",
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.find_bundled_dmc",
         lambda _exe: None,
     )
 
@@ -744,7 +745,7 @@ def test_build_dll_device_surfaces_compiler_failure(
         fake_run,
     )
     monkeypatch.setattr(
-        "qspice_mcp.services.mixed_signal.build_dll_device._find_bundled_dmc",
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.find_bundled_dmc",
         lambda _exe: None,
     )
 
@@ -763,11 +764,11 @@ def test_build_dll_device_reports_missing_toolchain(
 
     monkeypatch.setattr("qspice_mcp.services.mixed_signal.build_dll_device.which", lambda _: None)
     monkeypatch.setattr(
-        "qspice_mcp.services.mixed_signal.build_dll_device.discover_executable",
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.discover_executable",
         lambda _exe: (None, "unavailable"),
     )
     monkeypatch.setattr(
-        "qspice_mcp.services.mixed_signal.build_dll_device._find_vcvars64_bat",
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.find_vcvars64_bat",
         lambda: None,
     )
 
@@ -809,3 +810,42 @@ def test_build_dll_device_dmc_integration(tmp_path: Path) -> None:
 
     assert result.toolchain == "dmc"
     assert result.output_path.is_file()
+
+
+def test_describe_dll_build_toolchain_reports_bundled_dmc(tmp_path: Path) -> None:
+    qspice_exe = tmp_path / "QSPICE64.exe"
+    qspice_exe.write_text("", encoding="utf-8")
+    dmc = tmp_path / "dm" / "bin"
+    dmc.mkdir(parents=True)
+    (dmc / "dmc.exe").write_text("", encoding="utf-8")
+
+    snapshot = describe_dll_build_toolchain(qspice_executable=qspice_exe)
+
+    assert snapshot.dmc_available is True
+    assert snapshot.auto_toolchain == "dmc"
+    assert snapshot.dmc_path == (dmc / "dmc.exe").resolve(strict=False)
+
+
+def test_describe_dll_build_toolchain_reports_missing_toolchains(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.which",
+        lambda _name: None,
+    )
+    monkeypatch.setattr(
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.find_vcvars64_bat",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.find_bundled_dmc",
+        lambda _exe: None,
+    )
+
+    snapshot = describe_dll_build_toolchain(qspice_executable=None)
+
+    assert snapshot.dmc_available is False
+    assert snapshot.msvc_available is False
+    assert snapshot.cmake_available is False
+    assert snapshot.auto_toolchain is None
+    assert any("No DLL build toolchain" in note for note in snapshot.notes)

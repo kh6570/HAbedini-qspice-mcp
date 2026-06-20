@@ -6,8 +6,9 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "describe_server_capabilities": {
         "title": "Describe Server Capabilities",
         "description": (
-            "Report server-level backend availability, degraded tool groups, "
-            "and feature flags for the current runtime."
+            "Report server-level backend availability, DLL build toolchain "
+            "readiness, degraded tool groups, and feature flags for the "
+            "current runtime."
         ),
         "input_schema": {
             "type": "object",
