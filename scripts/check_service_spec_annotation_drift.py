@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assert ServiceSpec.read_only matches MCP tool metadata read_only_hint."""
+"""Assert ServiceSpec annotation flags match resolved MCP tool annotations."""
 
 from __future__ import annotations
 
@@ -36,16 +36,20 @@ def collect_annotation_drift_issues() -> list[AnnotationDriftIssue]:
             )
             continue
         resolved = resolve_tool_annotations(spec, metadata)
-        if spec.read_only != resolved.read_only_hint:
-            issues.append(
-                AnnotationDriftIssue(
-                    tool_name=spec.name,
-                    detail=(
-                        f"service.read_only={spec.read_only} "
-                        f"resolved.read_only_hint={resolved.read_only_hint}"
-                    ),
+        expected_idempotent = spec.idempotent if spec.idempotent is not None else spec.read_only
+        checks = (
+            ("read_only", spec.read_only, resolved.read_only_hint),
+            ("destructive", spec.destructive, resolved.destructive_hint),
+            ("idempotent", expected_idempotent, resolved.idempotent_hint),
+        )
+        for label, expected, actual in checks:
+            if expected != actual:
+                issues.append(
+                    AnnotationDriftIssue(
+                        tool_name=spec.name,
+                        detail=f"service.{label}={expected} resolved.{label}_hint={actual}",
+                    )
                 )
-            )
     return issues
 
 
@@ -53,14 +57,14 @@ def main() -> int:
     issues = collect_annotation_drift_issues()
     if issues:
         print(
-            f"ERROR: Found {len(issues)} ServiceSpec vs metadata read_only drift issue(s):",
+            f"ERROR: Found {len(issues)} ServiceSpec vs metadata annotation drift issue(s):",
             file=sys.stderr,
         )
         for issue in issues:
             print(f"  - {issue.tool_name}: {issue.detail}", file=sys.stderr)
         return 1
 
-    print("OK: ServiceSpec.read_only matches MCP metadata read_only_hint.")
+    print("OK: ServiceSpec annotation flags match resolved MCP tool annotations.")
     return 0
 
 

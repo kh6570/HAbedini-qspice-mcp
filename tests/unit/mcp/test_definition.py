@@ -221,7 +221,7 @@ def test_mcp_write_workspace_text_file_auto_builds_cpp_dll(
 
     typed_monkeypatch = monkeypatch
     typed_monkeypatch.setattr(
-        "qspice_mcp.mcp.tools.workspace_files.build_dll_device_service",
+        "qspice_mcp.mcp.tools.mixed_signal.build_dll_device_service",
         fake_build_dll_device,
     )
 
@@ -251,7 +251,7 @@ def test_mcp_write_workspace_text_file_reports_dll_build_error(
 
     typed_monkeypatch = monkeypatch
     typed_monkeypatch.setattr(
-        "qspice_mcp.mcp.tools.workspace_files.build_dll_device_service",
+        "qspice_mcp.mcp.tools.mixed_signal.build_dll_device_service",
         fail_build,
     )
 
@@ -284,7 +284,7 @@ def test_mcp_write_workspace_text_file_reuses_existing_dll_for_validation(
 
     typed_monkeypatch = monkeypatch
     typed_monkeypatch.setattr(
-        "qspice_mcp.mcp.tools.workspace_files.build_dll_device_service",
+        "qspice_mcp.mcp.tools.mixed_signal.build_dll_device_service",
         fail_build,
     )
 
@@ -1144,13 +1144,13 @@ def test_mcp_save_netlist_copy_is_invokable(monkeypatch: object, tmp_path: Path)
     typed_monkeypatch = monkeypatch
 
     def fake_save_netlist_copy(
-        raw_path: str | Path,
+        source_path: str | Path,
         *,
         workspace_root: Path,
         output_path: str | Path,
     ) -> SavedNetlistCopy:
         assert workspace_root == tmp_path.resolve(strict=False)
-        assert raw_path == "demo.qsch"
+        assert source_path == "demo.qsch"
         assert output_path == "artifacts/demo-copy.net"
         return SavedNetlistCopy(
             source_path=source.resolve(strict=False),

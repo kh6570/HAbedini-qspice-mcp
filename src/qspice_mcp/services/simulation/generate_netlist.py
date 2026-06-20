@@ -49,6 +49,7 @@ SERVICE_SPEC = ServiceSpec(
     summary="Resolve or stage the derived netlist used for QSpice execution.",
     phase="implemented",
     read_only=False,
+    idempotent=True,
 )
 
 

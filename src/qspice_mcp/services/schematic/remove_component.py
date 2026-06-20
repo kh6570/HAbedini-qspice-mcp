@@ -28,6 +28,7 @@ SERVICE_SPEC = ServiceSpec(
     summary="Remove one schematic component by reference and persist the edited schematic.",
     phase="implemented",
     read_only=False,
+    destructive=True,
 )
 
 

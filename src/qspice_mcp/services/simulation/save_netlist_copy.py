@@ -30,6 +30,7 @@ SERVICE_SPEC = ServiceSpec(
     summary="Materialize one derived .net or .cir artifact at a requested destination.",
     phase="implemented",
     read_only=False,
+    idempotent=True,
 )
 
 

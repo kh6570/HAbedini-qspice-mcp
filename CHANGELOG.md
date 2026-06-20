@@ -45,9 +45,12 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **Second bundled recipe** — `boost_converter_cpp` catalog entry proving `data/recipes/{recipe_id}/` modularity.
 - **Include-aware simulation cache** — cache keys now hash resolved `.include`/`.lib` file contents.
 - **Simulation phase progress** — `run_simulation` polls the `.log` for percent-complete lines and mirrors them via MCP progress + `ctx.info` when supported.
+- **Declarative MCP handler bindings** — `build_raw_tool_handlers()` auto-wires ~85% of tools from the service catalog; mixin classes no longer drive runtime dispatch.
+- **ServiceSpec destructive/idempotent hints** — `destructive` and `idempotent` on `ServiceSpec` drive MCP annotation hints (default: read-only tools are idempotent).
 
 ### Changed
 
+- **MCP runtime handler registration** — `QSpiceToolRuntime` builds handlers from the service catalog + `expose_tool_schema()` instead of a 13-class mixin MRO; legacy mixin modules remain as service-import shims for tests.
 - **Long-running MCP tools** — handlers flagged `ServiceSpec.long_running` now run on a
   worker thread (`anyio.to_thread`) so the async event loop stays responsive during sims/sweeps.
 - **QSpice probe memoization** — `probe_qspice()` caches results per executable path + mtime

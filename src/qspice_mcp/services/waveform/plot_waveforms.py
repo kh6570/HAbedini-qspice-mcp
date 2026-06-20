@@ -51,6 +51,7 @@ SERVICE_SPEC = ServiceSpec(
     summary="Generate derived plot artifacts for one or more QSpice signals.",
     read_only=False,
     phase="implemented",
+    idempotent=True,
 )
 
 

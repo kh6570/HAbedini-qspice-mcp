@@ -5,6 +5,7 @@ from __future__ import annotations
 from functools import cache
 from importlib import import_module
 from pkgutil import iter_modules
+from types import ModuleType  # noqa: TC003
 
 from qspice_mcp.services.service_spec import ServiceSpec
 
@@ -63,4 +64,42 @@ def build_service_spec_catalog(
     return tuple(catalog)
 
 
-__all__ = ["build_service_spec_catalog", "discover_package_service_specs"]
+def resolve_service_module(service_name: str) -> ModuleType:
+    """Import and return the service module for one catalog tool name."""
+
+    for package_name in _SERVICE_PACKAGE_ORDER:
+        package = import_module(f"qspice_mcp.services.{package_name}")
+        package_path = getattr(package, "__path__", None)
+        if package_path is None:
+            continue
+        for module_info in iter_modules(package_path):
+            if module_info.name.startswith("_"):
+                continue
+            if module_info.name != service_name:
+                continue
+            return import_module(f"{package.__name__}.{module_info.name}")
+    raise KeyError(f"No service module registered for tool {service_name!r}.")
+
+
+@cache
+def build_service_callable_catalog() -> dict[str, object]:
+    """Map implemented tool names to their primary service callables."""
+
+    catalog: dict[str, object] = {}
+    for package_name in _SERVICE_PACKAGE_ORDER:
+        for spec in discover_package_service_specs(package_name):
+            if spec.phase != "implemented":
+                continue
+            module = resolve_service_module(spec.name)
+            service_fn = getattr(module, spec.name, None)
+            if callable(service_fn):
+                catalog[spec.name] = service_fn
+    return catalog
+
+
+__all__ = [
+    "build_service_callable_catalog",
+    "build_service_spec_catalog",
+    "discover_package_service_specs",
+    "resolve_service_module",
+]

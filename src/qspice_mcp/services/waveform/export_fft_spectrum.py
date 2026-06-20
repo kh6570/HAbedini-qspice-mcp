@@ -44,6 +44,7 @@ SERVICE_SPEC = ServiceSpec(
     ),
     phase="implemented",
     read_only=False,
+    idempotent=True,
 )
 
 

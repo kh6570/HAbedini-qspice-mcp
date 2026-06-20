@@ -18,3 +18,5 @@ class ServiceSpec:
     phase: ServicePhase = "planned"
     read_only: bool = True
     long_running: bool = False
+    destructive: bool = False
+    idempotent: bool | None = None

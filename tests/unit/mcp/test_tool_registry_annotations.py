@@ -33,3 +33,26 @@ def test_resolve_tool_annotations_sets_open_world_for_long_running_tools() -> No
     resolved = resolve_tool_annotations(spec, {"annotations": {}})
 
     assert resolved.open_world_hint is True
+
+
+def test_resolve_tool_annotations_uses_service_destructive_and_idempotent_defaults() -> None:
+    destructive = ServiceSpec(
+        name="remove_component",
+        title="Remove Component",
+        summary="Remove one component.",
+        phase="implemented",
+        read_only=False,
+        destructive=True,
+    )
+    idempotent_write = ServiceSpec(
+        name="generate_netlist",
+        title="Generate Netlist",
+        summary="Generate netlist.",
+        phase="implemented",
+        read_only=False,
+        idempotent=True,
+    )
+
+    assert resolve_tool_annotations(destructive, {"annotations": {}}).destructive_hint is True
+    assert resolve_tool_annotations(idempotent_write, {"annotations": {}}).idempotent_hint is True
+    assert resolve_tool_annotations(idempotent_write, {"annotations": {}}).read_only_hint is False

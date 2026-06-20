@@ -98,8 +98,8 @@ def resolve_tool_annotations(
         open_world = True
     return ToolAnnotations(
         read_only_hint=spec.read_only,
-        destructive_hint=metadata_ann.destructive_hint,
-        idempotent_hint=metadata_ann.idempotent_hint,
+        destructive_hint=spec.destructive,
+        idempotent_hint=spec.idempotent if spec.idempotent is not None else spec.read_only,
         open_world_hint=open_world,
     )
 

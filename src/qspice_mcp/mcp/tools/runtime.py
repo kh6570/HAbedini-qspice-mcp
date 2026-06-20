@@ -6,7 +6,7 @@ import asyncio
 import inspect
 from functools import wraps
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 import anyio
 
@@ -17,25 +17,14 @@ from qspice_mcp.services._internals.batch_manager import SimulationBatchManager
 from qspice_mcp.services._internals.live_gui_manager import LiveGuiSessionManager
 from qspice_mcp.services._internals.remote_session_manager import RemoteSimulationManager
 
-from .artifacts import ARTIFACT_HANDLER_NAMES, ArtifactToolMixin
-from .batch import BATCH_HANDLER_NAMES, BatchToolMixin
-from .live_gui import LIVE_GUI_HANDLER_NAMES, LiveGuiToolMixin
-from .mixed_signal import MIXED_SIGNAL_HANDLER_NAMES, MixedSignalToolMixin
-from .protocol import PROTOCOL_HANDLER_NAMES, ProtocolToolMixin
-from .recipes import RECIPES_HANDLER_NAMES, RecipesToolMixin
-from .remote import REMOTE_HANDLER_NAMES, RemoteToolMixin
-from .schematic import SCHEMATIC_HANDLER_NAMES, SchematicToolMixin
-from .server_info import SERVER_INFO_HANDLER_NAMES, ServerInfoToolMixin
+from .handler_bindings import ToolHandler, build_raw_tool_handlers
+from .schema_handlers import expose_tool_schema
 from .shared import to_jsonable
-from .simulation import SIMULATION_HANDLER_NAMES, SimulationToolMixin
-from .subcircuit import SUBCIRCUIT_HANDLER_NAMES, SubcircuitToolMixin
-from .waveform import WAVEFORM_HANDLER_NAMES, WaveformToolMixin
 from .workspace import (
     _WorkspaceSettingsProxy,
     get_pending_workspace_root,
     resolve_workspace_override,
 )
-from .workspace_files import WORKSPACE_FILES_HANDLER_NAMES, WorkspaceFilesToolMixin
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -44,42 +33,8 @@ if TYPE_CHECKING:
 
     from ..tool_registry import ToolDefinition
 
-    ToolHandler = Callable[..., dict[str, object] | Awaitable[dict[str, object]]]
-else:
-    ToolHandler = Any
 
-HANDLER_NAMES = (
-    *SERVER_INFO_HANDLER_NAMES,
-    *BATCH_HANDLER_NAMES,
-    *REMOTE_HANDLER_NAMES,
-    *ARTIFACT_HANDLER_NAMES,
-    *LIVE_GUI_HANDLER_NAMES,
-    *MIXED_SIGNAL_HANDLER_NAMES,
-    *PROTOCOL_HANDLER_NAMES,
-    *SCHEMATIC_HANDLER_NAMES,
-    *SUBCIRCUIT_HANDLER_NAMES,
-    *SIMULATION_HANDLER_NAMES,
-    *WAVEFORM_HANDLER_NAMES,
-    *RECIPES_HANDLER_NAMES,
-    *WORKSPACE_FILES_HANDLER_NAMES,
-)
-
-
-class QSpiceToolRuntime(
-    ServerInfoToolMixin,
-    BatchToolMixin,
-    RemoteToolMixin,
-    ArtifactToolMixin,
-    LiveGuiToolMixin,
-    MixedSignalToolMixin,
-    ProtocolToolMixin,
-    SchematicToolMixin,
-    SubcircuitToolMixin,
-    SimulationToolMixin,
-    WaveformToolMixin,
-    RecipesToolMixin,
-    WorkspaceFilesToolMixin,
-):
+class QSpiceToolRuntime:
     """Thin orchestration layer used by MCP tool handlers."""
 
     def __init__(self, settings: QSpiceSettings, tools: tuple[ToolDefinition, ...]) -> None:
@@ -89,9 +44,13 @@ class QSpiceToolRuntime(
         self._live_gui_manager = LiveGuiSessionManager(self.settings)
         self._remote_manager = RemoteSimulationManager(self.settings)
         self._tool_definitions = {tool.name: tool for tool in tools}
+        raw_handlers = build_raw_tool_handlers(self, tools)
         self._handlers: dict[str, ToolHandler] = {
-            name: self._wrap_handler(self._tool_definitions[name], getattr(self, name))
-            for name in HANDLER_NAMES
+            name: self._wrap_handler(
+                self._tool_definitions[name],
+                expose_tool_schema(handler, self._tool_definitions[name]),
+            )
+            for name, handler in raw_handlers.items()
         }
 
     def _wrap_handler(
@@ -154,7 +113,7 @@ class QSpiceToolRuntime(
             async def async_wrapped_handler(**kwargs: object) -> dict[str, object]:
                 return await anyio.to_thread.run_sync(lambda: _execute(**kwargs))
 
-            return async_wrapped_handler
+            return cast("ToolHandler", async_wrapped_handler)
 
         @wraps(handler)
         def sync_wrapped_handler(**kwargs: object) -> dict[str, object]:
@@ -162,7 +121,7 @@ class QSpiceToolRuntime(
 
         return sync_wrapped_handler
 
-    def get_handler(self, name: str) -> ToolHandler:
+    def get_handler(self, name: str) -> ToolHandler | Callable[..., Awaitable[dict[str, object]]]:
         """Return the bound handler for one registered tool."""
 
         return self._handlers[name]

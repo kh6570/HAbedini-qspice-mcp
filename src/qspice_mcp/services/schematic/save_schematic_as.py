@@ -26,6 +26,7 @@ SERVICE_SPEC = ServiceSpec(
     summary="Write a schematic to a requested `.qsch` path through an installed editor backend.",
     phase="implemented",
     read_only=False,
+    idempotent=True,
 )
 
 
