@@ -120,6 +120,7 @@ SERVICE_SPEC = ServiceSpec(
         "protocol-level co-simulation with configurable SPI mode."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

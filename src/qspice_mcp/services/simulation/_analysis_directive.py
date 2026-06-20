@@ -34,20 +34,32 @@ def resolve_staged_output_path(
 
 
 def append_instruction_to_netlist(netlist_path: Path, instruction: str) -> None:
+    append_lines_before_end(netlist_path, (instruction,))
+
+
+def append_lines_before_end(netlist_path: Path, lines: tuple[str, ...]) -> None:
+    """Insert one or more lines immediately before the trailing ``.end`` directive."""
+
+    if not lines:
+        return
     existing = netlist_path.read_text(encoding="utf-8", errors="replace")
     line_ending = "\r\n" if "\r\n" in existing else "\n"
-    lines = existing.replace("\r\n", "\n").split("\n")
-    if lines and lines[-1] == "":
-        lines.pop()
+    normalized_lines = existing.replace("\r\n", "\n").split("\n")
+    if normalized_lines and normalized_lines[-1] == "":
+        normalized_lines.pop()
 
-    end_index = len(lines)
-    for index in range(len(lines) - 1, -1, -1):
-        if lines[index].strip().lower() == ".end":
+    end_index = len(normalized_lines)
+    for index in range(len(normalized_lines) - 1, -1, -1):
+        if normalized_lines[index].strip().lower() == ".end":
             end_index = index
             break
 
-    lines.insert(end_index, instruction)
-    netlist_path.write_text(f"{line_ending.join(lines)}{line_ending}", encoding="utf-8")
+    for offset, line in enumerate(lines):
+        normalized_lines.insert(end_index + offset, line)
+    netlist_path.write_text(
+        f"{line_ending.join(normalized_lines)}{line_ending}",
+        encoding="utf-8",
+    )
 
 
 def stage_analysis_directive(
@@ -102,6 +114,7 @@ def stage_analysis_directive(
 __all__ = [
     "_NETLIST_SUFFIXES",
     "append_instruction_to_netlist",
+    "append_lines_before_end",
     "resolve_staged_output_path",
     "stage_analysis_directive",
 ]

@@ -34,7 +34,9 @@ class NetlistInclude:
     source_netlist: Path
 
 
-def _strip_quotes(token: str) -> str:
+def strip_quoted_include_token(token: str) -> str:
+    """Return one include-path token with optional surrounding quotes removed."""
+
     stripped = token.strip()
     if (
         len(stripped) >= _MIN_QUOTED_TOKEN_LENGTH
@@ -43,6 +45,10 @@ def _strip_quotes(token: str) -> str:
     ):
         return stripped[1:-1]
     return stripped
+
+
+def _strip_quotes(token: str) -> str:
+    return strip_quoted_include_token(token)
 
 
 def _resolve_include_path(
@@ -75,6 +81,9 @@ def _parse_directives(netlist_path: Path) -> tuple[tuple[str, str, str], ...]:
         directive = f".{kind}"
         directives.append((kind, directive, raw_path))
     return tuple(directives)
+
+
+parse_netlist_directives = _parse_directives
 
 
 def collect_netlist_includes(
@@ -144,4 +153,6 @@ __all__ = [
     "NetlistInclude",
     "collect_netlist_includes",
     "hash_include_dependencies",
+    "parse_netlist_directives",
+    "strip_quoted_include_token",
 ]

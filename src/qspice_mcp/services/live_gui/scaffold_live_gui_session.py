@@ -43,6 +43,7 @@ SERVICE_SPEC = ServiceSpec(
         "use for optional live GUI orchestration and cross-probing."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

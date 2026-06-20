@@ -410,6 +410,40 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
         },
         "annotations": _ann(read_only=True, idempotent=True),
     },
+    "add_library_include": {
+        "title": "Add Library Include",
+        "description": (
+            "Append one `.include`, `.inc`, or `.lib` directive to a netlist artifact."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["netlist_path", "include_path"],
+            "properties": {
+                "netlist_path": {"type": "string"},
+                "include_path": {"type": "string"},
+                "kind": {"type": "string", "enum": ["include", "inc", "lib"]},
+                "output_path": {"type": "string"},
+                "relative_to_netlist": {"type": "boolean"},
+            },
+        },
+        "annotations": _ann(),
+    },
+    "add_model": {
+        "title": "Add Model Definition",
+        "description": (
+            "Append one SPICE model definition block to a `.lib`, `.inc`, or netlist file."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["target_path", "model_text"],
+            "properties": {
+                "target_path": {"type": "string"},
+                "model_text": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+        },
+        "annotations": _ann(),
+    },
     "run_simulation": {
         "title": "Run Simulation",
         "description": "Plan or run QSpice for a .qsch, .cir, or .net source path.",

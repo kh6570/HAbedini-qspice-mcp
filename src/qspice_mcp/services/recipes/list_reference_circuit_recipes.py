@@ -8,6 +8,7 @@ from qspice_mcp.services.recipes._catalog import (
     list_recipe_index_entries,
     load_recipe_manifest,
 )
+from qspice_mcp.services.recipes._catalog_guidance import RECIPE_CATALOG_DISCOVERY_GUIDANCE
 from qspice_mcp.services.service_spec import ServiceSpec
 
 SERVICE_SPEC = ServiceSpec(
@@ -32,6 +33,7 @@ class ReferenceCircuitRecipeSummary:
 class ReferenceCircuitRecipeList:
     """Catalog of bundled reference-circuit recipes."""
 
+    discovery_guidance: str
     recipes: tuple[ReferenceCircuitRecipeSummary, ...]
 
 
@@ -49,7 +51,10 @@ def list_reference_circuit_recipes() -> ReferenceCircuitRecipeList:
                 summary=description or None,
             )
         )
-    return ReferenceCircuitRecipeList(recipes=tuple(recipes))
+    return ReferenceCircuitRecipeList(
+        discovery_guidance=RECIPE_CATALOG_DISCOVERY_GUIDANCE,
+        recipes=tuple(recipes),
+    )
 
 
 __all__ = [

@@ -122,6 +122,7 @@ SERVICE_SPEC = ServiceSpec(
         "schematic block so the source stub matches the symbol contract."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

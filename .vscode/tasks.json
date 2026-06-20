@@ -14,11 +14,18 @@
     {
       "label": "Quality Gate",
       "type": "shell",
-      "command": "& .\\.venv\\Scripts\\python.exe -m ruff check .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & .\\.venv\\Scripts\\python.exe -m ruff format --check .; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & .\\.venv\\Scripts\\python.exe -m mypy --strict src/; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & .\\.venv\\Scripts\\python.exe -m pytest -m 'not integration' --cov; if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }; & .\\.venv\\Scripts\\python.exe scripts\\check_package_coverage.py",
+      "command": "pwsh -ExecutionPolicy Bypass -File .\\scripts\\quality_gate.ps1",
       "group": {
         "kind": "test",
         "isDefault": true
       },
+      "problemMatcher": []
+    },
+    {
+      "label": "Quality Gate (verbose)",
+      "type": "shell",
+      "command": "pwsh -ExecutionPolicy Bypass -File .\\scripts\\quality_gate.ps1 -Verbose",
+      "group": "test",
       "problemMatcher": []
     },
     {

@@ -36,6 +36,10 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`read_noise` tool** — parse integrated and spot `.noise` summary lines from simulation logs.
 - **`list_includes` / `resolve_model_libraries` tools** — discover and resolve netlist include/library dependencies.
 - **`import_circuit_bundle` tool** — copy a workspace-local `.qsch` and sibling sidecars into a destination folder.
+- **`add_library_include` / `add_model` tools** — append netlist include directives and SPICE model blocks to workspace library artifacts.
+- **Recipe catalog discovery guidance** — `list_reference_circuit_recipes` and `describe_reference_circuit_recipe` return shared `discovery_guidance` text.
+- **MCP client log mirroring** — tool lifecycle structlog events mirror to the MCP client when supported.
+- **ServiceSpec annotation drift guard** — `scripts/check_service_spec_annotation_drift.py` in pre-commit; write/scaffold services corrected to `read_only=False`.
 - **Second bundled recipe** — `boost_converter_cpp` catalog entry proving `data/recipes/{recipe_id}/` modularity.
 - **Include-aware simulation cache** — cache keys now hash resolved `.include`/`.lib` file contents.
 - **Simulation phase progress** — `run_simulation` polls the `.log` for percent-complete lines and mirrors them via MCP progress + `ctx.info` when supported.

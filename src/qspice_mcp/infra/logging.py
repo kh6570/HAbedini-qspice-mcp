@@ -6,6 +6,8 @@ import logging
 
 import structlog
 
+from qspice_mcp.infra.mcp_client_log import mcp_client_log_processor
+
 Logger = structlog.stdlib.BoundLogger
 
 
@@ -19,6 +21,7 @@ def configure_logging(level: str = "info") -> None:
             structlog.contextvars.merge_contextvars,
             structlog.stdlib.add_log_level,
             structlog.processors.TimeStamper(fmt="iso", utc=False),
+            mcp_client_log_processor,
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
             structlog.dev.ConsoleRenderer(),

@@ -117,6 +117,8 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `generate_netlist` | implemented | Resolve or stage a derived netlist artifact for execution. |
 | `list_includes` | implemented | List `.include`, `.inc`, and `.lib` directives reachable from one netlist. |
 | `resolve_model_libraries` | implemented | Resolve `.lib` model-library paths referenced by one netlist. |
+| `add_library_include` | implemented | Append one `.include`, `.inc`, or `.lib` directive to a netlist artifact. |
+| `add_model` | implemented | Append one SPICE model definition block to a library or netlist file. |
 | `save_netlist_copy` | implemented | Resolve or generate a derived netlist artifact at an explicit destination path. |
 | `prepare_bode_analysis` | implemented | Stage a source with a documented `.bode` directive for closed-loop SMPS analysis. |
 | `prepare_ac` | implemented | Stage a source with a documented `.ac` directive for small-signal frequency analysis. |
@@ -909,6 +911,7 @@ Typical inputs:
 - none
 
 Expected outputs:
+- `discovery_guidance` (shared catalog discovery workflow text)
 - `recipes` (each with `recipe_id`, `title`, `summary`)
 
 ## describe_reference_circuit_recipe
@@ -925,6 +928,7 @@ Expected outputs:
 - `recipe_id`
 - `title`
 - `description`
+- `discovery_guidance` (shared catalog discovery workflow text)
 - `files` (each with `relative_path`, `bundle_name`, `encoding`)
 - `build_required`
 - `build_hint`
@@ -1956,6 +1960,48 @@ Expected outputs:
 Notes:
 Missing libraries are summarized in `warnings`. Resolved include files also
 participate in simulation cache key hashing during `run_simulation`.
+
+## add_library_include
+
+Purpose:
+Append one `.include`, `.inc`, or `.lib` directive before the netlist `.end`
+marker.
+
+Typical inputs:
+- `netlist_path`
+- `include_path` (workspace-local library file that must already exist)
+- `kind` (`include`, `inc`, or `lib`; default `include`)
+- `output_path` (optional staged copy)
+- `relative_to_netlist` (default `true`)
+
+Expected outputs:
+- `source_netlist`
+- `output_netlist`
+- `include_path`
+- `directive`
+- `already_present` (always `false` on success)
+
+Notes:
+Duplicate directives for the same resolved path raise `validation_error`.
+
+## add_model
+
+Purpose:
+Append one SPICE model definition block to a `.lib`, `.inc`, or netlist file.
+
+Typical inputs:
+- `target_path`
+- `model_text` (multiline `.model` or subcircuit body)
+- `output_path` (optional staged copy)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `model_name` (best-effort guess from the first model token)
+- `line_count`
+
+Notes:
+`model_text` must not contain a standalone `.end` directive.
 
 ## save_netlist_copy
 

@@ -98,6 +98,7 @@ SERVICE_SPEC = ServiceSpec(
         "documented QSpice Python device integration path."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

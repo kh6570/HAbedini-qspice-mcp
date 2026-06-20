@@ -7,6 +7,7 @@ from typing import Any
 
 from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.services.recipes._catalog import load_recipe_manifest, recipe_bundle_path
+from qspice_mcp.services.recipes._catalog_guidance import RECIPE_CATALOG_DISCOVERY_GUIDANCE
 from qspice_mcp.services.schematic.inspect_schematic import inspect_schematic_bytes
 from qspice_mcp.services.service_spec import ServiceSpec
 
@@ -70,6 +71,7 @@ class ReferenceCircuitRecipeDescription:
     recipe_id: str
     title: str
     description: str
+    discovery_guidance: str
     files: tuple[RecipeFileEntry, ...]
     build_required: bool
     build_hint: str | None
@@ -194,6 +196,7 @@ def describe_reference_circuit_recipe(recipe_id: str) -> ReferenceCircuitRecipeD
         recipe_id=normalized_recipe_id,
         title=str(manifest.get("title", normalized_recipe_id)).strip(),
         description=str(manifest.get("description", "")).strip(),
+        discovery_guidance=RECIPE_CATALOG_DISCOVERY_GUIDANCE,
         files=files,
         build_required=build_required,
         build_hint=build_hint,

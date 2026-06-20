@@ -45,6 +45,7 @@ SERVICE_SPEC = ServiceSpec(
         "using QSpice-bundled DMC, MSVC (`cl`), or CMake when available."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

@@ -47,6 +47,7 @@ SERVICE_SPEC = ServiceSpec(
         "so an empty folder can reproduce a canonical bundled recipe from package data."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

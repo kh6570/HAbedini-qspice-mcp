@@ -5,6 +5,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Literal
 
 from qspice_mcp.services._shared.paths import resolve_workspace_path
+from qspice_mcp.services.simulation.add_library_include import (
+    add_library_include as add_library_include_service,
+)
+from qspice_mcp.services.simulation.add_model import (
+    add_model as add_model_service,
+)
 from qspice_mcp.services.simulation.generate_netlist import (
     generate_netlist as generate_netlist_service,
 )
@@ -99,6 +105,8 @@ SIMULATION_HANDLER_NAMES = (
     "list_plot_suggestions",
     "list_includes",
     "resolve_model_libraries",
+    "add_library_include",
+    "add_model",
     "run_simulation",
     "run_value_sweep",
     "run_param_sweep",
@@ -404,6 +412,38 @@ class SimulationToolMixin:
             workspace_root=self.settings.workspace_root,
         )
         return to_json_object(inspection)
+
+    def add_library_include(
+        self: _RuntimeWithSettings,
+        netlist_path: str,
+        include_path: str,
+        kind: Literal["include", "inc", "lib"] = "include",
+        output_path: str | None = None,
+        relative_to_netlist: bool = True,
+    ) -> dict[str, object]:
+        result = add_library_include_service(
+            netlist_path,
+            workspace_root=self.settings.workspace_root,
+            include_path=include_path,
+            kind=kind,
+            output_path=output_path,
+            relative_to_netlist=relative_to_netlist,
+        )
+        return to_json_object(result)
+
+    def add_model(
+        self: _RuntimeWithSettings,
+        target_path: str,
+        model_text: str,
+        output_path: str | None = None,
+    ) -> dict[str, object]:
+        result = add_model_service(
+            target_path,
+            workspace_root=self.settings.workspace_root,
+            model_text=model_text,
+            output_path=output_path,
+        )
+        return to_json_object(result)
 
     def run_simulation(
         self: _RuntimeWithSettings,

@@ -52,6 +52,11 @@ repos:
         entry: python scripts/check_tool_metadata_casing.py
         language: system
         pass_filenames: false
+      - id: check-service-spec-annotation-drift
+        name: check ServiceSpec annotation drift
+        entry: python scripts/check_service_spec_annotation_drift.py
+        language: system
+        pass_filenames: false
       - id: mypy
         name: mypy (strict, src)
         entry: mypy --strict src/

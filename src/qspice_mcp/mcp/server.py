@@ -23,6 +23,10 @@ from qspice_mcp.core.exceptions import (
 from qspice_mcp.infra.child_processes import install_shutdown_hooks
 from qspice_mcp.infra.config import QSpiceSettings, build_settings
 from qspice_mcp.infra.logging import get_logger
+from qspice_mcp.infra.mcp_client_log import (
+    bind_mcp_client_log_context,
+    reset_mcp_client_log_context,
+)
 from qspice_mcp.infra.progress import bind_context, reset_context
 from qspice_mcp.infra.telemetry import get_exception_trace_id
 
@@ -146,6 +150,7 @@ class _QSpiceFastMCP(FastMCP):
             resolve_workspace_override(effective_arguments.pop("workspace_root", None))
         )
         progress_token = bind_context(context)
+        log_token = bind_mcp_client_log_context(context)
         try:
             result = await tool.fn_metadata.call_fn_with_arg_validation(
                 tool.fn,
@@ -170,6 +175,7 @@ class _QSpiceFastMCP(FastMCP):
             raise ToolError(f"Error executing tool {name} [trace_id={trace_id}]: {exc}") from exc
         finally:
             reset_context(progress_token)
+            reset_mcp_client_log_context(log_token)
             reset_pending_workspace_root(workspace_token)
 
 

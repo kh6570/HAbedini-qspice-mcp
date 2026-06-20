@@ -115,6 +115,7 @@ SERVICE_SPEC = ServiceSpec(
         "co-simulation."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

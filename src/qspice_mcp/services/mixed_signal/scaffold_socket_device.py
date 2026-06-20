@@ -111,6 +111,7 @@ SERVICE_SPEC = ServiceSpec(
         "socket-based custom-device workflow."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

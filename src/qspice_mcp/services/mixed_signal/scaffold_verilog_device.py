@@ -56,6 +56,7 @@ SERVICE_SPEC = ServiceSpec(
         "through the documented Verilog device integration path."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

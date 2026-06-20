@@ -111,6 +111,7 @@ SERVICE_SPEC = ServiceSpec(
         "QSpice entry points (dll_device_count, dll_device, dll_device_end)."
     ),
     phase="implemented",
+    read_only=False,
 )
 
 

@@ -16,6 +16,9 @@ from qspice_mcp.services.recipes.list_reference_circuit_recipes import (
 def test_list_reference_circuit_recipes_includes_buck_converter() -> None:
     result = list_reference_circuit_recipes()
 
+    assert result.discovery_guidance
+    assert "list_reference_circuit_recipes" in result.discovery_guidance
+
     recipe_ids = {entry.recipe_id for entry in result.recipes}
     assert "buck_converter_cpp" in recipe_ids
     assert "boost_converter_cpp" in recipe_ids
@@ -30,6 +33,7 @@ def test_describe_reference_circuit_recipe_returns_manifest_and_topology() -> No
     result = describe_reference_circuit_recipe("buck_converter_cpp")
 
     assert result.recipe_id == "buck_converter_cpp"
+    assert result.discovery_guidance
     assert result.build_required is True
     assert result.build_hint == 'build_dll_device(source_path="buck_controller.cpp")'
     assert len(result.files) == 2

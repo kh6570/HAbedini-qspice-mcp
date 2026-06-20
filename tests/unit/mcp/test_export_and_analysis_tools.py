@@ -15,6 +15,8 @@ from qspice_mcp.mcp.server import create_server
 from qspice_mcp.services.artifacts._qux_export import DllVariableExport, QuxWaveformExport
 from qspice_mcp.services.artifacts.describe_qux_export_support import QuxExportSupport
 from qspice_mcp.services.schematic.set_component_position import ComponentPositionUpdate
+from qspice_mcp.services.simulation.add_library_include import LibraryIncludeAdd
+from qspice_mcp.services.simulation.add_model import ModelDefinitionAdd
 from qspice_mcp.services.simulation.list_plot_suggestions import (
     PlotSuggestion,
     PlotSuggestionCatalog,
@@ -998,3 +1000,78 @@ def test_mcp_read_fourier_is_invokable(monkeypatch, tmp_path) -> None:
     result = server.invoke_tool("read_fourier", log_path="demo.log")
 
     assert result["analyses"] == []
+
+
+def test_mcp_add_library_include_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+    netlist = tmp_path / "amp.net"
+    netlist.write_text("* amp\n.end\n", encoding="utf-8")
+    library = tmp_path / "models.lib"
+    library.write_text("* lib\n.end\n", encoding="utf-8")
+
+    def fake_add_library_include(
+        netlist_path: str,
+        *,
+        workspace_root,
+        include_path: str,
+        kind: str = "include",
+        output_path: str | None = None,
+        relative_to_netlist: bool = True,
+    ):
+        del kind, output_path, relative_to_netlist, workspace_root
+        return LibraryIncludeAdd(
+            source_netlist=netlist.resolve(strict=False),
+            output_netlist=netlist.resolve(strict=False),
+            include_path=library.resolve(strict=False),
+            directive=f".include {include_path}",
+            already_present=False,
+        )
+
+    monkeypatch.setattr(
+        mcp_simulation_tools,
+        "add_library_include_service",
+        fake_add_library_include,
+    )
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "add_library_include",
+        netlist_path="amp.net",
+        include_path="models.lib",
+    )
+
+    assert result["directive"] == ".include models.lib"
+
+
+def test_mcp_add_model_is_invokable(monkeypatch, tmp_path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+    library = tmp_path / "devices.lib"
+    library.write_text("* devices\n.end\n", encoding="utf-8")
+
+    def fake_add_model(
+        target_path: str,
+        *,
+        workspace_root,
+        model_text: str,
+        output_path: str | None = None,
+    ):
+        del workspace_root, model_text, output_path
+        return ModelDefinitionAdd(
+            source_path=library.resolve(strict=False),
+            output_path=library.resolve(strict=False),
+            model_name="NMOS1",
+            line_count=1,
+        )
+
+    monkeypatch.setattr(mcp_simulation_tools, "add_model_service", fake_add_model)
+
+    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    result = server.invoke_tool(
+        "add_model",
+        target_path="devices.lib",
+        model_text=".model NMOS1 NMOS (VTO=1)",
+    )
+
+    assert result["model_name"] == "NMOS1"
