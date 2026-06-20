@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, cast
 from qspice_mcp.core.exceptions import BackendUnavailableError, ValidationError
 from qspice_mcp.services._internals.service_catalog import build_service_callable_catalog
 from qspice_mcp.services._shared.paths import resolve_workspace_path
+from qspice_mcp.services.mixed_signal._dll_toolchain_probe import dll_build_degradation_hints
 
 from ._service_lookup import resolve_mcp_service_callable
 from .shared import to_json_object
@@ -252,6 +253,10 @@ def _write_workspace_text_file_handler(runtime: QSpiceToolRuntime) -> ToolHandle
                     _record_existing_dll(note=str(exc))
                 else:
                     payload["dll_build_error"] = str(exc)
+                    payload["dll_build_hints"] = dll_build_degradation_hints(
+                        qspice_executable=runtime.settings.exe,
+                        error=str(exc),
+                    )
                     return payload
             else:
                 payload["dll_build"] = to_json_object(build)

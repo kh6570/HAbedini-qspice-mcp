@@ -193,6 +193,74 @@ def _select_toolchain(
     )
 
 
+def _select_auto_toolchain_sequence(
+    source_path: Path,
+    qspice_executable: Path | None,
+) -> tuple[str, ...]:
+    """Return ordered auto toolchains: DMC, then MSVC, then CMake when each is available."""
+
+    sequence: list[str] = []
+    if find_bundled_dmc(qspice_executable) is not None:
+        sequence.append("dmc")
+    if which("cl") is not None or find_vcvars64_bat() is not None:
+        sequence.append("msvc")
+    if which("cmake") is not None and _cmake_command(source_path) is not None:
+        sequence.append("cmake")
+    if not sequence:
+        raise BackendUnavailableError(
+            "No supported DLL build toolchain found. Configure QSPICE_EXE for bundled DMC, "
+            "install MSVC (`cl`), add CMake, or run from a Developer Command Prompt."
+        )
+    return tuple(sequence)
+
+
+def _prepare_build(
+    selected_toolchain: str,
+    *,
+    source_path: Path,
+    output_path: Path,
+    qspice_executable: Path | None,
+) -> tuple[tuple[str, ...], dict[str, str] | None]:
+    """Return subprocess command and optional environment for one toolchain."""
+
+    _, _initial_command, bundled_dmc = _select_toolchain(
+        requested=cast_toolchain(selected_toolchain),
+        source_path=source_path,
+        qspice_executable=qspice_executable,
+    )
+    del _initial_command
+
+    command: tuple[str, ...]
+    subprocess_env: dict[str, str] | None = None
+    if selected_toolchain == "msvc":
+        command = _msvc_command(source_path, output_path)
+        if which("cl") is None:
+            vcvars = find_vcvars64_bat()
+            if vcvars is not None:
+                command = _wrap_msvc_with_vcvars(command, vcvars)
+    elif selected_toolchain == "dmc":
+        if bundled_dmc is None:
+            raise BackendUnavailableError("QSpice-bundled DMC was not found.")
+        command = _dmc_command(bundled_dmc, source_path)
+        subprocess_env = _dmc_subprocess_env(bundled_dmc)
+    elif selected_toolchain == "cmake":
+        cmake_command = _cmake_command(source_path)
+        if cmake_command is None:
+            raise ValidationError(
+                f"CMake build requested but no CMakeLists.txt found beside {source_path}"
+            )
+        command = cmake_command
+    else:
+        raise BackendUnavailableError(f"Unsupported DLL build toolchain: {selected_toolchain}")
+    return command, subprocess_env
+
+
+def cast_toolchain(name: str) -> Toolchain:
+    if name in {"auto", "dmc", "msvc", "cmake"}:
+        return name  # type: ignore[return-value]
+    raise BackendUnavailableError(f"Unsupported DLL build toolchain: {name}")
+
+
 def _run_build_command(
     command: tuple[str, ...],
     *,
@@ -211,6 +279,66 @@ def _run_build_command(
             env=env,
         )
     return run_subprocess(command, cwd=working_directory, timeout_s=timeout_s, env=env)
+
+
+def _finalize_output(
+    *,
+    source_path: Path,
+    output_path: Path,
+) -> None:
+    if output_path.is_file():
+        return
+    sibling = source_path.with_suffix(".dll")
+    if sibling.is_file() and sibling != output_path:
+        sibling.replace(output_path)
+    if not output_path.is_file():
+        raise ValidationError(
+            f"DLL build reported success but output file was not created: {output_path}"
+        )
+
+
+def _attempt_build(
+    selected_toolchain: str,
+    *,
+    source_path: Path,
+    output_path: Path,
+    qspice_executable: Path | None,
+    timeout_s: float | None,
+) -> tuple[BuiltDllDevice | None, str | None]:
+    command, subprocess_env = _prepare_build(
+        selected_toolchain,
+        source_path=source_path,
+        output_path=output_path,
+        qspice_executable=qspice_executable,
+    )
+    process = _run_build_command(
+        command,
+        working_directory=source_path.parent,
+        timeout_s=timeout_s,
+        env=subprocess_env,
+    )
+    if process.exit_code != 0:
+        detail = process.stderr.strip() or process.stdout.strip() or "compiler failed"
+        return None, f"{selected_toolchain}: exit {process.exit_code}: {detail}"
+
+    try:
+        _finalize_output(source_path=source_path, output_path=output_path)
+    except ValidationError as exc:
+        return None, str(exc)
+
+    return (
+        BuiltDllDevice(
+            source_path=source_path,
+            output_path=output_path,
+            toolchain=selected_toolchain,
+            command=command,
+            exit_code=process.exit_code,
+            duration_s=process.duration_s,
+            stdout=process.stdout,
+            stderr=process.stderr,
+        ),
+        None,
+    )
 
 
 def build_dll_device(
@@ -235,52 +363,36 @@ def build_dll_device(
         output_path=output_path,
     )
 
-    selected_toolchain, command, bundled_dmc = _select_toolchain(
-        requested=toolchain,
-        source_path=resolved_source,
-        qspice_executable=qspice_executable,
-    )
-    subprocess_env: dict[str, str] | None = None
-    if selected_toolchain == "msvc":
-        command = _msvc_command(resolved_source, resolved_output)
-        if which("cl") is None:
-            vcvars = find_vcvars64_bat()
-            if vcvars is not None:
-                command = _wrap_msvc_with_vcvars(command, vcvars)
-    elif selected_toolchain == "dmc" and bundled_dmc is not None:
-        command = _dmc_command(bundled_dmc, resolved_source)
-        subprocess_env = _dmc_subprocess_env(bundled_dmc)
+    if toolchain == "auto":
+        toolchain_sequence = _select_auto_toolchain_sequence(
+            resolved_source,
+            qspice_executable,
+        )
+    else:
+        selected_toolchain, _, _ = _select_toolchain(
+            requested=toolchain,
+            source_path=resolved_source,
+            qspice_executable=qspice_executable,
+        )
+        toolchain_sequence = (selected_toolchain,)
 
-    process = _run_build_command(
-        command,
-        working_directory=resolved_source.parent,
-        timeout_s=timeout_s,
-        env=subprocess_env,
-    )
+    failures: list[str] = []
+    for selected_toolchain in toolchain_sequence:
+        built, failure = _attempt_build(
+            selected_toolchain,
+            source_path=resolved_source,
+            output_path=resolved_output,
+            qspice_executable=qspice_executable,
+            timeout_s=timeout_s,
+        )
+        if built is not None:
+            return built
+        if failure is not None:
+            failures.append(failure)
 
-    if process.exit_code != 0:
-        detail = process.stderr.strip() or process.stdout.strip() or "compiler failed"
-        raise ValidationError(f"DLL build failed with exit code {process.exit_code}: {detail}")
-
-    if not resolved_output.is_file():
-        sibling = resolved_source.with_suffix(".dll")
-        if sibling.is_file() and sibling != resolved_output:
-            sibling.replace(resolved_output)
-        elif not resolved_output.is_file():
-            raise ValidationError(
-                f"DLL build reported success but output file was not created: {resolved_output}"
-            )
-
-    return BuiltDllDevice(
-        source_path=resolved_source,
-        output_path=resolved_output,
-        toolchain=selected_toolchain,
-        command=command,
-        exit_code=process.exit_code,
-        duration_s=process.duration_s,
-        stdout=process.stdout,
-        stderr=process.stderr,
-    )
+    attempted = ", ".join(toolchain_sequence)
+    detail = "; ".join(failures) if failures else "compiler failed"
+    raise ValidationError(f"DLL build failed after trying {attempted}. {detail}")
 
 
 __all__ = ["SERVICE_SPEC", "BuiltDllDevice", "Toolchain", "build_dll_device"]

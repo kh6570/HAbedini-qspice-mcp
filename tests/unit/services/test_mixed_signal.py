@@ -19,6 +19,7 @@ from qspice_mcp.services._backends.schematic_editor import (
 from qspice_mcp.services._internals.dll_contracts import parse_dll_source_contract_text
 from qspice_mcp.services.mixed_signal._dll_toolchain_probe import (
     describe_dll_build_toolchain,
+    dll_build_degradation_hints,
     find_bundled_dmc,
 )
 from qspice_mcp.services.mixed_signal.build_dll_device import build_dll_device
@@ -849,3 +850,90 @@ def test_describe_dll_build_toolchain_reports_missing_toolchains(
     assert snapshot.cmake_available is False
     assert snapshot.auto_toolchain is None
     assert any("No DLL build toolchain" in note for note in snapshot.notes)
+
+
+def test_auto_falls_back_to_msvc_when_dmc_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    source = workspace / "buck_controller.cpp"
+    source.write_text("// test source\n", encoding="utf-8")
+    output = workspace / "buck_controller.dll"
+    output.write_bytes(b"MZ")
+    qspice_exe = _fake_qspice_install(tmp_path)
+
+    monkeypatch.setattr("qspice_mcp.services.mixed_signal.build_dll_device.which", lambda _: None)
+    monkeypatch.setattr(
+        "qspice_mcp.services.mixed_signal.build_dll_device.find_vcvars64_bat",
+        lambda: tmp_path / "vcvars64.bat",
+    )
+
+    calls: list[tuple[str, ...]] = []
+
+    def fake_run(
+        command: tuple[str, ...],
+        *,
+        cwd: Path,
+        timeout_s: float | None,
+        env: dict[str, str] | None = None,
+    ) -> SubprocessResult:
+        calls.append(command)
+        if command[0].endswith("dmc.exe") or (
+            len(command) >= 2 and command[1] == "-mn"
+        ):
+            return SubprocessResult(
+                command=command,
+                working_directory=cwd,
+                exit_code=1,
+                duration_s=0.1,
+                stdout="",
+                stderr="dmc failed",
+            )
+        return SubprocessResult(
+            command=command,
+            working_directory=cwd,
+            exit_code=0,
+            duration_s=0.1,
+            stdout="ok",
+            stderr="",
+        )
+
+    monkeypatch.setattr(
+        "qspice_mcp.services.mixed_signal.build_dll_device.run_subprocess",
+        fake_run,
+    )
+
+    result = build_dll_device(
+        source,
+        workspace_root=workspace,
+        toolchain="auto",
+        qspice_executable=qspice_exe,
+    )
+
+    assert result.toolchain == "msvc"
+    assert len(calls) == 2
+
+
+def test_dll_build_degradation_hints_include_recovery_suggestions(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.which",
+        lambda _name: None,
+    )
+    monkeypatch.setattr(
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.find_vcvars64_bat",
+        lambda: None,
+    )
+    monkeypatch.setattr(
+        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.find_bundled_dmc",
+        lambda _exe: None,
+    )
+
+    hints = dll_build_degradation_hints(qspice_executable=None, error="no toolchain")
+    assert hints["auto_toolchain"] is None
+    suggestions = hints["recovery_suggestions"]
+    assert isinstance(suggestions, list)
+    assert any("describe_server_capabilities" in str(item) for item in suggestions)

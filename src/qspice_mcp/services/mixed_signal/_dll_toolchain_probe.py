@@ -204,9 +204,55 @@ def describe_dll_build_toolchain(
     )
 
 
+def dll_build_degradation_hints(
+    *,
+    qspice_executable: Path | None = None,
+    error: str | None = None,
+) -> dict[str, object]:
+    """Return MCP-friendly toolchain hints when auto DLL build is skipped or fails."""
+
+    snapshot = describe_dll_build_toolchain(qspice_executable=qspice_executable)
+    suggestions: list[str] = []
+    if not snapshot.dmc_available:
+        suggestions.append(
+            "Set QSPICE_EXE to a valid QSPICE64.exe install so bundled DMC can be discovered."
+        )
+    if snapshot.msvc_available and not snapshot.msvc_cl_on_path:
+        suggestions.append(
+            "MSVC is installed but `cl` is not on PATH in this MCP session; "
+            "build_dll_device can bootstrap via vcvars64.bat when toolchain='msvc' or 'auto'."
+        )
+    elif not snapshot.msvc_available:
+        suggestions.append(
+            "Install Visual Studio Build Tools or run from a Developer Command Prompt "
+            "for toolchain='msvc'."
+        )
+    if not snapshot.cmake_available:
+        suggestions.append(
+            "Add CMake to PATH when a CMakeLists.txt is present beside the C-block source."
+        )
+    if snapshot.auto_toolchain is None:
+        suggestions.append(
+            "Call describe_server_capabilities and inspect optional_backends.dll_build_toolchain "
+            "before relying on write_workspace_text_file auto-build."
+        )
+    elif error is not None and "after trying" in error:
+        suggestions.append(
+            "Auto-build already retried alternate toolchains (DMC → MSVC → CMake). "
+            "Fix compiler errors in the source or pass an explicit dll_toolchain."
+        )
+
+    payload = snapshot.as_dict()
+    payload["recovery_suggestions"] = suggestions
+    if error is not None:
+        payload["error"] = error
+    return payload
+
+
 __all__ = [
     "DllBuildToolchainSnapshot",
     "describe_dll_build_toolchain",
+    "dll_build_degradation_hints",
     "find_bundled_dmc",
     "find_vcvars64_bat",
     "resolve_qspice_executable",

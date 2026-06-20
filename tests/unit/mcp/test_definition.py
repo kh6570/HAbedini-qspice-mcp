@@ -265,6 +265,10 @@ def test_mcp_write_workspace_text_file_reports_dll_build_error(
     assert result["output_path"].endswith("buck_controller.cpp")
     assert "dll_build_error" in result
     assert "no toolchain" in str(result["dll_build_error"])
+    assert "dll_build_hints" in result
+    hints = result["dll_build_hints"]
+    assert isinstance(hints, dict)
+    assert "recovery_suggestions" in hints
 
 
 def test_mcp_write_workspace_text_file_reuses_existing_dll_for_validation(

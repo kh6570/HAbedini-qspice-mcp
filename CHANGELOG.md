@@ -49,6 +49,9 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **ServiceSpec destructive/idempotent hints** — `destructive` and `idempotent` on `ServiceSpec` drive MCP annotation hints (default: read-only tools are idempotent).
 - **Service-package MCP contracts** — `services/<group>/mcp_contracts.py` rows merge onto enriched `ServiceSpec` at catalog discovery; retired `mcp/_tool_metadata/`.
 - **DLL build toolchain probe** — `describe_server_capabilities` reports `optional_backends.dll_build_toolchain` with bundled DMC, MSVC/vcvars, and CMake availability separate from simulator configuration.
+- **Auto DLL build fallback** — `build_dll_device(toolchain='auto')` retries MSVC then CMake when bundled DMC compile fails.
+- **`dll_build_hints` on write failures** — `write_workspace_text_file` auto-build errors include toolchain recovery suggestions from `describe_server_capabilities`.
+- **`scripts/verify_scratch_buck.py`** — Track A scratch buck MCP smoke script (`--workspace-root`, `--with-dll-build`, `--with-sim`).
 
 ### Changed
 
