@@ -8,8 +8,6 @@ from functools import cache
 from qspice_mcp.services._internals.service_catalog import build_service_spec_catalog
 from qspice_mcp.services.service_spec import ServiceSpec
 
-from .tool_metadata import TOOL_METADATA
-
 _DESCRIBE_SERVER_CAPABILITIES_SERVICE = ServiceSpec(
     name="describe_server_capabilities",
     title="Describe Server Capabilities",
@@ -71,31 +69,10 @@ class ToolDefinition:
         }
 
 
-def _coerce_metadata_annotations(raw: object) -> ToolAnnotations:
-    if isinstance(raw, ToolAnnotations):
-        return raw
-    if not isinstance(raw, dict):
-        return ToolAnnotations()
-    return ToolAnnotations(
-        read_only_hint=bool(raw.get("read_only_hint", False)),
-        destructive_hint=bool(raw.get("destructive_hint", False)),
-        idempotent_hint=bool(raw.get("idempotent_hint", False)),
-        open_world_hint=bool(raw.get("open_world_hint", False)),
-    )
+def resolve_tool_annotations(spec: ServiceSpec) -> ToolAnnotations:
+    """Derive MCP tool annotation hints from one enriched service spec."""
 
-
-def resolve_tool_annotations(
-    spec: ServiceSpec,
-    metadata: dict[str, object] | None,
-) -> ToolAnnotations:
-    """Merge ServiceSpec classification with explicit metadata annotation hints."""
-
-    metadata_ann = _coerce_metadata_annotations(
-        metadata.get("annotations") if isinstance(metadata, dict) else None
-    )
-    open_world = metadata_ann.open_world_hint
-    if not open_world and (spec.long_running or spec.name in _OPEN_WORLD_TOOL_NAMES):
-        open_world = True
+    open_world = spec.long_running or spec.name in _OPEN_WORLD_TOOL_NAMES
     return ToolAnnotations(
         read_only_hint=spec.read_only,
         destructive_hint=spec.destructive,
@@ -142,17 +119,15 @@ def build_tool_registry(
     specs = service_specs or _load_planned_service_specs()
     tools: list[ToolDefinition] = []
     for spec in specs:
-        metadata = TOOL_METADATA[spec.name]
-        input_schema = metadata["input_schema"]
-        if not isinstance(input_schema, dict):
-            raise TypeError(f"Tool metadata for {spec.name} must expose a mapping input_schema.")
+        if spec.input_schema is None:
+            raise KeyError(f"Missing MCP input_schema for service {spec.name!r}.")
         tools.append(
             ToolDefinition(
                 name=spec.name,
-                title=str(metadata["title"]),
-                description=str(metadata["description"]),
-                input_schema=_with_workspace_root_property(dict(input_schema)),
-                annotations=resolve_tool_annotations(spec, metadata),
+                title=spec.title,
+                description=spec.description or spec.summary,
+                input_schema=_with_workspace_root_property(dict(spec.input_schema)),
+                annotations=resolve_tool_annotations(spec),
                 service=spec,
             )
         )

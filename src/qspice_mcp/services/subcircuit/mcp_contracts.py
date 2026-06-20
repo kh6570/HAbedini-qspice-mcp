@@ -1,10 +1,13 @@
-"""Subcircuit tool metadata."""
+"""MCP input schemas and descriptions for this service package."""
 
 from __future__ import annotations
 
-from .common import _SCALAR_VALUE, _STEP_FILTER_VALUE, _ann
+from qspice_mcp.services._internals.mcp_schema_common import (
+    _SCALAR_VALUE,
+    _STEP_FILTER_VALUE,
+)
 
-SUBCIRCUIT_TOOL_METADATA: dict[str, dict[str, object]] = {
+MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "list_subcircuits": {
         "title": "List Subcircuits",
         "description": "Enumerate subcircuit instances referenced by a schematic.",
@@ -16,7 +19,6 @@ SUBCIRCUIT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "instance_path": {"type": "array", "items": {"type": "string"}},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "read_subcircuit": {
         "title": "Read Subcircuit",
@@ -31,7 +33,6 @@ SUBCIRCUIT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "instance_path": {"type": "array", "items": {"type": "string"}},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "set_subcircuit_component_value": {
         "title": "Set Subcircuit Component Value",
@@ -49,13 +50,10 @@ SUBCIRCUIT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "set_subcircuit_component_parameters": {
         "title": "Set Subcircuit Component Parameters",
-        "description": (
-            "Update one component parameter set inside a subcircuit instance or definition."
-        ),
+        "description": "Update one component parameter set inside a subcircuit instance or definition.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference", "component_reference", "parameters"],
@@ -73,9 +71,5 @@ SUBCIRCUIT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
 }
-
-
-__all__ = ["SUBCIRCUIT_TOOL_METADATA"]

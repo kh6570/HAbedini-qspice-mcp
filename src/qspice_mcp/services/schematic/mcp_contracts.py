@@ -1,17 +1,16 @@
-"""Schematic tool metadata."""
+"""MCP input schemas and descriptions for this service package."""
 
 from __future__ import annotations
 
-from .common import _SCALAR_VALUE, _STEP_FILTER_VALUE, _ann
+from qspice_mcp.services._internals.mcp_schema_common import (
+    _SCALAR_VALUE,
+    _STEP_FILTER_VALUE,
+)
 
-SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
+MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "materialize_reference_circuit": {
         "title": "Materialize Reference Circuit",
-        "description": (
-            "Write server-bundled reference circuit files into the workspace so an empty "
-            "folder can reproduce a canonical example (for example buck_converter_cpp) "
-            "from bundled package data recipes."
-        ),
+        "description": "Write server-bundled reference circuit files into the workspace so an empty folder can reproduce a canonical example (for example buck_converter_cpp) from bundled package data recipes.",
         "input_schema": {
             "type": "object",
             "required": ["recipe_id"],
@@ -21,14 +20,10 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "overwrite": {"type": "boolean"},
             },
         },
-        "annotations": _ann(),
     },
     "import_circuit_bundle": {
         "title": "Import Circuit Bundle",
-        "description": (
-            "Copy one workspace-local `.qsch` schematic and sibling sidecar files "
-            "into a destination folder."
-        ),
+        "description": "Copy one workspace-local `.qsch` schematic and sibling sidecar files into a destination folder.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path"],
@@ -38,22 +33,15 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "overwrite": {"type": "boolean"},
             },
         },
-        "annotations": _ann(),
     },
     "create_schematic": {
         "title": "Create Schematic",
-        "description": (
-            "Create a blank `.qsch` file so later schematic tools can build from scratch."
-        ),
+        "description": "Create a blank `.qsch` file so later schematic tools can build from scratch.",
         "input_schema": {
             "type": "object",
             "required": ["output_path"],
-            "properties": {
-                "output_path": {"type": "string"},
-                "overwrite": {"type": "boolean"},
-            },
+            "properties": {"output_path": {"type": "string"}, "overwrite": {"type": "boolean"}},
         },
-        "annotations": _ann(),
     },
     "create_starter_schematic": {
         "title": "Create Starter Schematic",
@@ -72,15 +60,10 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "analysis_instruction": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "add_component": {
         "title": "Add Component",
-        "description": (
-            "Insert one simple part or ground label into a schematic. "
-            "Supported component_kind values: resistor, capacitor, diode, voltage_source, "
-            "inductor, behavioral, nmos, pmos, ground (aliases such as l, mn, b also work)."
-        ),
+        "description": "Insert one simple part or ground label into a schematic. Supported component_kind values: resistor, capacitor, diode, voltage_source, inductor, behavioral, nmos, pmos, ground (aliases such as l, mn, b also work).",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "component_kind"],
@@ -130,14 +113,10 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 }
             ],
         },
-        "annotations": _ann(),
     },
     "add_dll_block": {
         "title": "Add DLL Block",
-        "description": (
-            "Insert one `.DLL` custom-device block into a schematic with starter input and "
-            "output pins."
-        ),
+        "description": "Insert one `.DLL` custom-device block into a schematic with starter input and output pins.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference", "device_name"],
@@ -145,21 +124,14 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "schematic_path": {"type": "string"},
                 "reference": {"type": "string"},
                 "device_name": {"type": "string"},
-                "input_pin_names": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
-                "output_pin_names": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
+                "input_pin_names": {"type": "array", "items": {"type": "string"}},
+                "output_pin_names": {"type": "array", "items": {"type": "string"}},
                 "position_x": {"type": "integer"},
                 "position_y": {"type": "integer"},
                 "rotation_degrees": {"type": "integer"},
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "add_dll_block_pin": {
         "title": "Add DLL Block Pin",
@@ -176,7 +148,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "add_wire": {
         "title": "Add Wire",
@@ -212,7 +183,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 },
             ],
         },
-        "annotations": _ann(),
     },
     "remove_wire": {
         "title": "Remove Wire",
@@ -248,7 +218,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 },
             ],
         },
-        "annotations": _ann(),
     },
     "remove_net_label": {
         "title": "Remove Net Label",
@@ -264,7 +233,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "remove_junction": {
         "title": "Remove Junction",
@@ -279,7 +247,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "add_junction": {
         "title": "Add Junction",
@@ -294,7 +261,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "add_net_label": {
         "title": "Add Net Label",
@@ -310,7 +276,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "add_instruction": {
         "title": "Add Instruction",
@@ -324,13 +289,11 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "inspect_schematic": {
         "title": "Inspect Schematic",
         "description": "Summarize a QSpice schematic before simulation.",
         "input_schema": {"type": "object", "required": ["schematic_path"]},
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "list_components": {
         "title": "List Components",
@@ -338,12 +301,8 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
         "input_schema": {
             "type": "object",
             "required": ["schematic_path"],
-            "properties": {
-                "schematic_path": {"type": "string"},
-                "prefixes": {"type": "string"},
-            },
+            "properties": {"schematic_path": {"type": "string"}, "prefixes": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "read_component": {
         "title": "Read Component",
@@ -351,34 +310,21 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference"],
-            "properties": {
-                "schematic_path": {"type": "string"},
-                "reference": {"type": "string"},
-            },
+            "properties": {"schematic_path": {"type": "string"}, "reference": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "read_component_symbol": {
         "title": "Read Component Symbol",
-        "description": (
-            "Return embedded symbol text, pin, drawing-item, and drawing-tag "
-            "metadata for one component."
-        ),
+        "description": "Return embedded symbol text, pin, drawing-item, and drawing-tag metadata for one component.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference"],
-            "properties": {
-                "schematic_path": {"type": "string"},
-                "reference": {"type": "string"},
-            },
+            "properties": {"schematic_path": {"type": "string"}, "reference": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "add_component_symbol_drawing": {
         "title": "Add Component Symbol Drawing",
-        "description": (
-            "Insert one embedded symbol drawing item from a raw tag name and argument list."
-        ),
+        "description": "Insert one embedded symbol drawing item from a raw tag name and argument list.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference", "tag_name", "arguments"],
@@ -386,15 +332,11 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "schematic_path": {"type": "string"},
                 "reference": {"type": "string"},
                 "tag_name": {"type": "string"},
-                "arguments": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
+                "arguments": {"type": "array", "items": {"type": "string"}},
                 "insert_index": {"type": "integer", "minimum": 0},
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "save_schematic_as": {
         "title": "Save Schematic As",
@@ -402,18 +344,12 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "output_path"],
-            "properties": {
-                "schematic_path": {"type": "string"},
-                "output_path": {"type": "string"},
-            },
+            "properties": {"schematic_path": {"type": "string"}, "output_path": {"type": "string"}},
         },
-        "annotations": _ann(idempotent=True),
     },
     "set_component_symbol_text": {
         "title": "Set Component Symbol Text",
-        "description": (
-            "Update one embedded symbol text item, including layout and style attributes."
-        ),
+        "description": "Update one embedded symbol text item, including layout and style attributes.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference"],
@@ -432,12 +368,7 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
             "allOf": [
-                {
-                    "oneOf": [
-                        {"required": ["text_index"]},
-                        {"required": ["text_role"]},
-                    ]
-                },
+                {"oneOf": [{"required": ["text_index"]}, {"required": ["text_role"]}]},
                 {
                     "anyOf": [
                         {"required": ["text"]},
@@ -450,13 +381,10 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 },
             ],
         },
-        "annotations": _ann(),
     },
     "set_component_symbol_drawing": {
         "title": "Set Component Symbol Drawing",
-        "description": (
-            "Update one embedded symbol drawing item by replacing its tag name or raw arguments."
-        ),
+        "description": "Update one embedded symbol drawing item by replacing its tag name or raw arguments.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference", "drawing_index"],
@@ -465,22 +393,11 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "reference": {"type": "string"},
                 "drawing_index": {"type": "integer", "minimum": 0},
                 "tag_name": {"type": "string"},
-                "arguments": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
+                "arguments": {"type": "array", "items": {"type": "string"}},
                 "output_path": {"type": "string"},
             },
-            "allOf": [
-                {
-                    "anyOf": [
-                        {"required": ["tag_name"]},
-                        {"required": ["arguments"]},
-                    ]
-                }
-            ],
+            "allOf": [{"anyOf": [{"required": ["tag_name"]}, {"required": ["arguments"]}]}],
         },
-        "annotations": _ann(),
     },
     "set_component_symbol_pin": {
         "title": "Set Component Symbol Pin",
@@ -506,12 +423,7 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
             "allOf": [
-                {
-                    "oneOf": [
-                        {"required": ["pin_index"]},
-                        {"required": ["pin_name"]},
-                    ]
-                },
+                {"oneOf": [{"required": ["pin_index"]}, {"required": ["pin_name"]}]},
                 {
                     "anyOf": [
                         {"required": ["new_pin_name"]},
@@ -527,7 +439,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 },
             ],
         },
-        "annotations": _ann(),
     },
     "set_dll_block_pin_role": {
         "title": "Set DLL Block Pin Role",
@@ -543,22 +454,12 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "pin_name": {"type": "string"},
                 "output_path": {"type": "string"},
             },
-            "allOf": [
-                {
-                    "oneOf": [
-                        {"required": ["pin_index"]},
-                        {"required": ["pin_name"]},
-                    ]
-                }
-            ],
+            "allOf": [{"oneOf": [{"required": ["pin_index"]}, {"required": ["pin_name"]}]}],
         },
-        "annotations": _ann(),
     },
     "remove_component": {
         "title": "Remove Component",
-        "description": (
-            "Remove one schematic component by reference and persist the edited schematic."
-        ),
+        "description": "Remove one schematic component by reference and persist the edited schematic.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference"],
@@ -568,7 +469,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(destructive=True),
     },
     "remove_component_symbol_drawing": {
         "title": "Remove Component Symbol Drawing",
@@ -583,7 +483,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "remove_dll_block_pin": {
         "title": "Remove DLL Block Pin",
@@ -598,16 +497,8 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "pin_name": {"type": "string"},
                 "output_path": {"type": "string"},
             },
-            "allOf": [
-                {
-                    "oneOf": [
-                        {"required": ["pin_index"]},
-                        {"required": ["pin_name"]},
-                    ]
-                }
-            ],
+            "allOf": [{"oneOf": [{"required": ["pin_index"]}, {"required": ["pin_name"]}]}],
         },
-        "annotations": _ann(),
     },
     "set_component_value": {
         "title": "Set Component Value",
@@ -622,14 +513,10 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "set_component_rotation": {
         "title": "Set Component Rotation",
-        "description": (
-            "Rotate one placed schematic component in 45-degree steps without "
-            "changing its position."
-        ),
+        "description": "Rotate one placed schematic component in 45-degree steps without changing its position.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference", "rotation_degrees"],
@@ -640,13 +527,10 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "set_component_position": {
         "title": "Set Component Position",
-        "description": (
-            "Move one placed schematic component to new coordinates, optionally updating rotation."
-        ),
+        "description": "Move one placed schematic component to new coordinates, optionally updating rotation.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference", "position_x", "position_y"],
@@ -659,7 +543,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "set_component_parameters": {
         "title": "Set Component Parameters",
@@ -678,7 +561,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "set_element_model": {
         "title": "Set Element Model",
@@ -693,7 +575,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "set_parameter": {
         "title": "Set Parameter",
@@ -708,7 +589,6 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "remove_instruction": {
         "title": "Remove Instruction",
@@ -723,14 +603,10 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "regex": {"type": "boolean"},
             },
         },
-        "annotations": _ann(),
     },
     "rename_component_reference": {
         "title": "Rename Component Reference",
-        "description": (
-            "Rename one schematic component reference, updating both the component "
-            "and its embedded symbol text."
-        ),
+        "description": "Rename one schematic component reference, updating both the component and its embedded symbol text.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference", "new_reference"],
@@ -741,29 +617,15 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "describe_schematic_edit_support": {
         "title": "Describe Schematic Edit Support",
-        "description": (
-            "Return a static machine-readable capability map for every known "
-            "schematic edit intent so AI clients can make deterministic "
-            "go/no-go decisions before attempting writes."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {},
-        },
-        "annotations": _ann(read_only=True),
+        "description": "Return a static machine-readable capability map for every known schematic edit intent so AI clients can make deterministic go/no-go decisions before attempting writes.",
+        "input_schema": {"type": "object", "properties": {}},
     },
     "describe_edit_capability": {
         "title": "Describe Edit Capability",
-        "description": (
-            "Perform a preflight check for one edit intent on a component: read its "
-            "current state, map the intent to the correct tool, and return either a "
-            "ready-to-execute suggestion or a clear explanation plus nearest valid "
-            "alternatives."
-        ),
+        "description": "Perform a preflight check for one edit intent on a component: read its current state, map the intent to the correct tool, and return either a ready-to-execute suggestion or a clear explanation plus nearest valid alternatives.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference", "intent"],
@@ -785,9 +647,10 @@ SCHEMATIC_TOOL_METADATA: dict[str, dict[str, object]] = {
                 },
             },
         },
-        "annotations": _ann(read_only=True),
+    },
+    "describe_topology_authoring_support": {
+        "title": "Describe Topology Authoring Support",
+        "description": "Return a static map of schematic creation capabilities for scratch topology authoring (Track A), including buck scratch readiness.",
+        "input_schema": {"type": "object", "properties": {}},
     },
 }
-
-
-__all__ = ["SCHEMATIC_TOOL_METADATA"]

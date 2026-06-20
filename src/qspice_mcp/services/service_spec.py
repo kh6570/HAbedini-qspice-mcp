@@ -20,3 +20,5 @@ class ServiceSpec:
     long_running: bool = False
     destructive: bool = False
     idempotent: bool | None = None
+    description: str | None = None
+    input_schema: dict[str, object] | None = None

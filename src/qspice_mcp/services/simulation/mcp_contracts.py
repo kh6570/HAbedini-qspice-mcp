@@ -1,44 +1,35 @@
-"""Simulation tool metadata."""
+"""MCP input schemas and descriptions for this service package."""
 
 from __future__ import annotations
 
-from .common import _RETAINED_ARTIFACT_POLICY, _SCALAR_VALUE, _STEP_FILTER_VALUE, _ann
+from qspice_mcp.services._internals.mcp_schema_common import (
+    _RETAINED_ARTIFACT_POLICY,
+    _SCALAR_VALUE,
+    _STEP_FILTER_VALUE,
+)
 
-SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
+MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "generate_netlist": {
         "title": "Generate Netlist",
         "description": "Resolve or stage the derived .net or .cir artifact used for execution.",
         "input_schema": {
             "type": "object",
             "required": ["source_path"],
-            "properties": {
-                "source_path": {"type": "string"},
-                "output_path": {"type": "string"},
-            },
+            "properties": {"source_path": {"type": "string"}, "output_path": {"type": "string"}},
         },
-        "annotations": _ann(idempotent=True),
     },
     "save_netlist_copy": {
         "title": "Save Netlist Copy",
-        "description": (
-            "Resolve or generate one derived .net or .cir artifact at a requested destination."
-        ),
+        "description": "Resolve or generate one derived .net or .cir artifact at a requested destination.",
         "input_schema": {
             "type": "object",
             "required": ["source_path", "output_path"],
-            "properties": {
-                "source_path": {"type": "string"},
-                "output_path": {"type": "string"},
-            },
+            "properties": {"source_path": {"type": "string"}, "output_path": {"type": "string"}},
         },
-        "annotations": _ann(idempotent=True),
     },
     "prepare_bode_analysis": {
         "title": "Prepare Bode Analysis",
-        "description": (
-            "Stage a schematic or netlist with a documented `.bode` directive "
-            "for closed-loop SMPS analysis."
-        ),
+        "description": "Stage a schematic or netlist with a documented `.bode` directive for closed-loop SMPS analysis.",
         "input_schema": {
             "type": "object",
             "required": [
@@ -63,7 +54,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_ac": {
         "title": "Prepare AC Analysis",
@@ -80,7 +70,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_dc_sweep": {
         "title": "Prepare DC Sweep",
@@ -97,24 +86,13 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_loop_gain_analysis": {
         "title": "Prepare Loop Gain Analysis",
-        "description": (
-            "Stage a schematic or netlist with a documented `.ac` directive and "
-            "Tian or Middlebrook loop-gain guidance."
-        ),
+        "description": "Stage a schematic or netlist with a documented `.ac` directive and Tian or Middlebrook loop-gain guidance.",
         "input_schema": {
             "type": "object",
-            "required": [
-                "source_path",
-                "method",
-                "sweep_type",
-                "points",
-                "start",
-                "stop",
-            ],
+            "required": ["source_path", "method", "sweep_type", "points", "start", "stop"],
             "properties": {
                 "source_path": {"type": "string"},
                 "method": {"type": "string", "enum": ["tian", "middlebrook"]},
@@ -126,7 +104,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_noise": {
         "title": "Prepare Noise Analysis",
@@ -153,7 +130,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_transfer_function": {
         "title": "Prepare Transfer Function Analysis",
@@ -168,7 +144,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_sensitivity": {
         "title": "Prepare Sensitivity Analysis",
@@ -183,7 +158,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_temperature_sweep": {
         "title": "Prepare Temperature Sweep",
@@ -199,7 +173,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_transient": {
         "title": "Prepare Transient Analysis",
@@ -218,13 +191,10 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_monte_carlo": {
         "title": "Prepare Monte Carlo",
-        "description": (
-            "Persist explicit Monte Carlo parameter samples for later copy-on-write execution."
-        ),
+        "description": "Persist explicit Monte Carlo parameter samples for later copy-on-write execution.",
         "input_schema": {
             "type": "object",
             "required": ["source_path", "sample_count"],
@@ -285,7 +255,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "prepare_worst_case": {
         "title": "Prepare Worst Case",
@@ -349,14 +318,10 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "list_plot_suggestions": {
         "title": "List Plot Suggestions",
-        "description": (
-            "Inspect a schematic or netlist and surface `.plot`, `.print`, "
-            "`.probe`, and `.abscissa` hints."
-        ),
+        "description": "Inspect a schematic or netlist and surface `.plot`, `.print`, `.probe`, and `.abscissa` hints.",
         "input_schema": {
             "type": "object",
             "required": ["source_path"],
@@ -365,40 +330,28 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "netlist_output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "summarize_tolerance_analysis": {
         "title": "Summarize Tolerance Analysis",
-        "description": (
-            "Summarize Monte Carlo or worst-case target coverage and numeric `.meas` results from "
-            "a persisted batch; measure refresh requires sibling run netlists and QPOST, or pass "
-            "`refresh_measures=false` to use recorded `.meas` artifacts."
-        ),
+        "description": "Summarize Monte Carlo or worst-case target coverage and numeric `.meas` results from a persisted batch; measure refresh requires sibling run netlists and QPOST, or pass `refresh_measures=false` to use recorded `.meas` artifacts.",
         "input_schema": {
             "type": "object",
             "required": ["batch_path"],
             "properties": {
                 "batch_path": {"type": "string"},
-                "measures": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                },
+                "measures": {"type": "array", "items": {"type": "string"}},
                 "refresh_measures": {"type": "boolean"},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "list_includes": {
         "title": "List Netlist Includes",
-        "description": (
-            "List `.include`, `.inc`, and `.lib` directives reachable from one netlist."
-        ),
+        "description": "List `.include`, `.inc`, and `.lib` directives reachable from one netlist.",
         "input_schema": {
             "type": "object",
             "required": ["netlist_path"],
             "properties": {"netlist_path": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "resolve_model_libraries": {
         "title": "Resolve Model Libraries",
@@ -408,13 +361,10 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
             "required": ["netlist_path"],
             "properties": {"netlist_path": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "add_library_include": {
         "title": "Add Library Include",
-        "description": (
-            "Append one `.include`, `.inc`, or `.lib` directive to a netlist artifact."
-        ),
+        "description": "Append one `.include`, `.inc`, or `.lib` directive to a netlist artifact.",
         "input_schema": {
             "type": "object",
             "required": ["netlist_path", "include_path"],
@@ -426,13 +376,10 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "relative_to_netlist": {"type": "boolean"},
             },
         },
-        "annotations": _ann(),
     },
     "add_model": {
         "title": "Add Model Definition",
-        "description": (
-            "Append one SPICE model definition block to a `.lib`, `.inc`, or netlist file."
-        ),
+        "description": "Append one SPICE model definition block to a `.lib`, `.inc`, or netlist file.",
         "input_schema": {
             "type": "object",
             "required": ["target_path", "model_text"],
@@ -442,7 +389,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "run_simulation": {
         "title": "Run Simulation",
@@ -461,7 +407,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "extra_switches": {"type": "array", "items": {"type": "string"}},
             },
         },
-        "annotations": _ann(),
     },
     "run_value_sweep": {
         "title": "Run Value Sweep",
@@ -472,11 +417,7 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
             "properties": {
                 "source_path": {"type": "string"},
                 "reference": {"type": "string"},
-                "values": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": _SCALAR_VALUE,
-                },
+                "values": {"type": "array", "minItems": 1, "items": _SCALAR_VALUE},
                 "output_dir": {"type": "string"},
                 "parallelism": {"type": "integer", "minimum": 1},
                 "dry_run": {"type": "boolean"},
@@ -487,7 +428,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "retained_artifact_policy": _RETAINED_ARTIFACT_POLICY,
             },
         },
-        "annotations": _ann(),
     },
     "run_param_sweep": {
         "title": "Run Parameter Sweep",
@@ -516,7 +456,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "retained_artifact_policy": _RETAINED_ARTIFACT_POLICY,
             },
         },
-        "annotations": _ann(),
     },
     "run_monte_carlo": {
         "title": "Run Monte Carlo",
@@ -536,7 +475,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "retained_artifact_policy": _RETAINED_ARTIFACT_POLICY,
             },
         },
-        "annotations": _ann(),
     },
     "run_worst_case": {
         "title": "Run Worst Case",
@@ -556,7 +494,6 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "retained_artifact_policy": _RETAINED_ARTIFACT_POLICY,
             },
         },
-        "annotations": _ann(),
     },
     "run_model_sweep": {
         "title": "Run Model Sweep",
@@ -567,11 +504,7 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
             "properties": {
                 "source_path": {"type": "string"},
                 "reference": {"type": "string"},
-                "models": {
-                    "type": "array",
-                    "minItems": 1,
-                    "items": {"type": "string"},
-                },
+                "models": {"type": "array", "minItems": 1, "items": {"type": "string"}},
                 "output_dir": {"type": "string"},
                 "parallelism": {"type": "integer", "minimum": 1},
                 "dry_run": {"type": "boolean"},
@@ -582,9 +515,5 @@ SIMULATION_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "retained_artifact_policy": _RETAINED_ARTIFACT_POLICY,
             },
         },
-        "annotations": _ann(),
     },
 }
-
-
-__all__ = ["SIMULATION_TOOL_METADATA"]

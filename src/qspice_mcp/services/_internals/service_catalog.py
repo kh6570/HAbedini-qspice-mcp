@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from functools import cache
 from importlib import import_module
 from pkgutil import iter_modules
@@ -26,6 +27,43 @@ _SERVICE_PACKAGE_ORDER: tuple[str, ...] = (
 )
 
 
+def discover_package_mcp_contracts(package_name: str) -> dict[str, dict[str, object]]:
+    """Return MCP contract rows declared under one service package."""
+
+    try:
+        module = import_module(f"qspice_mcp.services.{package_name}.mcp_contracts")
+    except ModuleNotFoundError:
+        return {}
+    contracts = getattr(module, "MCP_CONTRACTS", None)
+    if not isinstance(contracts, dict):
+        return {}
+    return contracts
+
+
+@cache
+def build_mcp_contract_catalog() -> dict[str, dict[str, object]]:
+    """Build the full MCP contract catalog from service packages and internals."""
+
+    catalog: dict[str, dict[str, object]] = {}
+    for package_name in _SERVICE_PACKAGE_ORDER:
+        catalog.update(discover_package_mcp_contracts(package_name))
+    internals = import_module("qspice_mcp.services._internals.mcp_contracts")
+    internal_contracts = getattr(internals, "MCP_CONTRACTS", None)
+    if isinstance(internal_contracts, dict):
+        catalog.update(internal_contracts)
+    return catalog
+
+
+def _enrich_service_spec(spec: ServiceSpec, contract: dict[str, object]) -> ServiceSpec:
+    input_schema = contract.get("input_schema")
+    return replace(
+        spec,
+        title=str(contract.get("title", spec.title)),
+        description=str(contract.get("description", spec.summary)),
+        input_schema=dict(input_schema) if isinstance(input_schema, dict) else spec.input_schema,
+    )
+
+
 @cache
 def discover_package_service_specs(package_name: str) -> tuple[ServiceSpec, ...]:
     """Return all ``SERVICE_SPEC`` definitions found under a service package."""
@@ -35,6 +73,7 @@ def discover_package_service_specs(package_name: str) -> tuple[ServiceSpec, ...]
     if package_path is None:
         raise TypeError(f"qspice_mcp.services.{package_name} is not a package.")
 
+    contracts = discover_package_mcp_contracts(package_name)
     specs: list[ServiceSpec] = []
     for module_info in sorted(iter_modules(package_path), key=lambda entry: entry.name):
         if module_info.name.startswith("_"):
@@ -47,7 +86,11 @@ def discover_package_service_specs(package_name: str) -> tuple[ServiceSpec, ...]
             raise TypeError(
                 f"{module.__name__}.SERVICE_SPEC must be a {ServiceSpec.__name__} instance."
             )
-        specs.append(service_spec)
+        contract = contracts.get(service_spec.name)
+        enriched = (
+            _enrich_service_spec(service_spec, contract) if contract is not None else service_spec
+        )
+        specs.append(enriched)
 
     return tuple(specs)
 
@@ -58,7 +101,12 @@ def build_service_spec_catalog(
 ) -> tuple[ServiceSpec, ...]:
     """Build the full service catalog from discovered package service specs."""
 
-    catalog = list(extra_specs)
+    contracts = build_mcp_contract_catalog()
+    catalog: list[ServiceSpec] = []
+    for spec in extra_specs:
+        contract = contracts.get(spec.name)
+        enriched = _enrich_service_spec(spec, contract) if contract is not None else spec
+        catalog.append(enriched)
     for package_name in _SERVICE_PACKAGE_ORDER:
         catalog.extend(discover_package_service_specs(package_name))
     return tuple(catalog)
@@ -98,8 +146,10 @@ def build_service_callable_catalog() -> dict[str, object]:
 
 
 __all__ = [
+    "build_mcp_contract_catalog",
     "build_service_callable_catalog",
     "build_service_spec_catalog",
+    "discover_package_mcp_contracts",
     "discover_package_service_specs",
     "resolve_service_module",
 ]

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Guard MCP tool metadata against stale all-caps QSPICE prose.
-
-Public docs and tool descriptions use the Qorvo-style product name ``QSpice``.
-Identifiers such as ``QSPICE_EXE``, ``QSPICE64.exe``, and install paths under
-``Program Files\\QSPICE\\`` must stay untouched.
-"""
+"""Guard MCP service contract prose against stale all-caps QSPICE tokens."""
 
 from __future__ import annotations
 
@@ -13,7 +8,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-TOOL_METADATA_DIR = Path("src/qspice_mcp/mcp/_tool_metadata")
+MCP_CONTRACTS_DIR = Path("src/qspice_mcp/services")
 
 # Standalone QSPICE prose, not QSPICE64* or QSPICE_* env/path tokens.
 _STALE_PROSE = re.compile(r"\bQSPICE(?!64|_)")
@@ -27,14 +22,12 @@ class CasingIssue:
 
 
 def collect_casing_issues(*, root: Path) -> list[CasingIssue]:
-    metadata_root = root / TOOL_METADATA_DIR
-    if not metadata_root.is_dir():
-        return [CasingIssue(TOOL_METADATA_DIR, 0, "directory missing")]
+    contracts_root = root / MCP_CONTRACTS_DIR
+    if not contracts_root.is_dir():
+        return [CasingIssue(MCP_CONTRACTS_DIR, 0, "directory missing")]
 
     issues: list[CasingIssue] = []
-    for path in sorted(metadata_root.glob("*.py")):
-        if path.name == "__init__.py":
-            continue
+    for path in sorted(contracts_root.rglob("mcp_contracts.py")):
         for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
             match = _STALE_PROSE.search(line)
             if match is not None:
@@ -53,14 +46,14 @@ def main() -> int:
     issues = collect_casing_issues(root=root)
     if issues:
         print(
-            f"ERROR: Found {len(issues)} stale QSPICE prose token(s) in tool metadata:",
+            f"ERROR: Found {len(issues)} stale QSPICE prose token(s) in MCP contracts:",
             file=sys.stderr,
         )
         for item in issues:
             print(f"  - {item.path}:{item.line} {item.snippet}", file=sys.stderr)
         return 1
 
-    print("OK: MCP tool metadata uses QSpice prose casing.")
+    print("OK: MCP service contracts use QSpice prose casing.")
     return 0
 
 

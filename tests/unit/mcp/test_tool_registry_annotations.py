@@ -15,7 +15,7 @@ def test_resolve_tool_annotations_uses_service_read_only_flag() -> None:
         read_only=True,
     )
 
-    resolved = resolve_tool_annotations(spec, {"annotations": {"read_only_hint": False}})
+    resolved = resolve_tool_annotations(spec)
 
     assert resolved.read_only_hint is True
 
@@ -30,7 +30,7 @@ def test_resolve_tool_annotations_sets_open_world_for_long_running_tools() -> No
         long_running=True,
     )
 
-    resolved = resolve_tool_annotations(spec, {"annotations": {}})
+    resolved = resolve_tool_annotations(spec)
 
     assert resolved.open_world_hint is True
 
@@ -53,6 +53,6 @@ def test_resolve_tool_annotations_uses_service_destructive_and_idempotent_defaul
         idempotent=True,
     )
 
-    assert resolve_tool_annotations(destructive, {"annotations": {}}).destructive_hint is True
-    assert resolve_tool_annotations(idempotent_write, {"annotations": {}}).idempotent_hint is True
-    assert resolve_tool_annotations(idempotent_write, {"annotations": {}}).read_only_hint is False
+    assert resolve_tool_annotations(destructive).destructive_hint is True
+    assert resolve_tool_annotations(idempotent_write).idempotent_hint is True
+    assert resolve_tool_annotations(idempotent_write).read_only_hint is False

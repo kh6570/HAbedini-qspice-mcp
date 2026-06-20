@@ -1,10 +1,8 @@
-"""Remote-session tool metadata."""
+"""MCP input schemas and descriptions for this service package."""
 
 from __future__ import annotations
 
-from .common import _ann
-
-REMOTE_TOOL_METADATA: dict[str, dict[str, object]] = {
+MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "submit_remote_simulation": {
         "title": "Submit Remote Simulation",
         "description": "Submit one remote-style simulation session for background execution.",
@@ -20,7 +18,6 @@ REMOTE_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "extra_switches": {"type": "array", "items": {"type": "string"}},
             },
         },
-        "annotations": _ann(),
     },
     "poll_remote_run": {
         "title": "Poll Remote Run",
@@ -30,7 +27,6 @@ REMOTE_TOOL_METADATA: dict[str, dict[str, object]] = {
             "required": ["session_id"],
             "properties": {"session_id": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "download_remote_artifacts": {
         "title": "Download Remote Artifacts",
@@ -51,7 +47,6 @@ REMOTE_TOOL_METADATA: dict[str, dict[str, object]] = {
                 },
             },
         },
-        "annotations": _ann(),
     },
     "close_remote_session": {
         "title": "Close Remote Session",
@@ -59,14 +54,7 @@ REMOTE_TOOL_METADATA: dict[str, dict[str, object]] = {
         "input_schema": {
             "type": "object",
             "required": ["session_id"],
-            "properties": {
-                "session_id": {"type": "string"},
-                "delete_bundle": {"type": "boolean"},
-            },
+            "properties": {"session_id": {"type": "string"}, "delete_bundle": {"type": "boolean"}},
         },
-        "annotations": _ann(),
     },
 }
-
-
-__all__ = ["REMOTE_TOOL_METADATA"]

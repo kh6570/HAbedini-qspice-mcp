@@ -173,7 +173,7 @@ Adding a capability follows the inward-only grain:
 
 1. Add a service module + `SERVICE_SPEC` under `services/<group>/`.
 2. Keep logic in the service (and `_internals/`); add optional glue in `_backends/` only when a richer path exists.
-3. Register MCP metadata in `mcp/_tool_metadata/` and a handler in `mcp/tools/`.
+3. Add `description` and `input_schema` to the service package `mcp_contracts.py` (merged onto `ServiceSpec` at catalog discovery) and rely on catalog-driven handler bindings in `mcp/tools/handler_bindings.py`.
 4. Cover it with unit tests; reserve integration tests for cases that require a real QSpice.
 
 The implemented surface is enumerated in the [Tool reference](tool_reference.md); call `describe_server_capabilities` at runtime for the live backend, feature-flag, and error-taxonomy state.

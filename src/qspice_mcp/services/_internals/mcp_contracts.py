@@ -1,10 +1,8 @@
-"""Server tool metadata."""
+"""MCP contracts for services without a dedicated package module."""
 
 from __future__ import annotations
 
-from .common import _ann
-
-SERVER_TOOL_METADATA: dict[str, dict[str, object]] = {
+MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "describe_server_capabilities": {
         "title": "Describe Server Capabilities",
         "description": (
@@ -15,9 +13,5 @@ SERVER_TOOL_METADATA: dict[str, dict[str, object]] = {
             "type": "object",
             "properties": {},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
 }
-
-
-__all__ = ["SERVER_TOOL_METADATA"]

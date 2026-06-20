@@ -1,28 +1,17 @@
-"""Artifact tool metadata."""
+from qspice_mcp.services._internals.mcp_schema_common import (
+    _COMPONENT,
+    _STEP_FILTERS,
+)
 
-from __future__ import annotations
-
-from .common import _COMPONENT, _STEP_FILTERS, _ann
-
-ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
+MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "describe_qux_export_support": {
         "title": "Describe QUX Export Support",
-        "description": (
-            "Describe whether the companion QUX executable is available and "
-            "which documented export switches it supports."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {},
-        },
-        "annotations": _ann(read_only=True, idempotent=True),
+        "description": "Describe whether the companion QUX executable is available and which documented export switches it supports.",
+        "input_schema": {"type": "object", "properties": {}},
     },
     "export_derived_raw": {
         "title": "Export Derived Raw",
-        "description": (
-            "Write one filtered waveform selection to a derived binary raw artifact, "
-            "with optional stepped reconstruction."
-        ),
+        "description": "Write one filtered waveform selection to a derived binary raw artifact, with optional stepped reconstruction.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "signals"],
@@ -38,14 +27,10 @@ ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "t_end": {"type": "number"},
             },
         },
-        "annotations": _ann(),
     },
     "merge_waveforms": {
         "title": "Merge Waveforms",
-        "description": (
-            "Merge multiple filtered waveform selections into one derived raw artifact, "
-            "with optional stepped reconstruction."
-        ),
+        "description": "Merge multiple filtered waveform selections into one derived raw artifact, with optional stepped reconstruction.",
         "input_schema": {
             "type": "object",
             "required": ["inputs"],
@@ -72,13 +57,10 @@ ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "all_steps": {"type": "boolean"},
             },
         },
-        "annotations": _ann(),
     },
     "export_waveform_ascii": {
         "title": "Export Waveform ASCII",
-        "description": (
-            "Export one or more waveform expressions through the documented QUX ASCII export path."
-        ),
+        "description": "Export one or more waveform expressions through the documented QUX ASCII export path.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "expressions"],
@@ -89,13 +71,10 @@ ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "export_waveform_csv": {
         "title": "Export Waveform CSV",
-        "description": (
-            "Export one or more waveform expressions through the documented QUX CSV export path."
-        ),
+        "description": "Export one or more waveform expressions through the documented QUX CSV export path.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "expressions"],
@@ -106,13 +85,10 @@ ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "export_waveform_spice": {
         "title": "Export Waveform SPICE",
-        "description": (
-            "Export one or more waveform expressions through the documented QUX SPICE export path."
-        ),
+        "description": "Export one or more waveform expressions through the documented QUX SPICE export path.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "expressions"],
@@ -123,14 +99,10 @@ ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "export_touchstone_s2p": {
         "title": "Export Touchstone S2P",
-        "description": (
-            "Export one or more waveform expressions through the documented "
-            "QUX Touchstone S2P path."
-        ),
+        "description": "Export one or more waveform expressions through the documented QUX Touchstone S2P path.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "expressions"],
@@ -141,22 +113,15 @@ ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(),
     },
     "generate_dll_variables": {
         "title": "Generate DLL Variables",
-        "description": (
-            "Generate `.DLL` variable declarations through the documented QUX companion command."
-        ),
+        "description": "Generate `.DLL` variable declarations through the documented QUX companion command.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path"],
-            "properties": {
-                "schematic_path": {"type": "string"},
-                "output_path": {"type": "string"},
-            },
+            "properties": {"schematic_path": {"type": "string"}, "output_path": {"type": "string"}},
         },
-        "annotations": _ann(),
     },
     "summarize_batch": {
         "title": "Summarize Batch",
@@ -166,7 +131,6 @@ ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
             "required": ["batch_path"],
             "properties": {"batch_path": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "export_measures_csv": {
         "title": "Export Measures CSV",
@@ -181,7 +145,6 @@ ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "refresh_measures": {"type": "boolean"},
             },
         },
-        "annotations": _ann(),
     },
     "compare_waveforms": {
         "title": "Compare Waveforms",
@@ -214,9 +177,5 @@ ARTIFACT_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "t_end": {"type": "number"},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
 }
-
-
-__all__ = ["ARTIFACT_TOOL_METADATA"]

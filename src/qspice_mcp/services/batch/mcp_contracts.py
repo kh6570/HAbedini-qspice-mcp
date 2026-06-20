@@ -1,10 +1,14 @@
-"""Batch tool metadata."""
+"""MCP input schemas and descriptions for this service package."""
 
 from __future__ import annotations
 
-from .common import _RETAINED_ARTIFACT_POLICY, _SCALAR_VALUE, _STEP_FILTER_VALUE, _ann
+from qspice_mcp.services._internals.mcp_schema_common import (
+    _RETAINED_ARTIFACT_POLICY,
+    _SCALAR_VALUE,
+    _STEP_FILTER_VALUE,
+)
 
-BATCH_TOOL_METADATA: dict[str, dict[str, object]] = {
+MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "submit_batch": {
         "title": "Submit Batch",
         "description": "Submit a background value, parameter, or model sweep batch.",
@@ -12,17 +16,10 @@ BATCH_TOOL_METADATA: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["batch_kind", "source_path"],
             "properties": {
-                "batch_kind": {
-                    "type": "string",
-                    "enum": ["component_value", "parameter", "model"],
-                },
+                "batch_kind": {"type": "string", "enum": ["component_value", "parameter", "model"]},
                 "source_path": {"type": "string"},
                 "reference": {"type": "string"},
-                "values": {
-                    "type": "array",
-                    "items": _SCALAR_VALUE,
-                    "minItems": 1,
-                },
+                "values": {"type": "array", "items": _SCALAR_VALUE, "minItems": 1},
                 "parameters": {
                     "type": "object",
                     "propertyNames": {"type": "string"},
@@ -43,7 +40,6 @@ BATCH_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "retained_artifact_policy": _RETAINED_ARTIFACT_POLICY,
             },
         },
-        "annotations": _ann(),
     },
     "get_batch_status": {
         "title": "Get Batch Status",
@@ -53,7 +49,6 @@ BATCH_TOOL_METADATA: dict[str, dict[str, object]] = {
             "required": ["batch_id"],
             "properties": {"batch_id": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "collect_batch_results": {
         "title": "Collect Batch Results",
@@ -63,7 +58,6 @@ BATCH_TOOL_METADATA: dict[str, dict[str, object]] = {
             "required": ["batch_id"],
             "properties": {"batch_id": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "cancel_batch": {
         "title": "Cancel Batch",
@@ -73,9 +67,5 @@ BATCH_TOOL_METADATA: dict[str, dict[str, object]] = {
             "required": ["batch_id"],
             "properties": {"batch_id": {"type": "string"}},
         },
-        "annotations": _ann(),
     },
 }
-
-
-__all__ = ["BATCH_TOOL_METADATA"]

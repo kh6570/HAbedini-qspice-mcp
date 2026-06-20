@@ -47,6 +47,7 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **Simulation phase progress** — `run_simulation` polls the `.log` for percent-complete lines and mirrors them via MCP progress + `ctx.info` when supported.
 - **Declarative MCP handler bindings** — `build_raw_tool_handlers()` auto-wires ~85% of tools from the service catalog; mixin classes no longer drive runtime dispatch.
 - **ServiceSpec destructive/idempotent hints** — `destructive` and `idempotent` on `ServiceSpec` drive MCP annotation hints (default: read-only tools are idempotent).
+- **Service-package MCP contracts** — `services/<group>/mcp_contracts.py` rows merge onto enriched `ServiceSpec` at catalog discovery; retired `mcp/_tool_metadata/`.
 
 ### Changed
 

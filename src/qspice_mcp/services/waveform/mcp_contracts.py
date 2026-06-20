@@ -1,29 +1,21 @@
-"""Waveform tool metadata."""
+from qspice_mcp.services._internals.mcp_schema_common import (
+    _COMPONENT,
+    _STEP_FILTERS,
+)
 
-from __future__ import annotations
-
-from .common import _COMPONENT, _STEP_FILTERS, _ann
-
-WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
+MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "list_steps": {
         "title": "List Steps",
-        "description": (
-            "Enumerate available simulation steps and their variable assignments without "
-            "returning waveform samples; sibling `.log` metadata produces the richest step labels."
-        ),
+        "description": "Enumerate available simulation steps and their variable assignments without returning waveform samples; sibling `.log` metadata produces the richest step labels.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path"],
             "properties": {"raw_path": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "list_signals": {
         "title": "List Signals",
-        "description": (
-            "List available waveform signals without returning samples; compatible no-backend "
-            "reads are limited to the supported raw fallback subset."
-        ),
+        "description": "List available waveform signals without returning samples; compatible no-backend reads are limited to the supported raw fallback subset.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path"],
@@ -33,32 +25,19 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "step_filters": _STEP_FILTERS,
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "read_device_operating_points": {
         "title": "Read Device Operating Points",
-        "description": (
-            "Read device operating-point currents, powers, and node voltages from one "
-            "Operating Point `.qraw`; requires a sibling `.net`/`.cir` or `netlist_path`, "
-            "and current/power coverage is richest when the run used `.option KEEPOPINFO` "
-            "plus `.option SAVEPOWERS`."
-        ),
+        "description": "Read device operating-point currents, powers, and node voltages from one Operating Point `.qraw`; requires a sibling `.net`/`.cir` or `netlist_path`, and current/power coverage is richest when the run used `.option KEEPOPINFO` plus `.option SAVEPOWERS`.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path"],
-            "properties": {
-                "raw_path": {"type": "string"},
-                "netlist_path": {"type": "string"},
-            },
+            "properties": {"raw_path": {"type": "string"}, "netlist_path": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "filter_device_operating_points": {
         "title": "Filter Device Operating Points",
-        "description": (
-            "Filter one Operating Point device catalog by family, model, reference, and metric "
-            "presence; the same raw/netlist preconditions as `read_device_operating_points` apply."
-        ),
+        "description": "Filter one Operating Point device catalog by family, model, reference, and metric presence; the same raw/netlist preconditions as `read_device_operating_points` apply.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path"],
@@ -72,32 +51,19 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "metric_names": {"type": "array", "items": {"type": "string"}, "minItems": 1},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "summarize_device_operating_points": {
         "title": "Summarize Device Operating Points",
-        "description": (
-            "Return compact family-level and extremum summaries for one Operating Point `.qraw`; "
-            "requires the same sibling netlist and operating-point trace preconditions as the "
-            "full device read."
-        ),
+        "description": "Return compact family-level and extremum summaries for one Operating Point `.qraw`; requires the same sibling netlist and operating-point trace preconditions as the full device read.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path"],
-            "properties": {
-                "raw_path": {"type": "string"},
-                "netlist_path": {"type": "string"},
-            },
+            "properties": {"raw_path": {"type": "string"}, "netlist_path": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "read_waveform": {
         "title": "Read Waveform",
-        "description": (
-            "Return bounded waveform samples for a signal. JSON responses are capped at 2000 "
-            "points and 64000 bytes; use `plot_waveforms`, `export_waveform_csv`, or "
-            "`export_derived_raw` for larger outputs."
-        ),
+        "description": "Return bounded waveform samples for a signal. JSON responses are capped at 2000 points and 64000 bytes; use `plot_waveforms`, `export_waveform_csv`, or `export_derived_raw` for larger outputs.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "signal"],
@@ -113,7 +79,6 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "max_bytes": {"type": "integer", "minimum": 1024},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "measure_waveform": {
         "title": "Measure Waveform",
@@ -145,14 +110,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "t_end": {"type": "number"},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "measure_bode_response": {
         "title": "Measure Bode Response",
-        "description": (
-            "Sample magnitude and phase from one frequency-domain waveform "
-            "trace at requested frequencies."
-        ),
+        "description": "Sample magnitude and phase from one frequency-domain waveform trace at requested frequencies.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "signal", "frequencies_hz"],
@@ -164,14 +125,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "step_filters": _STEP_FILTERS,
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "measure_stability_margins": {
         "title": "Measure Stability Margins",
-        "description": (
-            "Compute crossover frequency, phase margin, and gain margin from one "
-            "loop-gain frequency-domain waveform trace."
-        ),
+        "description": "Compute crossover frequency, phase margin, and gain margin from one loop-gain frequency-domain waveform trace.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "signal"],
@@ -182,14 +139,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "step_filters": _STEP_FILTERS,
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "measure_step_response": {
         "title": "Measure Step Response",
-        "description": (
-            "Compute rise time, delay, overshoot, and settling time from one "
-            "transient waveform trace."
-        ),
+        "description": "Compute rise time, delay, overshoot, and settling time from one transient waveform trace.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "signal"],
@@ -208,14 +161,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "settling_band_pct": {"type": "number", "exclusiveMinimum": 0},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "measure_efficiency": {
         "title": "Measure Efficiency",
-        "description": (
-            "Compute average input power, output power, and Pout/Pin efficiency "
-            "from transient power traces such as SAVEPOWERS `p(...)` signals."
-        ),
+        "description": "Compute average input power, output power, and Pout/Pin efficiency from transient power traces such as SAVEPOWERS `p(...)` signals.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "input_power_signal", "output_power_signal"],
@@ -229,13 +178,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "t_end": {"type": "number"},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "compute_thd": {
         "title": "Compute THD",
-        "description": (
-            "Estimate total harmonic distortion over a trailing integer-cycle waveform window."
-        ),
+        "description": "Estimate total harmonic distortion over a trailing integer-cycle waveform window.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "signal", "fundamental_hz"],
@@ -252,14 +198,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "samples_per_cycle": {"type": "integer", "minimum": 16},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "export_fft_spectrum": {
         "title": "Export FFT Spectrum",
-        "description": (
-            "Resample one time-domain waveform window and export its "
-            "single-sided FFT spectrum as CSV."
-        ),
+        "description": "Resample one time-domain waveform window and export its single-sided FFT spectrum as CSV.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "signal"],
@@ -276,14 +218,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "output_path": {"type": "string"},
             },
         },
-        "annotations": _ann(idempotent=True),
     },
     "plot_waveforms": {
         "title": "Plot Waveforms",
-        "description": (
-            "Generate a derived plot artifact for one or more waveforms, avoiding the bounded "
-            "`read_waveform` JSON ceiling when you need larger visual outputs."
-        ),
+        "description": "Generate a derived plot artifact for one or more waveforms, avoiding the bounded `read_waveform` JSON ceiling when you need larger visual outputs.",
         "input_schema": {
             "type": "object",
             "required": ["raw_path", "signals"],
@@ -302,14 +240,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "title": {"type": "string"},
             },
         },
-        "annotations": _ann(idempotent=True),
     },
     "read_log": {
         "title": "Read Simulation Log",
-        "description": (
-            "Return a concise log excerpt and optionally materialize QPOST-based measures; "
-            "refreshing measures requires a sibling `.net`/`.cir` plus a configured `QPOST.exe`."
-        ),
+        "description": "Return a concise log excerpt and optionally materialize QPOST-based measures; refreshing measures requires a sibling `.net`/`.cir` plus a configured `QPOST.exe`.",
         "input_schema": {
             "type": "object",
             "required": ["log_path"],
@@ -321,15 +255,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "meas_path": {"type": "string"},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "list_measures": {
         "title": "List Measures",
-        "description": (
-            "Enumerate QPOST-derived measurement blocks for one simulation log; set "
-            "`refresh_measures=false` to reuse an existing `.meas` file when QPOST or the sibling "
-            "netlist is unavailable."
-        ),
+        "description": "Enumerate QPOST-derived measurement blocks for one simulation log; set `refresh_measures=false` to reuse an existing `.meas` file when QPOST or the sibling netlist is unavailable.",
         "input_schema": {
             "type": "object",
             "required": ["log_path"],
@@ -339,14 +268,10 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "meas_path": {"type": "string"},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "read_measures": {
         "title": "Read Measures",
-        "description": (
-            "Return QPOST-derived measurement values with optional measure and step filtering; "
-            "set `refresh_measures=false` to read a recorded `.meas` file without rerunning QPOST."
-        ),
+        "description": "Return QPOST-derived measurement values with optional measure and step filtering; set `refresh_measures=false` to read a recorded `.meas` file without rerunning QPOST.",
         "input_schema": {
             "type": "object",
             "required": ["log_path"],
@@ -359,34 +284,23 @@ WAVEFORM_TOOL_METADATA: dict[str, dict[str, object]] = {
                 "meas_path": {"type": "string"},
             },
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "read_fourier": {
         "title": "Read Fourier Analysis",
-        "description": (
-            "Parse native QSpice `.four` Fourier summaries from a simulation `.log` file. "
-            "Distinct from recomputed FFT tools such as `compute_thd`."
-        ),
+        "description": "Parse native QSpice `.four` Fourier summaries from a simulation `.log` file. Distinct from recomputed FFT tools such as `compute_thd`.",
         "input_schema": {
             "type": "object",
             "required": ["log_path"],
             "properties": {"log_path": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
     "read_noise": {
         "title": "Read Noise Analysis",
-        "description": (
-            "Parse integrated and spot `.noise` summary lines from a simulation `.log` file."
-        ),
+        "description": "Parse integrated and spot `.noise` summary lines from a simulation `.log` file.",
         "input_schema": {
             "type": "object",
             "required": ["log_path"],
             "properties": {"log_path": {"type": "string"}},
         },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
 }
-
-
-__all__ = ["WAVEFORM_TOOL_METADATA"]

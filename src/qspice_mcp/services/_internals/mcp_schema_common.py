@@ -1,22 +1,6 @@
-"""Shared schema fragments for MCP tool metadata."""
+"""Shared JSON-schema fragments for service MCP contracts."""
 
 from __future__ import annotations
-
-
-def _ann(
-    *,
-    read_only: bool = False,
-    destructive: bool = False,
-    idempotent: bool = False,
-    open_world: bool = False,
-) -> dict[str, bool]:
-    return {
-        "read_only_hint": read_only,
-        "destructive_hint": destructive,
-        "idempotent_hint": idempotent,
-        "open_world_hint": open_world,
-    }
-
 
 _SCALAR_VALUE = {"oneOf": [{"type": "string"}, {"type": "number"}]}
 _STEP_FILTER_VALUE = {"oneOf": [{"type": "string"}, {"type": "number"}, {"type": "boolean"}]}
@@ -41,5 +25,4 @@ __all__ = [
     "_SCALAR_VALUE",
     "_STEP_FILTERS",
     "_STEP_FILTER_VALUE",
-    "_ann",
 ]

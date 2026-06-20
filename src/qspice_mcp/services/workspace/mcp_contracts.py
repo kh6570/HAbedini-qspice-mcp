@@ -1,10 +1,8 @@
-"""Workspace file tool metadata."""
+"""MCP input schemas and descriptions for this service package."""
 
 from __future__ import annotations
 
-from .common import _ann
-
-WORKSPACE_TOOL_METADATA: dict[str, dict[str, object]] = {
+MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "write_workspace_text_file": {
         "title": "Write Workspace Text File",
         "description": (
@@ -48,47 +46,5 @@ WORKSPACE_TOOL_METADATA: dict[str, dict[str, object]] = {
                 },
             },
         },
-        "annotations": _ann(),
-    },
-    "describe_topology_authoring_support": {
-        "title": "Describe Topology Authoring Support",
-        "description": (
-            "Return a static map of schematic creation capabilities for scratch "
-            "topology authoring (Track A), including buck scratch readiness."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {},
-        },
-        "annotations": _ann(read_only=True, idempotent=True),
-    },
-    "list_workflow_instructions": {
-        "title": "List Workflow Instructions",
-        "description": (
-            "List bundled workflow instructions for scratch circuit authoring "
-            "(for example buck-converter-cpp)."
-        ),
-        "input_schema": {
-            "type": "object",
-            "properties": {},
-        },
-        "annotations": _ann(read_only=True, idempotent=True),
-    },
-    "read_workflow_instruction": {
-        "title": "Read Workflow Instruction",
-        "description": (
-            "Read one bundled workflow instruction document with build steps, "
-            "coordinates, and source templates."
-        ),
-        "input_schema": {
-            "type": "object",
-            "required": ["instruction_id"],
-            "properties": {
-                "instruction_id": {"type": "string"},
-            },
-        },
-        "annotations": _ann(read_only=True, idempotent=True),
     },
 }
-
-__all__ = ["WORKSPACE_TOOL_METADATA"]
