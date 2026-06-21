@@ -88,6 +88,13 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "position_x": {"type": "integer"},
                 "position_y": {"type": "integer"},
                 "rotation_degrees": {"type": "integer"},
+                "auto_place": {
+                    "type": "boolean",
+                    "description": (
+                        "When true, ignore explicit coordinates and place the part on the "
+                        "next collision-free grid slot (left-to-right, 0° rotation)."
+                    ),
+                },
                 "net_name": {"type": "string"},
                 "output_path": {"type": "string"},
             },
@@ -652,5 +659,66 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
         "title": "Describe Topology Authoring Support",
         "description": "Return a static map of schematic creation capabilities for scratch topology authoring (Track A), including buck scratch readiness.",
         "input_schema": {"type": "object", "properties": {}},
+    },
+    "suggest_component_placement": {
+        "title": "Suggest Component Placement",
+        "description": (
+            "Suggest collision-free schematic coordinates for the next component using "
+            "a readable left-to-right grid with upright (0°) rotation."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "component_kind"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "component_kind": {
+                    "type": "string",
+                    "enum": [
+                        "resistor",
+                        "capacitor",
+                        "diode",
+                        "voltage_source",
+                        "inductor",
+                        "behavioral",
+                        "nmos",
+                        "pmos",
+                        "ground",
+                        "dll_block",
+                    ],
+                },
+                "origin_x": {"type": "integer"},
+                "origin_y": {"type": "integer"},
+                "grid_step_x": {"type": "integer"},
+                "grid_step_y": {"type": "integer"},
+                "clearance_units": {"type": "integer"},
+                "max_columns": {"type": "integer"},
+                "max_rows": {"type": "integer"},
+            },
+        },
+    },
+    "describe_schematic_layout_spec": {
+        "title": "Describe Schematic Layout Spec",
+        "description": (
+            "Return the v1 JSON layout-spec schema, placement modes, and bundled example "
+            "for batch component placement without large coordinate tables."
+        ),
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    "apply_schematic_layout_spec": {
+        "title": "Apply Schematic Layout Spec",
+        "description": (
+            "Place schematic components in batch from a workspace JSON layout specification "
+            "using auto, grid, or absolute placement modes."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "spec_path"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "spec_path": {"type": "string"},
+                "skip_existing": {"type": "boolean"},
+                "output_path": {"type": "string"},
+            },
+        },
     },
 }

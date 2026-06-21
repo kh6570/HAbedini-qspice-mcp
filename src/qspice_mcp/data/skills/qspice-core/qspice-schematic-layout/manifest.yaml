@@ -1,0 +1,19 @@
+schema_version: 1
+license: MIT
+scope: cross-product
+version: "1.1"
+human-description: Place schematic components readably without overlap using grid-based placement helpers and v1 JSON layout specs.
+requires-tools:
+  - describe_topology_authoring_support
+  - describe_schematic_layout_spec
+  - apply_schematic_layout_spec
+  - suggest_component_placement
+  - add_component
+  - read_component
+  - set_component_position
+  - set_component_rotation
+  - read_workflow_instruction
+requires-skills:
+  - qspice-getting-started
+requires-products: []
+toolkit: qspice-mcp

@@ -10,6 +10,20 @@ Build `Buck-converter.qsch` and `buck_controller.cpp` in an **empty workspace** 
 
 1. `describe_topology_authoring_support` — confirm `scratch_buck_ready` is true.
 2. `list_workflow_instructions` — confirm `buck-converter-cpp` is listed.
+3. For ad-hoc part placement (not the coordinate table below), call
+   `suggest_component_placement`, use `add_component(..., auto_place=true)`, or batch-apply
+   a v1 JSON layout spec via `apply_schematic_layout_spec` (see
+   `describe_schematic_layout_spec` and bundled `scratch_power_stage.v1.json`).
+
+## Layout rules
+
+- **Prefer the component table below** for the full buck — it is human-tuned.
+- **Ad-hoc parts:** `suggest_component_placement` or `apply_schematic_layout_spec`
+  scan a 400×400 grid from the origin, left-to-right then downward, keeping
+  `rotation_degrees=0` unless the table specifies otherwise.
+- After placement, use `read_component` to verify coordinates; nudge with
+  `set_component_position` if needed.
+- Rotate (`set_component_rotation`) only when the workflow table calls for non-zero rotation.
 
 ## Build steps
 

@@ -27,6 +27,8 @@ TopologyCapabilityName = Literal[
     "analysis_instruction",
     "simulate",
     "waveform_readback",
+    "layout_suggestion",
+    "layout_spec",
 ]
 
 
@@ -64,7 +66,30 @@ _CAPABILITY_CATALOG: tuple[TopologyCapabilityEntry, ...] = (
         label="Insert R/C/D/V/GND",
         tool="add_component",
         supported=True,
-        limitations=("Pass rotation_degrees in multiples of 45 at placement time.",),
+        limitations=(
+            "Pass rotation_degrees in multiples of 45 at placement time.",
+            "Use auto_place=true or suggest_component_placement to avoid overlapping parts.",
+        ),
+    ),
+    TopologyCapabilityEntry(
+        capability="layout_suggestion",
+        label="Suggest collision-free placement",
+        tool="suggest_component_placement",
+        supported=True,
+        limitations=(
+            "Uses conservative symbol footprints; verify dense layouts in the GUI.",
+            "Complex buck layouts should still follow read_workflow_instruction coordinate tables.",
+        ),
+    ),
+    TopologyCapabilityEntry(
+        capability="layout_spec",
+        label="Batch placement from JSON layout spec",
+        tool="apply_schematic_layout_spec",
+        supported=True,
+        limitations=(
+            "Layout spec v1 covers component coordinates only (not wires, junctions, or labels).",
+            "See describe_schematic_layout_spec for schema and bundled scratch_power_stage.v1.json.",
+        ),
     ),
     TopologyCapabilityEntry(
         capability="component_rotation",
@@ -192,6 +217,9 @@ def describe_topology_authoring_support() -> TopologyAuthoringSupport:
             "Track A scratch buck: read_workflow_instruction(instruction_id=buck-converter-cpp); "
             "do not use materialize_reference_circuit.",
             "Track B catalog: materialize_reference_circuit(recipe_id=buck_converter_cpp).",
+            "Readable placement: call suggest_component_placement before add_component, "
+            "or pass auto_place=true on add_component.",
+            "Batch placement: write a v1 JSON layout spec and call apply_schematic_layout_spec.",
         ),
     )
 

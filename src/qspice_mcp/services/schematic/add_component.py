@@ -7,6 +7,10 @@ from typing import TYPE_CHECKING, Any, cast
 
 from qspice_mcp.services._backends.schematic_editor import add_simple_component
 from qspice_mcp.services._internals.schematic_edits import edit_schematic
+from qspice_mcp.services.schematic._layout import DEFAULT_ORIGIN_X, DEFAULT_ORIGIN_Y
+from qspice_mcp.services.schematic.suggest_component_placement import (
+    suggest_component_placement,
+)
 from qspice_mcp.services.service_spec import ServiceSpec
 
 if TYPE_CHECKING:
@@ -49,8 +53,25 @@ def add_component(
     rotation_degrees: int = 0,
     net_name: str | None = None,
     output_path: str | Path | None = None,
+    auto_place: bool = False,
 ) -> AddedComponent:
     """Insert one supported simple component and persist the edited schematic."""
+
+    effective_x = position_x
+    effective_y = position_y
+    effective_rotation = rotation_degrees
+    if auto_place:
+        suggestion = suggest_component_placement(
+            schematic_path,
+            workspace_root=workspace_root,
+            component_kind=component_kind,
+            origin_x=position_x if position_x != 0 else DEFAULT_ORIGIN_X,
+            origin_y=position_y if position_y != 0 else DEFAULT_ORIGIN_Y,
+        )
+        effective_x = suggestion.position_x
+        effective_y = suggestion.position_y
+        if rotation_degrees == 0:
+            effective_rotation = suggestion.rotation_degrees
 
     normalized_kind: str | None = None
 
@@ -61,8 +82,8 @@ def add_component(
             component_kind=component_kind,
             reference=reference,
             value=value,
-            position=(position_x, position_y),
-            rotation_degrees=rotation_degrees,
+            position=(effective_x, effective_y),
+            rotation_degrees=effective_rotation,
             net_name=net_name,
         )
 
@@ -83,9 +104,9 @@ def add_component(
         component_kind=normalized_kind,
         reference=reference,
         value=None if value is None else str(value),
-        position_x=position_x,
-        position_y=position_y,
-        rotation_degrees=rotation_degrees,
+        position_x=effective_x,
+        position_y=effective_y,
+        rotation_degrees=effective_rotation,
         net_name=effective_net_name,
     )
 

@@ -211,6 +211,7 @@ class SchematicToolMixin:
         rotation_degrees: int = 0,
         net_name: str | None = None,
         output_path: str | None = None,
+        auto_place: bool = False,
     ) -> dict[str, object]:
         inspection = add_component_service(
             schematic_path,
@@ -223,6 +224,7 @@ class SchematicToolMixin:
             rotation_degrees=rotation_degrees,
             net_name=net_name,
             output_path=output_path,
+            auto_place=auto_place,
         )
         return to_json_object(inspection)
 

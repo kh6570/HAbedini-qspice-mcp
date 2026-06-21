@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "notes": [
+    "Compact power-stage layout for scratch buck authoring.",
+    "Use read_workflow_instruction for full buck coordinates, wires, and labels."
+  ],
+  "grid": {
+    "origin_x": 400,
+    "origin_y": 400,
+    "step_x": 400,
+    "step_y": 400,
+    "clearance_units": 80
+  },
+  "components": [
+    {
+      "reference": "L1",
+      "component_kind": "inductor",
+      "value": "50µ",
+      "placement": "auto"
+    },
+    {
+      "reference": "M1",
+      "component_kind": "nmos",
+      "value": "BSC123N08NS3",
+      "placement": "auto"
+    },
+    {
+      "reference": "M2",
+      "component_kind": "pmos",
+      "value": "PMOS",
+      "placement": "auto"
+    },
+    {
+      "reference": "B1",
+      "component_kind": "behavioral",
+      "value": "V=V(PWM)",
+      "placement": "auto"
+    }
+  ]
+}

@@ -14,6 +14,8 @@ def test_describe_topology_authoring_support_lists_scratch_capabilities() -> Non
     assert "inductor" in capability_names
     assert "mosfet" in capability_names
     assert "junction" in capability_names
+    assert "layout_suggestion" in capability_names
+    assert "layout_spec" in capability_names
     assert "component_rotation" in capability_names
     assert "workspace_source_write" in capability_names
     assert result.scratch_buck_ready is True

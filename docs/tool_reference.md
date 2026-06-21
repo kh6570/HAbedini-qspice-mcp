@@ -73,7 +73,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `describe_reference_circuit_recipe` | implemented | Return one bundled recipe manifest, workflow entries, file list, and topology digest. |
 | `create_schematic` | implemented | Create a blank `.qsch` file so later schematic tools can build from scratch. |
 | `create_starter_schematic` | implemented | Create a runnable source-load starter schematic in one call. |
-| `add_component` | implemented | Insert one supported part (`R/C/D/V/L/B/nmos/pmos`) or a `GND` ground label into a schematic. |
+| `add_component` | implemented | Insert one supported part (`R/C/D/V/L/B/nmos/pmos`) or a `GND` ground label; optional `auto_place` uses the layout grid. |
 | `add_dll_block` | implemented | Insert one `.DLL` custom-device block with starter input and output pins into a schematic. |
 | `add_dll_block_pin` | implemented | Insert one input or output pin into an existing `.DLL` block symbol. |
 | `add_component_symbol_drawing` | implemented | Insert one embedded symbol drawing item from a raw tag name and argument list. |
@@ -85,6 +85,9 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `add_net_label` | implemented | Insert one net label into a schematic. |
 | `write_workspace_text_file` | implemented | Write a sandboxed UTF-8 text file; for `.c`/`.cpp`/`.cc`/`.cxx` sources, auto-invokes `build_dll_device` on the sibling `.dll` unless opted out (see detailed section). |
 | `describe_topology_authoring_support` | implemented | Report scratch topology authoring capabilities (Track A readiness map). |
+| `describe_schematic_layout_spec` | implemented | Return the v1 JSON layout-spec schema, placement modes, and bundled example. |
+| `apply_schematic_layout_spec` | implemented | Batch-place schematic components from a workspace JSON layout specification. |
+| `suggest_component_placement` | implemented | Suggest collision-free coordinates for the next component on a readable left-to-right grid (0° rotation). |
 | `list_workflow_instructions` | implemented | List bundled workflow build instructions (for example buck-converter-cpp). |
 | `read_workflow_instruction` | implemented | Read one bundled workflow instruction document with build steps and coordinate tables. |
 | `inspect_schematic` | implemented | Summarize a `.qsch` file and the analyses it defines. |
@@ -1052,6 +1055,7 @@ Typical inputs:
 - `position_x` (optional integer)
 - `position_y` (optional integer)
 - `rotation_degrees` (optional integer, multiple of 45)
+- `auto_place` (optional boolean; use layout grid instead of explicit coordinates)
 - `net_name` (optional; used for `ground`, defaults to `GND`)
 - `output_path` (optional)
 
@@ -1069,7 +1073,35 @@ Expected outputs:
 Notes:
 Supported `component_kind` values are `resistor`, `capacitor`, `diode`,
 `voltage_source`, and `ground`. `ground` is authored as a `GND` net label so it
-matches the persisted format already used in the example schematics.
+matches the persisted format already used in the example schematics. Set
+`auto_place=true`, call `suggest_component_placement`, or batch-apply a v1 JSON layout
+spec via `apply_schematic_layout_spec` to avoid overlapping parts at `(0,0)`.
+
+## apply_schematic_layout_spec
+
+Purpose:
+Place schematic components in batch from a workspace JSON layout specification
+using `auto`, `grid`, or `absolute` placement modes.
+
+Typical inputs:
+- `schematic_path`
+- `spec_path` (workspace-local `.json` file)
+- `skip_existing` (optional boolean; default true — skip rows whose reference already exists)
+- `output_path` (optional)
+
+Expected outputs:
+- `schematic_path`
+- `spec_path`
+- `output_path`
+- `schema_version`
+- `applied_count`
+- `skipped_existing_count`
+- `components` (reference, component_kind, placement, position_x, position_y, rotation_degrees, skipped_existing)
+
+Notes:
+Call `describe_schematic_layout_spec` for the v1 schema and bundled
+`scratch_power_stage.v1.json` example. Layout spec v1 covers component coordinates
+only — add wires, junctions, and labels with dedicated tools afterward.
 
 ## add_dll_block
 
@@ -1493,6 +1525,28 @@ Notes:
 Read-only and component-independent. Use `describe_edit_capability` when you
 need the same decision evaluated against one specific component.
 
+## describe_schematic_layout_spec
+
+Purpose:
+Return the v1 JSON layout-spec schema, supported placement modes, and a bundled
+example document for batch component placement without large coordinate tables.
+
+Typical inputs:
+- none
+
+Expected outputs:
+- `schema_version`
+- `placement_modes` (`auto`, `grid`, `absolute`)
+- `json_schema`
+- `example_document`
+- `bundled_example_path`
+- `notes`
+
+Notes:
+Write a workspace JSON file matching the schema and pass its path to
+`apply_schematic_layout_spec`. `placement=auto` uses the same collision-aware grid
+as `suggest_component_placement`. Wires, junctions, and labels are not part of v1.
+
 ## set_component_symbol_pin
 
 Purpose:
@@ -1699,6 +1753,38 @@ Expected outputs:
 Notes:
 Re-check wire endpoints after moving a component. When `rotation_degrees` is
 omitted the existing rotation is preserved.
+
+## suggest_component_placement
+
+Purpose:
+Suggest collision-free schematic coordinates for the next component using a
+readable left-to-right grid with upright (0°) rotation.
+
+Typical inputs:
+- `schematic_path`
+- `component_kind`
+- `origin_x` / `origin_y` (optional grid start; default 400,400)
+- `grid_step_x` / `grid_step_y` (optional; default 400)
+- `clearance_units` (optional extra separation margin)
+- `max_columns` / `max_rows` (optional scan limits)
+
+Expected outputs:
+- `schematic_path`
+- `component_kind`
+- `position_x`
+- `position_y`
+- `rotation_degrees` (0 unless you override at `add_component` time)
+- `grid_step_x`
+- `grid_step_y`
+- `clearance_units`
+- `existing_component_count`
+- `notes`
+
+Notes:
+Uses conservative symbol footprints — verify dense layouts in the GUI. For full
+buck scratch builds, prefer coordinate tables from
+`read_workflow_instruction(instruction_id="buck-converter-cpp")`. Pair with
+`add_component(..., auto_place=true)` to place and persist in one step.
 
 ## set_component_parameters
 

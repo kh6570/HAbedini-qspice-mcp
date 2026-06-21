@@ -143,15 +143,14 @@ def _build_scratch_schematic(
         ("behavioral", "B1", "V=V(PWM)"),
     )
     try:
-        for index, (kind, reference, value) in enumerate(parts):
+        for kind, reference, value in parts:
             server.invoke_tool(
                 "add_component",
                 schematic_path=schematic_name,
                 component_kind=kind,
                 reference=reference,
                 value=value,
-                position_x=index * 400,
-                position_y=0,
+                auto_place=True,
             )
         server.invoke_tool(
             "add_junction",
@@ -181,8 +180,7 @@ def _build_scratch_schematic(
     except Exception as exc:
         _record(results, "scratch power-stage placement", False, str(exc))
         return schematic_path
-    else:
-        return schematic_path
+    return schematic_path
 
 
 def _check_dll_build(

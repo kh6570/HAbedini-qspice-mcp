@@ -51,11 +51,15 @@ returns a backend error.
 1. `describe_topology_authoring_support` — check what scratch authoring supports.
 2. `create_starter_schematic` (runnable source+load in one call) or
    `create_schematic` (blank) to begin.
-3. Build topology: `add_component` (`R/C/D/V/L/B/nmos/pmos` or `GND`),
+3. Build topology: `add_component` (`R/C/D/V/L/B/nmos/pmos` or `GND`; use
+   `auto_place=true` or `suggest_component_placement` for readable grids),
    `add_wire`, `add_junction`, `add_net_label`; adjust with `set_component_value`,
    `set_component_parameters`, `set_component_rotation`.
 4. For custom devices, `write_workspace_text_file` writes a `.c`/`.cpp` source and
    auto-builds the sibling `.dll` (see the mixed-signal/DLL skills).
+
+Install the **`qspice-schematic-layout`** skill when authoring scratch topology
+so placement stays collision-free and upright.
 
 ## Inspect what you have
 

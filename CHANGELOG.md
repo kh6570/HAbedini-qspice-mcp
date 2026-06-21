@@ -52,6 +52,9 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **Auto DLL build fallback** — `build_dll_device(toolchain='auto')` retries MSVC then CMake when bundled DMC compile fails.
 - **`dll_build_hints` on write failures** — `write_workspace_text_file` auto-build errors include toolchain recovery suggestions from `describe_server_capabilities`.
 - **`scripts/verify_scratch_buck.py`** — Track A scratch buck MCP smoke script (`--workspace-root`, `--with-dll-build`, `--with-sim`).
+- **`suggest_component_placement` tool** — grid-based collision-free placement with default 0° rotation; `add_component` accepts `auto_place=true`.
+- **`describe_schematic_layout_spec` / `apply_schematic_layout_spec` tools** — v1 JSON layout spec for batch component placement (`auto`, `grid`, `absolute` modes); bundled `scratch_power_stage.v1.json` example.
+- **`qspice-schematic-layout` skill** — bundled agent guidance for readable scratch placement.
 
 ### Changed
 
