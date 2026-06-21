@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 from qspice_mcp.core.exceptions import QSpiceError
 from qspice_mcp.services._backends.clean_room_schematic import write_starter_schematic
 from qspice_mcp.services._backends.schematic_editor import (
-    _GROUND_NET_NAME,
     add_net_label,
     add_simple_component,
     add_wire,
@@ -37,7 +36,7 @@ class CreatedStarterSchematic:
     source_value: str
     load_reference: str
     load_value: str
-    output_net_name: str
+    input_net_name: str
     analysis_instruction: str
 
 
@@ -59,7 +58,7 @@ def create_starter_schematic(
     source_value: str | int | float = "10",
     load_reference: str = "R1",
     load_value: str | int | float = "1k",
-    output_net_name: str = "VOUT",
+    input_net_name: str = "VIN",
     analysis_instruction: str = ".op",
 ) -> CreatedStarterSchematic:
     """Create a saved starter schematic with a source, load, labels, and analysis."""
@@ -82,7 +81,7 @@ def create_starter_schematic(
             source_value=source_value,
             load_reference=load_reference,
             load_value=load_value,
-            output_net_name=output_net_name,
+            input_net_name=input_net_name,
             analysis_instruction=analysis_instruction,
         )
         return CreatedStarterSchematic(
@@ -92,7 +91,7 @@ def create_starter_schematic(
             source_value=str(source_value),
             load_reference=load_reference,
             load_value=str(load_value),
-            output_net_name=output_net_name,
+            input_net_name=input_net_name,
             analysis_instruction=analysis_instruction,
         )
 
@@ -126,20 +125,14 @@ def create_starter_schematic(
         start_pin="+",
         end_reference=load_reference,
         end_pin="1",
-        net_name=output_net_name,
+        net_name=input_net_name,
     )
-    add_wire(
+    add_simple_component(
         editor,
-        start_reference=source_reference,
-        start_pin="-",
-        end_reference=load_reference,
-        end_pin="2",
-        net_name=_GROUND_NET_NAME,
-    )
-    add_net_label(
-        editor,
-        net_name=output_net_name,
-        position=resolve_component_pin_position(editor, reference=source_reference, pin_name="+"),
+        component_kind="ground",
+        reference=None,
+        value=None,
+        position=resolve_component_pin_position(editor, reference=load_reference, pin_name="2"),
     )
     add_simple_component(
         editor,
@@ -147,6 +140,11 @@ def create_starter_schematic(
         reference=None,
         value=None,
         position=resolve_component_pin_position(editor, reference=source_reference, pin_name="-"),
+    )
+    add_net_label(
+        editor,
+        net_name=input_net_name,
+        position=resolve_component_pin_position(editor, reference=source_reference, pin_name="+"),
     )
     editor.add_instruction(analysis_instruction)
     saved_path = save_editor_as(
@@ -162,7 +160,7 @@ def create_starter_schematic(
         source_value=str(source_value),
         load_reference=load_reference,
         load_value=str(load_value),
-        output_net_name=output_net_name,
+        input_net_name=input_net_name,
         analysis_instruction=analysis_instruction,
     )
 

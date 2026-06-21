@@ -52,8 +52,10 @@ def test_create_starter_schematic_falls_back_without_editor_backend(
     assert result.load_value == "1k"
     assert b"component (400,400) 0 0" in payload
     assert b"component (800,400) 0 0" in payload
-    assert b'wire (400,600) (800,600) "VOUT"' in payload
+    assert b'wire (400,600) (800,600) "VIN"' in payload
     assert b'net (400,200) 1 13 0 "GND"' in payload
+    assert b'net (800,200) 1 13 0 "GND"' in payload
+    assert b'wire (400,200) (800,200) "GND"' not in payload
     assert b"\xef\xbb\xbf.op" in payload
 
 
@@ -64,7 +66,7 @@ def test_starter_schematic_bytes_rejects_duplicate_references() -> None:
             source_value="10",
             load_reference="V1",
             load_value="1k",
-            output_net_name="VOUT",
+            input_net_name="VIN",
             analysis_instruction=".op",
         )
 
@@ -76,7 +78,7 @@ def test_starter_schematic_bytes_rejects_multiline_values() -> None:
             source_value="10\n20",
             load_reference="R1",
             load_value="1k",
-            output_net_name="VOUT",
+            input_net_name="VIN",
             analysis_instruction=".op",
         )
 
@@ -88,7 +90,7 @@ def test_starter_schematic_bytes_rejects_blank_instruction() -> None:
             source_value="10",
             load_reference="R1",
             load_value="1k",
-            output_net_name="VOUT",
+            input_net_name="VIN",
             analysis_instruction="  ",
         )
 

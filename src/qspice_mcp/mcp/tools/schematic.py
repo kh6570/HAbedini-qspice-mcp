@@ -320,7 +320,7 @@ class SchematicToolMixin:
         source_value: str | int | float = "10",
         load_reference: str = "R1",
         load_value: str | int | float = "1k",
-        output_net_name: str = "VOUT",
+        input_net_name: str = "VIN",
         analysis_instruction: str = ".op",
     ) -> dict[str, object]:
         inspection = create_starter_schematic_service(
@@ -331,7 +331,7 @@ class SchematicToolMixin:
             source_value=source_value,
             load_reference=load_reference,
             load_value=load_value,
-            output_net_name=output_net_name,
+            input_net_name=input_net_name,
             analysis_instruction=analysis_instruction,
         )
         return to_json_object(inspection)

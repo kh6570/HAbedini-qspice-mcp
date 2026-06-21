@@ -246,7 +246,7 @@ def test_remove_instruction_falls_back_without_editor_backend(
             source_value="10",
             load_reference="R1",
             load_value="1k",
-            output_net_name="VOUT",
+            input_net_name="VIN",
             analysis_instruction=".tran 1m",
         )
     )
@@ -758,6 +758,7 @@ def test_create_starter_schematic_orchestrates_blank_template_creation(
         mapping = {
             ("V1", "+"): (400, 600),
             ("V1", "-"): (400, 200),
+            ("R1", "2"): (800, 200),
         }
         return mapping[(reference, pin_name)]
 
@@ -804,7 +805,7 @@ def test_create_starter_schematic_orchestrates_blank_template_creation(
     assert result.overwritten is False
     assert result.source_reference == "V1"
     assert result.load_reference == "R1"
-    assert result.output_net_name == "VOUT"
+    assert result.input_net_name == "VIN"
     assert result.analysis_instruction == ".op"
     assert ("bootstrap_blank_schematic", editor) in calls
     assert (
@@ -814,6 +815,10 @@ def test_create_starter_schematic_orchestrates_blank_template_creation(
     assert (
         "add_simple_component",
         (editor, "resistor", "R1", "1k", (800, 400), 0, None),
+    ) in calls
+    assert (
+        "add_simple_component",
+        (editor, "ground", None, None, (800, 200), 0, None),
     ) in calls
     assert (
         "add_simple_component",

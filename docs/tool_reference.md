@@ -1017,7 +1017,7 @@ Typical inputs:
 - `source_value` (optional, defaults to `10`)
 - `load_reference` (optional, defaults to `R1`)
 - `load_value` (optional, defaults to `1k`)
-- `output_net_name` (optional, defaults to `VOUT`)
+- `input_net_name` (optional, defaults to `VIN`)
 - `analysis_instruction` (optional, defaults to `.op`)
 
 Expected outputs:
@@ -1027,19 +1027,18 @@ Expected outputs:
 - `source_value`
 - `load_reference`
 - `load_value`
-- `output_net_name`
+- `input_net_name`
 - `analysis_instruction`
 
 Notes:
 This tool remains available from the base install through a repo-owned
-fixed-format clean-room writer. Optional editor backends still broaden later
-inspection and mutation workflows, but they are no longer required just to
-materialize the starter schematic itself.
-
-Notes:
-The generated topology is a source feeding a resistor to ground. It is designed
-to be immediately runnable and to provide a concrete blank-start workflow the
-other schematic tools can extend.
+fixed-format clean-room writer when no optional schematic editor backend is
+installed. It builds a series V–R–GND divider: label `VIN` on the
+source-to-R node, separate GND symbols at V− and R pin 2 (no spanning GND
+bus). For RC filters, place R then C manually or with
+`apply_schematic_layout_spec`. The topology is designed to be immediately
+runnable and to provide a concrete blank-start workflow the other schematic
+tools can extend.
 
 ## add_component
 

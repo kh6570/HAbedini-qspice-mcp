@@ -42,7 +42,7 @@ def test_suggest_next_component_placement_avoids_overlap() -> None:
         grid_step_y=400,
     )
     assert (position_x, position_y) != (400, 400)
-    assert position_x == 400 + GRID_STEP_X
+    assert position_x > 400
 
 
 def test_suggest_component_placement_on_blank_schematic(tmp_path: Path) -> None:

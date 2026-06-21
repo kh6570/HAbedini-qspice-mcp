@@ -38,7 +38,8 @@ topology.
 | --- | --- |
 | Grid | Server scans **400×400** schematic units, **left-to-right**, then next row down |
 | Rotation | Default **0°** (upright text). Do not rotate "for neatness" alone |
-| Overlap | Never place multiple parts at `(0,0)` or reuse the same coordinates |
+| Overlap | Never place multiple parts at `(0,0)` or reuse the same coordinates; collision boxes include refdes/value text margin |
+| GND wiring | Do **not** draw one long horizontal GND wire through a vertical R/C bottom pin — use separate GND symbols at V− and the load |
 | Complex circuits | For buck/boost scratch builds, **follow `read_workflow_instruction` tables** — they override the auto grid |
 | Dense edits | Auto placement uses conservative footprints; open the GUI to fine-tune if needed |
 

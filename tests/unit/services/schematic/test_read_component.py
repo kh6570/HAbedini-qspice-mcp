@@ -214,7 +214,7 @@ def test_read_component_falls_back_to_supported_clean_room_subset(
     assert result.kind == "V"
     assert result.value == "10"
     assert result.description == "Independent Voltage Source"
-    assert result.nodes == ("VOUT", "0")
+    assert result.nodes == ("VIN", "0")
     assert result.parameters == {}
     assert result.raw_parameter_lines == ()
     assert result.position_x == 400

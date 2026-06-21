@@ -54,6 +54,9 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`scripts/verify_scratch_buck.py`** — Track A scratch buck MCP smoke script (`--workspace-root`, `--with-dll-build`, `--with-sim`).
 - **`suggest_component_placement` tool** — grid-based collision-free placement with default 0° rotation; `add_component` accepts `auto_place=true`.
 - **`describe_schematic_layout_spec` / `apply_schematic_layout_spec` tools** — v1 JSON layout spec for batch component placement (`auto`, `grid`, `absolute` modes); bundled `scratch_power_stage.v1.json` example.
+- **MCP handler optional-arg fix** — omitted/null tool params no longer override Python service defaults (`add_component`, `read_waveform`, `plot_waveforms`, etc.).
+- **`inspect_schematic` schema fix** — MCP descriptor now exposes `schematic_path`; handler maps it to the service `raw_path` parameter.
+- **`create_starter_schematic` net naming** — series V–R–GND starter labels `VIN` on the source side and uses separate GND symbols (no spanning GND bus).
 - **`qspice-schematic-layout` skill** — bundled agent guidance for readable scratch placement.
 
 ### Changed

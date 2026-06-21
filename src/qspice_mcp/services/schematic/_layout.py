@@ -21,6 +21,9 @@ if TYPE_CHECKING:
 GRID_STEP_X = 400
 GRID_STEP_Y = 400
 DEFAULT_CLEARANCE = 80
+# Extra margin so refdes/value text (offset ~100,150 from anchor) does not overlap.
+_TEXT_LABEL_MARGIN_X = 120
+_TEXT_LABEL_MARGIN_Y = 100
 DEFAULT_ORIGIN_X = 400
 DEFAULT_ORIGIN_Y = 400
 DEFAULT_MAX_COLUMNS = 12
@@ -86,7 +89,11 @@ def component_half_extents(component_kind: str) -> tuple[int, int]:
         "x": "dll_block",
     }
     resolved = aliases.get(normalized, normalized)
-    return _COMPONENT_HALF_EXTENTS.get(resolved, (180, 150))
+    half_width, half_height = _COMPONENT_HALF_EXTENTS.get(resolved, (180, 150))
+    return (
+        half_width + _TEXT_LABEL_MARGIN_X,
+        half_height + _TEXT_LABEL_MARGIN_Y,
+    )
 
 
 def _collides(

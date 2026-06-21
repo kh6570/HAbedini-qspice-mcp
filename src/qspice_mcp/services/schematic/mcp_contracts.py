@@ -56,7 +56,7 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "source_value": _SCALAR_VALUE,
                 "load_reference": {"type": "string"},
                 "load_value": _SCALAR_VALUE,
-                "output_net_name": {"type": "string"},
+                "input_net_name": {"type": "string"},
                 "analysis_instruction": {"type": "string"},
             },
         },
@@ -300,7 +300,11 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "inspect_schematic": {
         "title": "Inspect Schematic",
         "description": "Summarize a QSpice schematic before simulation.",
-        "input_schema": {"type": "object", "required": ["schematic_path"]},
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path"],
+            "properties": {"schematic_path": {"type": "string"}},
+        },
     },
     "list_components": {
         "title": "List Components",

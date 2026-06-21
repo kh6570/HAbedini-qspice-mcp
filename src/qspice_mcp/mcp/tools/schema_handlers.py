@@ -22,8 +22,12 @@ def expose_tool_schema(handler: ToolHandler, tool: ToolDefinition) -> ToolHandle
     required = schema.get("required", [])
     required_names = {str(item) for item in required} if isinstance(required, list) else set[str]()
 
+    merged_properties = dict(properties)
+    for name in required_names:
+        merged_properties.setdefault(name, {"type": "string"})
+
     parameters: list[inspect.Parameter] = []
-    for name in properties:
+    for name in merged_properties:
         if name in required_names:
             default: object = inspect.Parameter.empty
         else:

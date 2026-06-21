@@ -73,11 +73,28 @@ def _normalize_tool_kwargs(name: str, kwargs: dict[str, object]) -> dict[str, ob
     return normalized
 
 
+def _remap_tool_kwargs_for_service(
+    service_fn: Callable[..., object],
+    tool_kwargs: dict[str, object],
+) -> dict[str, object]:
+    """Map MCP-facing argument names onto service function parameters."""
+
+    remapped = dict(tool_kwargs)
+    signature = inspect.signature(service_fn).parameters
+    if "raw_path" in signature:
+        if "schematic_path" in remapped and "schematic_path" not in signature:
+            remapped.setdefault("raw_path", remapped.pop("schematic_path"))
+        if "source_path" in remapped and "source_path" not in signature:
+            remapped.setdefault("raw_path", remapped.pop("source_path"))
+    return remapped
+
+
 def _build_service_call_kwargs(
     runtime: QSpiceToolRuntime,
     service_fn: Callable[..., object],
     tool_kwargs: dict[str, object],
 ) -> dict[str, object]:
+    remapped = _remap_tool_kwargs_for_service(service_fn, tool_kwargs)
     call_kwargs: dict[str, object] = {}
     for name, parameter in inspect.signature(service_fn).parameters.items():
         if name == "workspace_root":
@@ -86,8 +103,11 @@ def _build_service_call_kwargs(
             call_kwargs[name] = runtime.settings
         elif name == "qspice_executable":
             call_kwargs[name] = runtime.settings.exe
-        elif name in tool_kwargs:
-            call_kwargs[name] = tool_kwargs[name]
+        elif name in remapped:
+            value = remapped[name]
+            if value is None and parameter.default is not inspect.Parameter.empty:
+                continue
+            call_kwargs[name] = value
         elif parameter.default is not inspect.Parameter.empty or parameter.kind in (
             inspect.Parameter.VAR_KEYWORD,
             inspect.Parameter.VAR_POSITIONAL,

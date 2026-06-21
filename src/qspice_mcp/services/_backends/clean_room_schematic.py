@@ -378,7 +378,7 @@ def starter_schematic_bytes(
     source_value: str | int | float | complex,
     load_reference: str,
     load_value: str | int | float | complex,
-    output_net_name: str,
+    input_net_name: str,
     analysis_instruction: str,
 ) -> bytes:
     normalized_source_reference = _component_reference(
@@ -394,14 +394,14 @@ def starter_schematic_bytes(
 
     normalized_source_value = str(source_value)
     normalized_load_value = str(load_value)
-    normalized_output_net = _normalize_net_name(output_net_name)
+    normalized_input_net = _normalize_net_name(input_net_name)
     normalized_instruction = str(analysis_instruction).strip()
     if not normalized_instruction:
         raise ValueError("analysis_instruction must not be empty.")
     _quote_qsch_string(normalized_instruction)
-    output_net_bytes = _quoted_utf8_bytes(
-        normalized_output_net,
-        field_name="output_net_name",
+    input_net_bytes = _quoted_utf8_bytes(
+        normalized_input_net,
+        field_name="input_net_name",
     )
     ground_net_bytes = _quoted_utf8_bytes(
         _GROUND_NET_NAME,
@@ -412,9 +412,9 @@ def starter_schematic_bytes(
         _tag_open(0, b"schematic"),
         _voltage_source_component_bytes(normalized_source_reference, normalized_source_value),
         _resistor_component_bytes(normalized_load_reference, normalized_load_value),
-        _tag_inline(2, b"wire (400,600) (800,600) " + output_net_bytes),
-        _tag_inline(2, b"wire (400,200) (800,200) " + ground_net_bytes),
-        _tag_inline(2, b"net (400,600) 1 14 0 " + output_net_bytes),
+        _tag_inline(2, b"wire (400,600) (800,600) " + input_net_bytes),
+        _tag_inline(2, b"net (400,600) 1 14 0 " + input_net_bytes),
+        _tag_inline(2, b"net (800,200) 1 13 0 " + ground_net_bytes),
         _tag_inline(2, b"net (400,200) 1 13 0 " + ground_net_bytes),
         (b" " * 2)
         + _QSCH_OPEN
@@ -438,7 +438,7 @@ def write_starter_schematic(
     source_value: str | int | float | complex,
     load_reference: str,
     load_value: str | int | float | complex,
-    output_net_name: str,
+    input_net_name: str,
     analysis_instruction: str,
 ) -> None:
     _write_artifact(
@@ -448,7 +448,7 @@ def write_starter_schematic(
             source_value=source_value,
             load_reference=load_reference,
             load_value=load_value,
-            output_net_name=output_net_name,
+            input_net_name=input_net_name,
             analysis_instruction=analysis_instruction,
         ),
     )

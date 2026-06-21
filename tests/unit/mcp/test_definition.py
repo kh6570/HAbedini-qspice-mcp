@@ -839,7 +839,7 @@ def test_mcp_create_starter_schematic_is_invokable(monkeypatch: object, tmp_path
         source_value: str | int | float = "10",
         load_reference: str = "R1",
         load_value: str | int | float = "1k",
-        output_net_name: str = "VOUT",
+        input_net_name: str = "VIN",
         analysis_instruction: str = ".op",
     ) -> CreatedStarterSchematic:
         assert workspace_root == tmp_path.resolve(strict=False)
@@ -848,7 +848,7 @@ def test_mcp_create_starter_schematic_is_invokable(monkeypatch: object, tmp_path
         assert str(source_value) == "10"
         assert load_reference == "R1"
         assert str(load_value) == "1k"
-        assert output_net_name == "VOUT"
+        assert input_net_name == "VIN"
         assert analysis_instruction == ".op"
         return CreatedStarterSchematic(
             output_path=(tmp_path / Path(output_path)).resolve(strict=False),
@@ -857,7 +857,7 @@ def test_mcp_create_starter_schematic_is_invokable(monkeypatch: object, tmp_path
             source_value=str(source_value),
             load_reference=load_reference,
             load_value=str(load_value),
-            output_net_name=output_net_name,
+            input_net_name=input_net_name,
             analysis_instruction=analysis_instruction,
         )
 

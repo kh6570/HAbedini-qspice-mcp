@@ -26,7 +26,8 @@ def test_create_starter_schematic_builds_source_load_template(tmp_path: Path) ->
     assert components == ("V1", "R1")
     assert reopened.get_component_value("V1") == "10"
     assert reopened.get_component_value("R1") == "1k"
-    assert ["net", "(400,600)", "1", "14", "0", '"VOUT"'] in net_tokens
+    assert ["net", "(400,600)", "1", "14", "0", '"VIN"'] in net_tokens
     assert ["net", "(400,200)", "1", "13", "0", '"GND"'] in net_tokens
-    assert ["wire", "(400,600)", "(800,600)", '"VOUT"'] in wire_tokens
-    assert ["wire", "(400,200)", "(800,200)", '"GND"'] in wire_tokens
+    assert ["net", "(800,200)", "1", "13", "0", '"GND"'] in net_tokens
+    assert ["wire", "(400,600)", "(800,600)", '"VIN"'] in wire_tokens
+    assert ["wire", "(400,200)", "(800,200)", '"GND"'] not in wire_tokens

@@ -444,9 +444,17 @@ def _build_net_names(  # noqa: PLR0912
                 continue
             labels = named_roots.get(root, set())
             if len(labels) > 1:
+                normalized = {label.upper() for label in labels}
+                hint = ""
+                if normalized & {"0", "GND"} and normalized - {"0", "GND"}:
+                    hint = (
+                        " A spanning GND wire may pass through a component pin "
+                        "(for example the bottom pin of a vertical R/C); use "
+                        "separate GND symbols at V- and the load instead."
+                    )
                 raise QSpiceError(
                     "Conflicting qsch net labels were found on the same "
-                    f"connection: {sorted(labels)}"
+                    f"connection: {sorted(labels)}.{hint}"
                 )
             if labels:
                 root_to_name[root] = next(iter(labels))
