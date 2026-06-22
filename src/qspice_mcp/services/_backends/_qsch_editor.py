@@ -11,6 +11,7 @@ import re
 from typing import TYPE_CHECKING, Any
 
 from qspice_mcp.core.exceptions import QSpiceError
+from qspice_mcp.services._backends.directive_placement import compute_directive_position
 from qspice_mcp.services._backends._qsch_support import (
     QSCH_COMPONENT_POS,
     QSCH_COMPONENT_ROTATION,
@@ -86,6 +87,8 @@ _TAG_SCHEMATIC = "schematic"
 _COMPONENT_HEADER_PATTERN = re.compile(r"^component \((-?\d+),(-?\d+)\) (\d+) (\d+)$")
 _QUOTED_VALUE_PATTERN = re.compile(r'"([^"]*)"')
 _REFERENCE_PATTERN = re.compile(r"^([A-Za-z]+\d+)$")
+_LONG_VOLTAGE_VALUE_CHARS = 20
+_VOLTAGE_VALUE_TEXT_POSITION = "(0,380)"
 
 
 # ---------------------------------------------------------------------------
@@ -280,6 +283,31 @@ class QschEditor:
                     text_val.startswith(".") or text_val.startswith(QSCH_TEXT_INSTR_QUALIFIER)
                 ):
                     self._instructions.append((item, len(self._instructions)))
+
+    def _collect_component_anchors(self) -> tuple[tuple[int, int], ...]:
+        """Return world anchor positions for all indexed components."""
+
+        anchors: list[tuple[int, int]] = []
+        for comp_tag, _symbol_tag in self._components.values():
+            anchor = self._parse_component_anchor(comp_tag)
+            if anchor is not None:
+                anchors.append(anchor)
+        return tuple(anchors)
+
+    @staticmethod
+    def _parse_component_anchor(comp_tag: QschTag) -> tuple[int, int] | None:
+        if len(comp_tag.tokens) <= QSCH_COMPONENT_POS:
+            return None
+        coord_match = re.fullmatch(r"\((-?\d+),(-?\d+)\)", comp_tag.tokens[QSCH_COMPONENT_POS])
+        if coord_match is None:
+            return None
+        return int(coord_match.group(1)), int(coord_match.group(2))
+
+    def _component_symbol_name(self, reference: str) -> str | None:
+        _comp_tag, symbol_tag = self._components.get(reference, (None, None))
+        if symbol_tag is None or not symbol_tag.tokens:
+            return None
+        return str(symbol_tag.tokens[0])
 
     @staticmethod
     def _extract_reference(component_tag: QschTag) -> str | None:
@@ -506,6 +534,11 @@ class QschEditor:
                 continue
             if ref_found:
                 self._set_text_value(text_tag, str(value))
+                if (
+                    self._component_symbol_name(reference) == "V"
+                    and len(str(value)) >= _LONG_VOLTAGE_VALUE_CHARS
+                ):
+                    text_tag.set_attr(QSCH_TEXT_POS, _VOLTAGE_VALUE_TEXT_POSITION)
                 self.updated = True
                 return
         self.updated = True
@@ -600,14 +633,13 @@ class QschEditor:
         if instr.startswith(QSCH_TEXT_INSTR_QUALIFIER):
             instr = instr[1:]
         # Build a text tag: «text (x,y) size rot comment color -1 -1 "instr"»
-        x = 400
-        y = -40 - (len(self._instructions) * 80)
-        # Store directives as plain Latin-1 text. Do not prefix with the UTF-8 BOM
-        # qualifier: QSPICE .qsch files are Latin-1, and mixing a BOM with
-        # Latin-1 unit suffixes (for example 300µ) makes QSPICE show U+FFFD.
+        position_x, position_y = compute_directive_position(
+            self._collect_component_anchors(),
+            len(self._instructions),
+        )
         text_tag = QschTag(
             _TAG_TEXT,
-            f"({x},{y})",
+            f"({position_x},{position_y})",
             "1",  # size
             "0",  # rotation
             "0",  # comment flag

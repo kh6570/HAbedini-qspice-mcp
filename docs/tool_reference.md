@@ -103,6 +103,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `set_component_parameters` | implemented | Update one or more component-local parameters. |
 | `set_component_symbol_drawing` | implemented | Update one embedded symbol drawing item by replacing its raw tag name or arguments. |
 | `set_component_symbol_text` | implemented | Update one embedded symbol text item, including safe layout/style attributes. |
+| `normalize_component_text_rotation` | implemented | Reset refdes/value symbol text to upright readable orientation after symbol body rotation. |
 | `set_component_symbol_pin` | implemented | Update one embedded symbol pin name, label geometry, or typed-pin metadata. |
 | `set_dll_block_pin_role` | implemented | Move one `.DLL` block pin into the input or output role preset. |
 | `remove_dll_block_pin` | implemented | Remove one pin from an existing `.DLL` block symbol. |
@@ -1457,9 +1458,45 @@ Expected outputs:
 - `text_attribute`
 
 Notes:
-At least one editable attribute must be supplied. Reference-designator text is
-not rewritten through this tool; use the dedicated `rename_component_reference`
-tool instead.
+At least one editable attribute must be supplied. Reference-designator text content
+is not rewritten through this tool; use `rename_component_reference` instead.
+For layout readability after symbol body rotation, prefer
+`normalize_component_text_rotation` (compensates body rotation automatically).
+Use this tool for manual per-item text layout when you need explicit
+`position_x`/`position_y`, `size`, or non-default `rotation_code` values.
+
+## normalize_component_text_rotation
+
+Purpose:
+Reset embedded refdes/value symbol text to left-to-right readable orientation,
+optionally compensating for the placed component body rotation.
+
+Typical inputs:
+- `schematic_path`
+- `reference`
+- `text_roles` (optional; default `["reference", "value"]`; accepts `refdes` alias)
+- `compensate_component_rotation` (optional; default `true`)
+- `upright_rotation_code` (optional; used when `compensate_component_rotation` is `false`)
+- `output_path` (optional)
+
+Expected outputs:
+- `schematic_path`
+- `output_path`
+- `reference`
+- `component_rotation_degrees`
+- `compensate_component_rotation`
+- `target_rotation_code`
+- `updated_count`
+- `skipped_count`
+- `text_attributes` (per-role previous/new rotation codes and update flags)
+
+Notes:
+Symbol body rotation (`set_component_rotation`) does not update embedded text or
+wire endpoints. With `compensate_component_rotation=true` (default), the tool
+sets text rotation codes so labels read horizontal in world space (for example,
+body at 90° targets rotation code **109**). Factory-default text codes on
+0°-placed parts are left unchanged. Does not move wire segments — refresh wires
+separately after layout moves.
 
 ## rename_component_reference
 
@@ -1724,8 +1761,13 @@ Expected outputs:
 - `rotation_degrees`
 
 Notes:
-Pin world coordinates depend on rotation; re-check wire endpoints after rotating.
-`read_component` reports `rotation_degrees` in human-friendly degrees, not the raw QSpice rotation index.
+Pin world coordinates depend on rotation; **wire segments are not moved with the
+symbol**. After rotating, remove stale segments with `remove_wire` and re-add with
+`add_wire` using pin selectors on the same `net_name`. **Refdes/value text rotates
+with the symbol** — run a readability pass with `read_component_symbol` and
+`set_component_symbol_text(..., rotation_code=13)` on `refdes` and `value` roles.
+`read_component` reports component `rotation_degrees`; symbol text uses separate
+`rotation_code` on each embedded text item.
 
 ## set_component_position
 
@@ -1750,8 +1792,10 @@ Expected outputs:
 - `rotation_degrees`
 
 Notes:
-Re-check wire endpoints after moving a component. When `rotation_degrees` is
-omitted the existing rotation is preserved.
+**Wire segments are not moved with the symbol.** After moving, remove affected
+segments with `remove_wire` and reconnect with `add_wire` (pin selectors +
+`net_name`). When `rotation_degrees` is omitted the existing rotation is preserved.
+Prefer final placement before wiring when building from scratch.
 
 ## suggest_component_placement
 
@@ -3266,6 +3310,16 @@ Expected outputs:
 Notes:
 Time parameters are accepted as strings so the caller can use QSpice-friendly
 engineering suffixes such as `1u`, `5m`, or `10m` without server-side reformatting.
+
+The default `output_path` is a sibling such as `{stem}-tran.qsch`. That file is a
+**derived snapshot** of `source_path` plus one `.tran` text item — it does not
+auto-sync when the source schematic is edited later (including GUI moves). Edit
+layout on `source_path` only; re-run this tool after placement changes; simulate
+`output_path` but do not open the staged file in the GUI for placement.
+
+Analysis directives (`.tran`, `.ac`, etc.) are placed **below the lowest
+component** on the sheet so they do not overlap long source value strings such as
+`PULSE(...)`.
 
 ## prepare_monte_carlo
 

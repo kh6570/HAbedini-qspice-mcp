@@ -393,6 +393,28 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             ],
         },
     },
+    "normalize_component_text_rotation": {
+        "title": "Normalize Component Text Rotation",
+        "description": (
+            "Reset refdes/value symbol text to left-to-right readable orientation, "
+            "optionally compensating for the component body rotation."
+        ),
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "reference"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "reference": {"type": "string"},
+                "text_roles": {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["reference", "refdes", "value"]},
+                },
+                "compensate_component_rotation": {"type": "boolean"},
+                "upright_rotation_code": {"type": "integer"},
+                "output_path": {"type": "string"},
+            },
+        },
+    },
     "set_component_symbol_drawing": {
         "title": "Set Component Symbol Drawing",
         "description": "Update one embedded symbol drawing item by replacing its tag name or raw arguments.",

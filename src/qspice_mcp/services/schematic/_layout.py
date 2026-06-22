@@ -18,12 +18,12 @@ from qspice_mcp.services._shared.paths import validate_existing_file
 if TYPE_CHECKING:
     from pathlib import Path
 
-GRID_STEP_X = 400
-GRID_STEP_Y = 400
+GRID_STEP_X = 900
+GRID_STEP_Y = 500
 DEFAULT_CLEARANCE = 80
-# Extra margin so refdes/value text (offset ~100,150 from anchor) does not overlap.
-_TEXT_LABEL_MARGIN_X = 120
-_TEXT_LABEL_MARGIN_Y = 100
+# Extra margin so refdes/value text (offset ~100–200 from anchor) does not overlap.
+_TEXT_LABEL_MARGIN_X = 200
+_TEXT_LABEL_MARGIN_Y = 140
 DEFAULT_ORIGIN_X = 400
 DEFAULT_ORIGIN_Y = 400
 DEFAULT_MAX_COLUMNS = 12
@@ -34,7 +34,7 @@ _COMPONENT_HALF_EXTENTS: dict[str, tuple[int, int]] = {
     "resistor": (160, 90),
     "capacitor": (130, 110),
     "diode": (160, 100),
-    "voltage_source": (160, 220),
+    "voltage_source": (200, 260),
     "inductor": (190, 130),
     "behavioral": (170, 110),
     "nmos": (220, 260),

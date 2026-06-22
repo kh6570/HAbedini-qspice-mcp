@@ -17,6 +17,12 @@ if TYPE_CHECKING:
 
 _NETLIST_SUFFIXES = (".net", ".cir")
 
+_DERIVED_SCHEMATIC_WARNING = (
+    "Staged output is a derived snapshot: edit layout on source_path only. "
+    "Re-run prepare_transient after moving components on the source schematic; "
+    "do not open the staged file in the GUI for placement."
+)
+
 
 @dataclass(frozen=True, slots=True)
 class PreparedTransientAnalysis:
@@ -77,6 +83,22 @@ def _render_tran_instruction(
     return " ".join(tokens)
 
 
+def _staging_warnings(
+    source_path: Path,
+    output_path: Path,
+    *,
+    prepared_message: str,
+) -> tuple[str, ...]:
+    warnings: list[str] = [prepared_message, _DERIVED_SCHEMATIC_WARNING]
+    if output_path.exists():
+        if source_path.stat().st_mtime_ns > output_path.stat().st_mtime_ns:
+            warnings.append(
+                "Source is newer than the previous staged output; layout was refreshed "
+                "from source_path."
+            )
+    return tuple(warnings)
+
+
 def _append_instruction_to_netlist(netlist_path: Path, instruction: str) -> None:
     existing = netlist_path.read_text(encoding="utf-8", errors="replace")
     line_ending = "\r\n" if "\r\n" in existing else "\n"
@@ -130,6 +152,14 @@ def prepare_transient(
             default=resolved_source.with_name(f"{resolved_source.stem}-tran.qsch"),
             allowed_suffixes=(".qsch",),
         )
+        staging_warnings = _staging_warnings(
+            resolved_source,
+            destination,
+            prepared_message=(
+                "Prepared a schematic artifact with one `.tran` directive. "
+                "Run simulation on the staged output_path."
+            ),
+        )
         added = add_instruction_service(
             resolved_source,
             workspace_root=normalized_workspace,
@@ -141,10 +171,7 @@ def prepare_transient(
             output_path=added.output_path,
             source_kind="schematic",
             instruction=instruction,
-            warnings=(
-                "Prepared a schematic artifact with one `.tran` directive. "
-                "Run simulation on the staged output.",
-            ),
+            warnings=staging_warnings,
         )
 
     destination = _resolve_output_path(

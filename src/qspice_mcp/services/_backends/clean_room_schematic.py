@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from qspice_mcp.core.exceptions import ArtifactMissingError, QSpiceError
+from qspice_mcp.services._backends.directive_placement import compute_directive_position
 from qspice_mcp.services.simulation._clean_room_netlist import (
     _build_net_names,
     _decode_qsch_text,
@@ -31,8 +32,7 @@ _QSCH_CLOSE = b"\xbb"
 _QSCH_NEWLINE = b"\r\n"
 _DIRECTIVE_UTF8_BOM = b"\xef\xbb\xbf"
 _TOP_LEVEL_DIRECTIVE_MAX_INDENT = 2
-_DIRECTIVE_DEFAULT_X = 400
-_DIRECTIVE_DEFAULT_Y = -40
+_DIRECTIVE_UTF8_BOM = b"\xef\xbb\xbf"
 _DIRECTIVE_Y_STEP = 80
 
 
@@ -134,12 +134,17 @@ def _normalize_instruction_text(value: str, *, field_name: str) -> str:
     return normalized
 
 
-def _directive_line_bytes(instruction: str, *, directive_index: int) -> bytes:
-    position_y = _DIRECTIVE_DEFAULT_Y - (directive_index * _DIRECTIVE_Y_STEP)
+def _directive_line_bytes(
+    instruction: str,
+    *,
+    directive_index: int,
+    component_anchors: tuple[tuple[int, int], ...] = (),
+) -> bytes:
+    position_x, position_y = compute_directive_position(component_anchors, directive_index)
     return (
         (b" " * 2)
         + _QSCH_OPEN
-        + f"text ({_DIRECTIVE_DEFAULT_X},{position_y}) 1 0 0 0x1000000 -1 -1 ".encode("ascii")
+        + f"text ({position_x},{position_y}) 1 0 0 0x1000000 -1 -1 ".encode("ascii")
         + b'"'
         + _DIRECTIVE_UTF8_BOM
         + instruction.encode("utf-8")
@@ -216,9 +221,15 @@ def add_instruction_to_supported_schematic(
     root_close_index = _find_root_close_line_index(raw_lines)
     if root_close_index is None:
         raise QSpiceError("Clean-room directive fallback requires a supported qsch root wrapper.")
+    components, _, _, _ = _parse_qsch_schematic(schematic_path, allow_empty=True)
+    component_anchors = tuple((component.anchor[0], component.anchor[1]) for component in components)
     raw_lines.insert(
         root_close_index,
-        _directive_line_bytes(normalized_instruction, directive_index=len(directives)),
+        _directive_line_bytes(
+            normalized_instruction,
+            directive_index=len(directives),
+            component_anchors=component_anchors,
+        ),
     )
     _write_artifact(destination, _QSCH_FILE_PREFIX + b"".join(raw_lines)[len(_QSCH_FILE_PREFIX) :])
 

@@ -18,6 +18,11 @@ tools. Read this first when you pick up any QSpice task.
 - **`.qsch` is the source of truth.** Netlists (`.net`/`.cir`), logs (`.log`), and
   waveforms (`.qraw`) are *derived* — regenerate them from the schematic rather
   than editing them by hand.
+- **Staged analysis siblings are derived too.** Tools like `prepare_transient` write
+  `*-tran.qsch` (and similar) as copies of `source_path` plus one directive. They
+  **do not auto-sync** when you edit the base schematic in the GUI. Edit layout on
+  the base `.qsch` only; re-run `prepare_*` before simulating; never treat
+  `*-tran.qsch` as the layout master or open it in the GUI for placement.
 - **Bounded results.** `read_waveform` is capped (≈2000 points). Prefer
   `measure_waveform` for scalars (peak, RMS, settling) over dumping raw samples.
 - **Sandbox.** All paths resolve against the server's workspace root. Use relative
@@ -73,8 +78,16 @@ so placement stays collision-free and upright.
 1. `generate_netlist` — resolve/stage the derived netlist (refreshes a stale
    sibling `.net` when the schematic is newer). Often optional —
    `run_simulation` can take a `.qsch` directly.
-2. `run_simulation` — execute from a `.qsch`, `.cir`, or `.net`. This is
+2. `prepare_transient` / `prepare_ac` / etc. — optional staging that writes a
+   sibling file (e.g. `filter-tran.qsch`). **Simulate `output_path`; edit layout on
+   `source_path`.** After any placement change on the source, call `prepare_*`
+   again so the sibling matches.
+3. `run_simulation` — execute from a `.qsch`, `.cir`, or `.net`. This is
    long-running; expect a wait for transient analyses.
+
+**Layout verification before “done”:** `read_component` on every ref — reject
+duplicate `(position_x, position_y)` pairs and fix with
+`suggest_component_placement` / explicit coordinates before staging or sim.
 
 For design exploration use the sweep tools instead of repeated single runs:
 `run_value_sweep`, `run_param_sweep`, `run_model_sweep`, `run_monte_carlo`,

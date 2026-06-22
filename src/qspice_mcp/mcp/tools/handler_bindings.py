@@ -70,6 +70,8 @@ def _normalize_tool_kwargs(name: str, kwargs: dict[str, object]) -> dict[str, ob
             normalized["input_pin_names"] = ("in0",)
         if normalized.get("output_pin_names") is None:
             normalized["output_pin_names"] = ("out0",)
+    if name == "normalize_component_text_rotation" and normalized.get("text_roles") is not None:
+        normalized["text_roles"] = tuple(cast("list[str]", normalized["text_roles"]))
     return normalized
 
 

@@ -79,6 +79,7 @@ def test_add_component_auto_place_avoids_stacked_origin(tmp_path: Path) -> None:
     )
 
     assert (first.position_x, first.position_y) != (second.position_x, second.position_y)
+    assert abs(first.position_x - second.position_x) >= 900 or abs(first.position_y - second.position_y) >= 500
     assert first.rotation_degrees == 0
     assert second.rotation_degrees == 0
 

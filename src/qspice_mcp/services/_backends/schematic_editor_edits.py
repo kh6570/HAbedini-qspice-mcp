@@ -936,6 +936,7 @@ def _build_voltage_source_component(
             ("pin", "(0,-200)", "(0,0)", 1, 0, 0, "0x0", -1, '"-"'),
         ),
         port_names=("+", "-"),
+        value_text_position="(0,380)",
     )
 
 
@@ -1571,7 +1572,7 @@ def add_net_label(
     qsch_module, _ = _load_qsch_support_modules()
     style = (
         _NET_LABEL_STYLE_GROUND
-        if normalized_net_name.upper() == _GROUND_NET_NAME
+        if normalized_net_name.upper() in {_GROUND_NET_NAME, "0"}
         else _NET_LABEL_STYLE_DEFAULT
     )
     label_tag = qsch_module.QschTag(
@@ -1974,3 +1975,125 @@ def set_component_position(
     )
     editor.updated = True
     return int(position_x), int(position_y), rotation_degrees
+
+
+FACTORY_SYMBOL_TEXT_ROTATION_CODE = 7
+UPRIGHT_SYMBOL_TEXT_ROTATION_CODE = 13
+
+
+def symbol_text_rotation_code_for_degrees(degrees: int) -> int:
+    """Encode one symbol-text orientation as a QSch rotation code (multiples of 90°)."""
+
+    normalized = degrees % 360
+    if normalized % 90 != 0:
+        raise ValueError(f"degrees must be a multiple of 90; got {degrees}.")
+    quarter_turns = normalized // 90
+    return UPRIGHT_SYMBOL_TEXT_ROTATION_CODE + quarter_turns * 32
+
+
+def _normalize_symbol_text_role_name(text_role: str) -> str:
+    normalized = text_role.strip().lower()
+    if normalized in {"reference", "refdes"}:
+        return "reference"
+    if normalized == "value":
+        return "value"
+    raise ValueError("text_roles entries must be 'reference', 'refdes', or 'value'.")
+
+
+def _symbol_text_is_upright(
+    rotation_code: int,
+    *,
+    target_rotation_code: int,
+    component_rotation_degrees: int,
+) -> bool:
+    if rotation_code == target_rotation_code:
+        return True
+    if (
+        component_rotation_degrees == 0
+        and rotation_code == FACTORY_SYMBOL_TEXT_ROTATION_CODE
+        and target_rotation_code == symbol_text_rotation_code_for_degrees(0)
+    ):
+        return True
+    return False
+
+
+@dataclass(frozen=True, slots=True)
+class NormalizedSymbolTextRotation:
+    """One embedded symbol text row normalized to upright readability."""
+
+    role: str
+    previous_rotation_code: int
+    rotation_code: int
+    rotation_degrees: int | None
+    updated: bool
+
+
+def normalize_component_symbol_text_rotation(
+    editor: _QschEditorProtocol,
+    *,
+    reference: str,
+    text_roles: tuple[str, ...] = ("reference", "value"),
+    compensate_component_rotation: bool = True,
+    upright_rotation_code: int | None = None,
+) -> tuple[NormalizedSymbolTextRotation, ...]:
+    """Reset refdes/value text rotation so labels read left-to-right in world space."""
+
+    normalized_reference = reference.strip()
+    if not normalized_reference:
+        raise ValueError("reference must not be empty.")
+    if not text_roles:
+        raise ValueError("text_roles must contain at least one role.")
+
+    normalized_roles = {_normalize_symbol_text_role_name(role) for role in text_roles}
+    _position, rotation_index_raw = editor.get_component_position(normalized_reference)
+    del _position
+    if not isinstance(rotation_index_raw, int):
+        raise TypeError(f"Unsupported component rotation index: {rotation_index_raw!r}")
+    component_rotation_degrees = component_rotation_index_to_degrees(rotation_index_raw)
+
+    if compensate_component_rotation:
+        target_rotation_code = symbol_text_rotation_code_for_degrees(
+            (-component_rotation_degrees) % 360
+        )
+    elif upright_rotation_code is not None:
+        target_rotation_code = upright_rotation_code
+    else:
+        target_rotation_code = symbol_text_rotation_code_for_degrees(0)
+
+    metadata = read_component_symbol_metadata(editor, reference=normalized_reference)
+    results: list[NormalizedSymbolTextRotation] = []
+    for text_attribute in metadata.text_attributes:
+        if text_attribute.role not in normalized_roles:
+            continue
+        previous_code = text_attribute.rotation_code
+        if _symbol_text_is_upright(
+            previous_code,
+            target_rotation_code=target_rotation_code,
+            component_rotation_degrees=component_rotation_degrees,
+        ):
+            results.append(
+                NormalizedSymbolTextRotation(
+                    role=text_attribute.role,
+                    previous_rotation_code=previous_code,
+                    rotation_code=previous_code,
+                    rotation_degrees=text_attribute.rotation_degrees,
+                    updated=False,
+                )
+            )
+            continue
+        updated = set_component_symbol_text_attributes(
+            editor,
+            reference=normalized_reference,
+            text_index=text_attribute.index,
+            rotation_code=target_rotation_code,
+        )
+        results.append(
+            NormalizedSymbolTextRotation(
+                role=updated.role,
+                previous_rotation_code=previous_code,
+                rotation_code=updated.rotation_code,
+                rotation_degrees=updated.rotation_degrees,
+                updated=True,
+            )
+        )
+    return tuple(results)

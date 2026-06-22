@@ -88,7 +88,10 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         supported=True,
         requires_backend=False,
         preconditions=("component reference must exist in the schematic",),
-        limitations=("Re-check wire connectivity after moving a component.",),
+        limitations=(
+            "Re-check wire connectivity after moving a component; remove stale segments "
+            "with remove_wire and re-add with add_wire on pin selectors.",
+        ),
     ),
     IntentEntry(
         intent="rotate_component",
@@ -97,7 +100,22 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         supported=True,
         requires_backend=False,
         preconditions=("rotation_degrees must be a multiple of 45",),
-        limitations=("Rotation updates pin attachment geometry; re-check wires after rotating.",),
+        limitations=(
+            "Rotation updates pin attachment geometry; remove_wire + add_wire to refresh "
+            "connected segments. Use normalize_component_text_rotation after rotating for "
+            "readable refdes/value labels.",
+        ),
+    ),
+    IntentEntry(
+        intent="normalize_symbol_text_rotation",
+        label="Normalize refdes/value text rotation",
+        tool="normalize_component_text_rotation",
+        supported=True,
+        requires_backend=True,
+        preconditions=("a compatible editor backend must be installed",),
+        limitations=(
+            "Adjusts embedded symbol text rotation only; does not move wire endpoints.",
+        ),
     ),
     IntentEntry(
         intent="edit_symbol_text",

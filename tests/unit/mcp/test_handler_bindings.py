@@ -6,7 +6,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from qspice_mcp.infra.config import QSpiceSettings
-from qspice_mcp.mcp.tools.handler_bindings import _build_service_call_kwargs
+from qspice_mcp.mcp.tools.handler_bindings import (
+    _build_service_call_kwargs,
+    _normalize_tool_kwargs,
+)
 from qspice_mcp.mcp.tools.runtime import QSpiceToolRuntime
 from qspice_mcp.mcp.tool_registry import build_runtime_tool_registry
 from qspice_mcp.services.schematic.add_component import add_component
@@ -70,3 +73,15 @@ def test_build_service_call_kwargs_preserves_explicit_none_defaults(
     )
     assert "component" not in kwargs
     assert "step" not in kwargs
+
+
+def test_normalize_tool_kwargs_coerces_text_roles_to_tuple() -> None:
+    normalized = _normalize_tool_kwargs(
+        "normalize_component_text_rotation",
+        {
+            "schematic_path": "demo.qsch",
+            "reference": "R1",
+            "text_roles": ["refdes", "value"],
+        },
+    )
+    assert normalized["text_roles"] == ("refdes", "value")
