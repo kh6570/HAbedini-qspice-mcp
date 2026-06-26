@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -13,6 +13,9 @@ from qspice_mcp.services._backends.schematic_editor import (
     open_schematic_editor,
 )
 from qspice_mcp.services.schematic.add_instruction import add_instruction
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_compute_directive_position_below_components() -> None:
@@ -50,7 +53,7 @@ def test_add_instruction_places_below_components(tmp_path: Path) -> None:
     editor.save_as(output_path)
 
     text = output_path.read_text(encoding="latin-1")
-    assert "text (100,1360) 1 0 0 0x1000000 -1 -1 \".tran 100n 50u\"" in text
+    assert 'text (100,1360) 1 0 0 0x1000000 -1 -1 ".tran 100n 50u"' in text
 
 
 def test_add_instruction_service_places_below_components(tmp_path: Path) -> None:

@@ -68,7 +68,12 @@ def test_run_simulation_executes_via_subprocess_wrapper(
     raw_path = tmp_path / "artifacts" / "demo.qraw"
 
     def fake_run_subprocess_with_log_progress(
-        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
+        command: tuple[str, ...],
+        *,
+        cwd: Path,
+        log_path: Path | None,
+        timeout_s: float | None,
+        run_id: str | None = None,
     ) -> SubprocessResult:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         log_path.write_text("ok", encoding="utf-8")
@@ -118,7 +123,12 @@ def test_run_simulation_uses_settings_default_timeout(
     observed: dict[str, float | None] = {}
 
     def fake_run_subprocess_with_log_progress(
-        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
+        command: tuple[str, ...],
+        *,
+        cwd: Path,
+        log_path: Path | None,
+        timeout_s: float | None,
+        run_id: str | None = None,
     ) -> SubprocessResult:
         del command, cwd
         observed["timeout_s"] = timeout_s
@@ -169,7 +179,12 @@ def test_run_simulation_reuses_cached_artifacts_without_rerunning_subprocess(
     )
 
     def fake_run_subprocess_with_log_progress(
-        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
+        command: tuple[str, ...],
+        *,
+        cwd: Path,
+        log_path: Path | None,
+        timeout_s: float | None,
+        run_id: str | None = None,
     ) -> SubprocessResult:
         del command, cwd, timeout_s
         first_log.parent.mkdir(parents=True, exist_ok=True)
@@ -239,7 +254,12 @@ def test_run_simulation_invalidates_stale_cache_entry_and_reruns(
     call_count = 0
 
     def fake_run_subprocess_with_log_progress(
-        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
+        command: tuple[str, ...],
+        *,
+        cwd: Path,
+        log_path: Path | None,
+        timeout_s: float | None,
+        run_id: str | None = None,
     ) -> SubprocessResult:
         nonlocal call_count
         del command, cwd, timeout_s
@@ -323,7 +343,7 @@ def test_run_simulation_maps_nonzero_exit_to_domain_error(
     monkeypatch.setattr(
         run_simulation_service,
         "run_subprocess_with_log_progress",
-        lambda command, *, cwd, log_path, timeout_s: SubprocessResult(
+        lambda command, *, cwd, log_path, timeout_s, run_id=None: SubprocessResult(
             command=command,
             working_directory=cwd,
             exit_code=7,
@@ -354,7 +374,12 @@ def test_run_simulation_raises_convergence_error_from_log_signature(
     netlist.write_text("* demo\n", encoding="utf-8")
 
     def fake_run_subprocess_with_log_progress(
-        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
+        command: tuple[str, ...],
+        *,
+        cwd: Path,
+        log_path: Path | None,
+        timeout_s: float | None,
+        run_id: str | None = None,
     ) -> SubprocessResult:
         assert log_path is not None
         log_path.write_text("Transient analysis failed: time step too small\n", encoding="utf-8")
@@ -395,7 +420,12 @@ def test_run_simulation_raises_simulation_error_from_fatal_log_signature(
     netlist.write_text("* demo\n", encoding="utf-8")
 
     def fake_run_subprocess_with_log_progress(
-        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
+        command: tuple[str, ...],
+        *,
+        cwd: Path,
+        log_path: Path | None,
+        timeout_s: float | None,
+        run_id: str | None = None,
     ) -> SubprocessResult:
         assert log_path is not None
         log_path.write_text("Fatal error: missing model definition\n", encoding="utf-8")
@@ -440,7 +470,12 @@ def test_run_simulation_maps_timeout_to_domain_error(
     raw_path.write_text("previous raw\n", encoding="utf-8")
 
     def raise_timeout(
-        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
+        command: tuple[str, ...],
+        *,
+        cwd: Path,
+        log_path: Path | None,
+        timeout_s: float | None,
+        run_id: str | None = None,
     ) -> SubprocessResult:
         del cwd
         log_path.write_text("partial log\n", encoding="utf-8")
@@ -475,7 +510,12 @@ def test_run_simulation_restores_previous_outputs_after_nonzero_exit(
     raw_path.write_text("previous raw\n", encoding="utf-8")
 
     def fail_with_partial_outputs(
-        command: tuple[str, ...], *, cwd: Path, log_path: Path | None, timeout_s: float | None
+        command: tuple[str, ...],
+        *,
+        cwd: Path,
+        log_path: Path | None,
+        timeout_s: float | None,
+        run_id: str | None = None,
     ) -> SubprocessResult:
         del command, cwd, timeout_s
         log_path.write_text("new partial log\n", encoding="utf-8")

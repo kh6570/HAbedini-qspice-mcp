@@ -5,8 +5,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from qspice_mcp.core.models import AnalysisKind
 from qspice_mcp.mcp.tools.shared import to_json_object
 from qspice_mcp.services._backends._qsch_editor import _decode_qsch_bytes
@@ -115,8 +113,10 @@ def test_inspect_schematic_handles_real_example_file() -> None:
     repo_root = Path(__file__).resolve().parents[4]
     workspace_root = repo_root
     schematic = repo_root / "tests" / "fixtures" / "schematics" / "comparator-test.qsch"
-    if not schematic.is_file():
-        pytest.skip("comparator fixture schematic is not available")
+    assert schematic.is_file(), (
+        f"committed fixture missing: {schematic} — it must be tracked in git so this "
+        "test cannot silently skip on a clean checkout"
+    )
 
     summary = inspect_schematic(schematic, workspace_root=workspace_root)
 

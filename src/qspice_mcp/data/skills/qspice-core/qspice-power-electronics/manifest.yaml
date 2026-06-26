@@ -1,0 +1,23 @@
+schema_version: 1
+license: MIT
+scope: cross-product
+version: "1.0"
+human-description: Simulate and characterize switching power converters in QSpice — transient, efficiency, step response, and loop-gain stability.
+requires-tools:
+  - materialize_reference_circuit
+  - inspect_schematic
+  - check_schematic
+  - prepare_transient
+  - run_simulation
+  - read_waveform
+  - measure_waveform
+  - measure_step_response
+  - measure_efficiency
+  - prepare_loop_gain_analysis
+  - prepare_ac
+  - measure_stability_margins
+requires-skills:
+  - qspice-getting-started
+  - qspice-convergence-debugging
+requires-products: []
+toolkit: qspice-mcp

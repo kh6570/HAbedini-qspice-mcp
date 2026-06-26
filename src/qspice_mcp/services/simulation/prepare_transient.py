@@ -90,12 +90,11 @@ def _staging_warnings(
     prepared_message: str,
 ) -> tuple[str, ...]:
     warnings: list[str] = [prepared_message, _DERIVED_SCHEMATIC_WARNING]
-    if output_path.exists():
-        if source_path.stat().st_mtime_ns > output_path.stat().st_mtime_ns:
-            warnings.append(
-                "Source is newer than the previous staged output; layout was refreshed "
-                "from source_path."
-            )
+    if output_path.exists() and source_path.stat().st_mtime_ns > output_path.stat().st_mtime_ns:
+        warnings.append(
+            "Source is newer than the previous staged output; layout was refreshed "
+            "from source_path."
+        )
     return tuple(warnings)
 
 

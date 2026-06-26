@@ -358,8 +358,10 @@ def test_mcp_run_simulation_accepts_schematic_source(monkeypatch: object, tmp_pa
         raw_output_path: str | Path | None = None,
         extra_switches: tuple[str, ...] = (),
         ascii_raw: bool = False,
+        run_id: str | None = None,
     ) -> SimulationRun:
         del settings, dry_run, timeout_s, log_path, raw_output_path, extra_switches, ascii_raw
+        del run_id
         calls.append(("run_simulation", Path(netlist_path)))
         return SimulationRun(
             adapter_key="cli.v1",

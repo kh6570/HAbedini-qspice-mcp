@@ -880,9 +880,7 @@ def test_auto_falls_back_to_msvc_when_dmc_fails(
         env: dict[str, str] | None = None,
     ) -> SubprocessResult:
         calls.append(command)
-        if command[0].endswith("dmc.exe") or (
-            len(command) >= 2 and command[1] == "-mn"
-        ):
+        if command[0].endswith("dmc.exe") or (len(command) >= 2 and command[1] == "-mn"):
             return SubprocessResult(
                 command=command,
                 working_directory=cwd,

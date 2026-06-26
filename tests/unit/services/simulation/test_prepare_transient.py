@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import importlib
+import os
+import time
 from pathlib import Path
 
 from qspice_mcp.services.schematic.add_instruction import InstructionAdd
@@ -62,9 +64,6 @@ def test_prepare_transient_warns_when_source_is_newer_than_staged_output(
     staged = tmp_path / "buck-tran.qsch"
     staged.write_text("old staged", encoding="utf-8")
     # Ensure source mtime is newer than staged output.
-    import os
-    import time
-
     old = time.time() - 10
     os.utime(staged, (old, old))
     os.utime(schematic, None)

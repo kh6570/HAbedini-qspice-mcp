@@ -324,6 +324,11 @@ def run(*, settings: QSpiceSettings | None = None, describe: bool = False) -> in
         print(json.dumps(server.summary(), indent=2))
         return 0
 
-    install_shutdown_hooks()
+    batch_manager = server.tool_runtime._batch_manager
+
+    def _request_batch_shutdown() -> None:
+        batch_manager.request_shutdown()
+
+    install_shutdown_hooks(on_shutdown=_request_batch_shutdown)
     server.app.run(transport=server.settings.transport)
     return 0

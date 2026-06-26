@@ -45,11 +45,15 @@ def describe_schematic_layout_spec() -> SchematicLayoutSpecDescription:
         example_document=example_layout_spec_document(),
         bundled_example_path="scratch_power_stage.v1.json",
         notes=(
-            "Write the JSON file under the workspace and pass its path to apply_schematic_layout_spec.",
-            "placement=auto uses collision-aware grid scanning (same engine as suggest_component_placement).",
+            "Write the JSON file under the workspace and pass its path "
+            "to apply_schematic_layout_spec.",
+            "placement=auto uses collision-aware grid scanning "
+            "(same engine as suggest_component_placement).",
             "placement=grid uses grid.origin + column/row * step without overlap checks.",
-            "placement=absolute uses explicit position_x/position_y (for human-tuned rows like scratch.md).",
-            "Wires, junctions, and labels are not part of layout spec v1; add them with dedicated tools.",
+            "placement=absolute uses explicit position_x/position_y "
+            "(for human-tuned rows like scratch.md).",
+            "Wires, junctions, and labels are not part of layout spec v1; "
+            "add them with dedicated tools.",
         ),
     )
 

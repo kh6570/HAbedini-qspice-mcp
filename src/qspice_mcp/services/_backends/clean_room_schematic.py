@@ -222,7 +222,9 @@ def add_instruction_to_supported_schematic(
     if root_close_index is None:
         raise QSpiceError("Clean-room directive fallback requires a supported qsch root wrapper.")
     components, _, _, _ = _parse_qsch_schematic(schematic_path, allow_empty=True)
-    component_anchors = tuple((component.anchor[0], component.anchor[1]) for component in components)
+    component_anchors = tuple(
+        (component.anchor[0], component.anchor[1]) for component in components
+    )
     raw_lines.insert(
         root_close_index,
         _directive_line_bytes(

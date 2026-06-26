@@ -563,6 +563,20 @@ class SimulationBatchManager:
                 note=note,
             )
 
+    def request_shutdown(self) -> tuple[str, ...]:
+        """Flag every live batch for cancellation ahead of process shutdown."""
+
+        cancelled: list[str] = []
+        for job in list(self._jobs.values()):
+            with job.lock:
+                if job.status in {"completed", "failed", "canceled"} or job.thread is None:
+                    continue
+                job.cancellation_requested = True
+                if job.status == "queued":
+                    job.status = "cancel_requested"
+                cancelled.append(job.batch_id)
+        return tuple(cancelled)
+
     def collect_batch_results(self, batch_id: str) -> BatchCollection:
         """Return completed batch results when they are available."""
 

@@ -1,0 +1,19 @@
+schema_version: 1
+license: MIT
+scope: cross-product
+version: "1.0"
+human-description: Inspect, derive, and measure QSpice waveform results after a simulation.
+requires-tools:
+  - list_signals
+  - list_steps
+  - read_waveform
+  - evaluate_waveform_expression
+  - measure_waveform
+  - plot_waveforms
+  - read_fourier
+  - read_noise
+  - export_waveform_csv
+requires-skills:
+  - qspice-getting-started
+requires-products: []
+toolkit: qspice-mcp

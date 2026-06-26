@@ -8,7 +8,12 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-from qspice_mcp.infra.child_processes import register_process, unregister_process
+from qspice_mcp.infra.child_processes import (
+    register_process,
+    register_run,
+    unregister_process,
+    unregister_run,
+)
 from qspice_mcp.infra.progress import report_info, report_progress
 from qspice_mcp.infra.subprocess import SubprocessResult
 
@@ -64,6 +69,7 @@ def run_subprocess_with_log_progress(
     log_path: Path | None,
     timeout_s: float | None = None,
     env: dict[str, str] | None = None,
+    run_id: str | None = None,
 ) -> SubprocessResult:
     """Run QSpice and poll the simulation log for phase progress notifications."""
 
@@ -78,6 +84,8 @@ def run_subprocess_with_log_progress(
         env=env,
     )
     register_process(process)
+    if run_id is not None:
+        register_run(run_id, process)
     stop_event = threading.Event()
     poller: threading.Thread | None = None
     if log_path is not None:
@@ -101,6 +109,8 @@ def run_subprocess_with_log_progress(
         if poller is not None:
             poller.join(timeout=1.0)
         unregister_process(process.pid)
+        if run_id is not None:
+            unregister_run(run_id)
     return SubprocessResult(
         command=tuple(command),
         working_directory=cwd,

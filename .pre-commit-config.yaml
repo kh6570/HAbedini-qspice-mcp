@@ -57,6 +57,11 @@ repos:
         entry: python scripts/check_service_spec_annotation_drift.py
         language: system
         pass_filenames: false
+      - id: check-prompts-drift
+        name: check MCP prompts drift
+        entry: python scripts/check_prompts_drift.py
+        language: system
+        pass_filenames: false
       - id: mypy
         name: mypy (strict, src)
         entry: mypy --strict src/

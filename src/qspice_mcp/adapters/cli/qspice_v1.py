@@ -20,6 +20,10 @@ if TYPE_CHECKING:
 
     from ..probe import ProbeResult
 
+# Bump whenever the log-classification rulesets below change. Contract tests
+# pin this value so behavior changes are deliberate and reviewable.
+LOG_CLASSIFICATION_VERSION = 1
+
 _SUPPORTED_NETLIST_SUFFIXES = frozenset({".cir", ".net"})
 _RESERVED_SWITCHES = frozenset({"-o", "-r"})
 _PATHLIKE_SWITCH_MARKERS = ("\\", "/", ":")
@@ -125,11 +129,23 @@ class CurrentQSpiceCLIAdapter:
     key: str = "cli.v1"
     title: str = "Current QSpice CLI"
     capabilities: AdapterCapabilities = field(default_factory=_default_capabilities)
+    log_classification_version: int = LOG_CLASSIFICATION_VERSION
 
     def can_handle(self, probe: ProbeResult) -> bool:
         """Return whether the discovered executable can be used by this adapter."""
 
         return probe.executable is not None and probe.exists
+
+    def supports_probe_version(self, version: str | None) -> bool:
+        """Return whether this adapter's log rules apply to a probed version.
+
+        Version-specific adapters should override this seam so the registry can
+        prefer them for matching QSpice releases. The conservative ``cli.v1``
+        adapter applies to every discovered version as the baseline fallback.
+        """
+
+        del version
+        return True
 
     def describe(self, probe: ProbeResult) -> AdapterDescription:
         """Describe the adapter against the current probe result."""

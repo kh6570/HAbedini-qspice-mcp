@@ -186,6 +186,28 @@ Both must exit 0. If they fail in a normal terminal, fix the venv/`QSPICE_EXE` s
 
 That terminal is JSON-RPC only — not a normal shell. Prefer `scripts/verify_mcp.ps1` for a non-interactive health check.
 
+Run `python -m qspice_mcp --setup` to print a JSON readiness report (QSpice
+executable, workspace root, and optional DLL build toolchains) without starting
+the server.
+
+### CLI flags and environment variables
+
+CLI flags override the matching `QSPICE_*` environment variable (which may come
+from your shell, the MCP launcher `env` block, or a local `.env`).
+
+| CLI flag | Environment variable | Purpose |
+| --- | --- | --- |
+| `--transport` | `QSPICE_TRANSPORT` | Transport (`stdio` default, `sse` experimental) |
+| _(none)_ | `QSPICE_ENABLE_SSE` | Must be `true` to allow `--transport sse` |
+| `--qspice-exe` | `QSPICE_EXE` | Path to `QSPICE64.exe` |
+| `--workspace-root` | `QSPICE_WORKSPACE_ROOT` | Folder for schematics and derived artifacts |
+| `--log-level` | `QSPICE_LOG_LEVEL` | `debug`, `info`, `warning`, or `error` |
+| `--log-folder` | `QSPICE_LOG_FOLDER` | Optional folder for rotating server log files |
+| `--recipe-path` | `QSPICE_RECIPE_PATH` | Optional override for the recipe catalog directory |
+
+The experimental `sse` transport is gated: `--transport sse` exits with an error
+unless `QSPICE_ENABLE_SSE=true` is also set.
+
 ---
 
 ## DLL / C-block devices

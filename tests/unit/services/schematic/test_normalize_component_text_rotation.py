@@ -87,9 +87,7 @@ def test_normalize_component_symbol_text_skips_factory_defaults_at_zero_rotation
 
     assert len(rows) == 2
     assert all(not item.updated for item in rows)
-    assert all(
-        item.previous_rotation_code == FACTORY_SYMBOL_TEXT_ROTATION_CODE for item in rows
-    )
+    assert all(item.previous_rotation_code == FACTORY_SYMBOL_TEXT_ROTATION_CODE for item in rows)
 
 
 def test_normalize_component_symbol_text_updates_non_upright_codes(tmp_path: Path) -> None:

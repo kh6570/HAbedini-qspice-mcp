@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 from functools import cache
 from importlib.resources import files
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from qspice_mcp.core.exceptions import ValidationError
@@ -14,6 +16,7 @@ if TYPE_CHECKING:
     from importlib.resources.abc import Traversable
 
 _RECIPES_ROOT = "qspice_mcp.data.recipes"
+_RECIPE_PATH_ENV = "QSPICE_RECIPE_PATH"
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,7 +42,22 @@ class WorkflowInstructionEntry:
 
 @cache
 def _recipes_root() -> Traversable:
+    override = os.environ.get(_RECIPE_PATH_ENV, "").strip()
+    if override:
+        override_path = Path(override).expanduser()
+        if override_path.is_dir():
+            return override_path
+        raise ValidationError(
+            f"{_RECIPE_PATH_ENV} is set to {override!r} but that directory does not exist."
+        )
     return files(_RECIPES_ROOT)
+
+
+def clear_recipes_root_cache() -> None:
+    """Clear the memoized recipe-root resolution (primarily for tests)."""
+
+    _recipes_root.cache_clear()
+    load_recipe_manifest.cache_clear()
 
 
 def list_recipe_index_entries() -> tuple[RecipeIndexEntry, ...]:
@@ -257,6 +275,7 @@ def read_workflow_instruction_markdown(instruction_id: str) -> str:
 __all__ = [
     "RecipeIndexEntry",
     "WorkflowInstructionEntry",
+    "clear_recipes_root_cache",
     "list_recipe_index_entries",
     "list_workflow_instruction_entries",
     "load_recipe_manifest",

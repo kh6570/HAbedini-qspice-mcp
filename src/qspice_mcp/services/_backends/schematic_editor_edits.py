@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
@@ -52,7 +53,7 @@ from .schematic_editor_backend import (
     normalize_component_position,
     resolve_schematic_output_path,
 )
-from .schematic_editor_geometry import resolve_wire_points
+from .schematic_editor_geometry import resolve_component_pin_position, resolve_wire_points
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -1977,6 +1978,229 @@ def set_component_position(
     return int(position_x), int(position_y), rotation_degrees
 
 
+@dataclass(frozen=True, slots=True)
+class ClonedLibraryComponent:
+    """Result of cloning one component symbol from a template schematic."""
+
+    reference: str
+    symbol_name: str
+    type_name: str | None
+    library_file: str | None
+    value: str | None
+    pin_names: tuple[str, ...]
+
+
+def clone_library_component(  # noqa: PLR0915
+    editor: _QschEditorProtocol,
+    *,
+    template_component_tag: Any,
+    reference: str,
+    position: tuple[int, int],
+    value: str | None = None,
+    rotation_degrees: int = 0,
+) -> ClonedLibraryComponent:
+    """Clone one component symbol subtree from a template into the current editor."""
+
+    if rotation_degrees % 45 != 0:
+        raise ValueError("rotation_degrees must be a multiple of 45.")
+    normalized_reference = reference.strip()
+    if not normalized_reference:
+        raise ValueError("reference must not be empty.")
+    if template_component_tag is None:
+        raise QSpiceError("Template component does not expose a raw tag tree.")
+
+    bootstrap_blank_schematic(editor)
+    existing_references = {str(item) for item in editor.get_components(prefixes="*")}
+    if normalized_reference in existing_references:
+        raise ValueError(f"Component reference already exists in schematic: {normalized_reference}")
+
+    qsch_module, base_schematic_module = _load_qsch_support_modules()
+    cloned_tag = copy.deepcopy(template_component_tag)
+    symbol_tags = cloned_tag.get_items("symbol")
+    if not symbol_tags:
+        raise QSpiceError("Template component does not expose a symbol tag.")
+    symbol_tag = symbol_tags[0]
+
+    pin_names = tuple(
+        str(pin_tag.get_attr(qsch_module.QSCH_SYMBOL_PIN_NET))
+        for pin_tag in symbol_tag.get_items("pin")
+    )
+    if not pin_names:
+        raise QSpiceError("Template component does not expose any pins.")
+
+    symbol_name = str(symbol_tag.tokens[1]) if len(symbol_tag.tokens) > 1 else ""
+    type_name = _read_symbol_metadata_attr(symbol_tag, "type:")
+    library_file = _read_symbol_metadata_attr(symbol_tag, "library file:")
+
+    texts = symbol_tag.get_items("text")
+    if len(texts) > qsch_module.QSCH_SYMBOL_TEXT_REFDES:
+        texts[qsch_module.QSCH_SYMBOL_TEXT_REFDES].set_attr(
+            qsch_module.QSCH_TEXT_STR_ATTR, normalized_reference
+        )
+    template_value: str | None = None
+    if len(texts) > qsch_module.QSCH_SYMBOL_TEXT_VALUE:
+        template_value = str(
+            texts[qsch_module.QSCH_SYMBOL_TEXT_VALUE].get_attr(qsch_module.QSCH_TEXT_STR_ATTR)
+        )
+    resolved_value = value if value is not None else template_value
+
+    component = base_schematic_module.SchematicComponent(editor, normalized_reference)
+    component.reference = normalized_reference
+    component.position = base_schematic_module.Point(0, 0)
+    component.rotation = 0
+    if type_name is not None:
+        component.attributes["type"] = type_name
+    if library_file is not None:
+        component.attributes["library file"] = library_file
+    if resolved_value is not None:
+        component.attributes["value"] = resolved_value
+    component.attributes["tag"] = cloned_tag
+    component.attributes["enabled"] = True
+    component.ports = list(pin_names)
+
+    editor.add_component(cast("_SchematicComponentProtocol", component))
+    _append_schematic_tag(editor, cloned_tag)
+    rotation_index = component_rotation_degrees_to_index(rotation_degrees)
+    editor.set_component_position(normalized_reference, position, rotation_index)
+    if resolved_value is not None:
+        editor.set_component_value(normalized_reference, resolved_value)
+    editor.updated = True
+
+    return ClonedLibraryComponent(
+        reference=normalized_reference,
+        symbol_name=symbol_name,
+        type_name=type_name,
+        library_file=library_file,
+        value=resolved_value,
+        pin_names=pin_names,
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class WireFollowMove:
+    """Result of moving one component while rewiring attached connection points."""
+
+    position_x: int
+    position_y: int
+    rotation_degrees: int
+    rewired_endpoints: int
+
+
+def _component_position_xy(position: object) -> tuple[int, int]:
+    """Read integer coordinates from a Point-like or tuple component position."""
+
+    x_attr = getattr(position, "X", None)
+    y_attr = getattr(position, "Y", None)
+    if x_attr is not None and y_attr is not None:
+        return int(x_attr), int(y_attr)
+    sequence = cast("tuple[int, int]", position)
+    return int(sequence[0]), int(sequence[1])
+
+
+def _maybe_rewrite_point_token(
+    tag: Any,
+    token_index: int,
+    coordinate_map: dict[tuple[int, int], tuple[int, int]],
+) -> int:
+    """Rewrite one QSch point token in place when it matches a remapped coordinate."""
+
+    tokens = getattr(tag, "tokens", None)
+    if tokens is None or len(tokens) <= token_index:
+        return 0
+    try:
+        point = _parse_qsch_point(str(tokens[token_index]))
+    except ValueError:
+        return 0
+    new_point = coordinate_map.get(point)
+    if new_point is None:
+        return 0
+    tokens[token_index] = _format_qsch_point(new_point)
+    return 1
+
+
+def _rewrite_connection_points(
+    editor: _QschEditorProtocol,
+    coordinate_map: dict[tuple[int, int], tuple[int, int]],
+) -> int:
+    """Rewrite wire, junction, and net-label points that matched old pin coordinates."""
+
+    if not coordinate_map or editor.schematic is None:
+        return 0
+    schematic_obj: Any = editor.schematic
+    items = cast("list[Any]", schematic_obj.items)
+    rewired = 0
+    for tag in items:
+        tag_name = getattr(tag, "tag", None)
+        if tag_name == "wire":
+            rewired += _maybe_rewrite_point_token(tag, 1, coordinate_map)
+            rewired += _maybe_rewrite_point_token(tag, 2, coordinate_map)
+        elif tag_name in {"junction", "net"}:
+            rewired += _maybe_rewrite_point_token(tag, 1, coordinate_map)
+    if rewired:
+        editor.updated = True
+    return rewired
+
+
+def move_component_preserving_connections(
+    editor: _QschEditorProtocol,
+    *,
+    reference: str,
+    position_x: int | None = None,
+    position_y: int | None = None,
+    rotation_degrees: int | None = None,
+) -> WireFollowMove:
+    """Move/rotate one component and follow attached wire, junction, and net-label points."""
+
+    normalized_reference = reference.strip()
+    if not normalized_reference:
+        raise ValueError("reference must not be empty.")
+    if position_x is None and position_y is None and rotation_degrees is None:
+        raise ValueError("Provide at least one of position_x, position_y, or rotation_degrees.")
+
+    component = editor.get_component(normalized_reference)
+    pin_names = [str(port) for port in component.ports]
+    old_positions: dict[str, tuple[int, int]] = {}
+    for pin_name in pin_names:
+        try:
+            old_positions[pin_name] = resolve_component_pin_position(
+                editor, reference=normalized_reference, pin_name=pin_name
+            )
+        except (ValueError, QSpiceError):
+            continue
+
+    current_position, _ = editor.get_component_position(normalized_reference)
+    current_x, current_y = _component_position_xy(current_position)
+    resolved_x = current_x if position_x is None else int(position_x)
+    resolved_y = current_y if position_y is None else int(position_y)
+
+    applied_x, applied_y, applied_degrees = set_component_position(
+        editor,
+        reference=normalized_reference,
+        position_x=resolved_x,
+        position_y=resolved_y,
+        rotation_degrees=rotation_degrees,
+    )
+
+    coordinate_map: dict[tuple[int, int], tuple[int, int]] = {}
+    for pin_name, old_point in old_positions.items():
+        try:
+            new_point = resolve_component_pin_position(
+                editor, reference=normalized_reference, pin_name=pin_name
+            )
+        except (ValueError, QSpiceError):
+            continue
+        if new_point != old_point:
+            coordinate_map[old_point] = new_point
+
+    rewired = _rewrite_connection_points(editor, coordinate_map)
+    return WireFollowMove(
+        position_x=applied_x,
+        position_y=applied_y,
+        rotation_degrees=applied_degrees,
+        rewired_endpoints=rewired,
+    )
+
+
 FACTORY_SYMBOL_TEXT_ROTATION_CODE = 7
 UPRIGHT_SYMBOL_TEXT_ROTATION_CODE = 13
 
@@ -2008,13 +2232,11 @@ def _symbol_text_is_upright(
 ) -> bool:
     if rotation_code == target_rotation_code:
         return True
-    if (
+    return (
         component_rotation_degrees == 0
         and rotation_code == FACTORY_SYMBOL_TEXT_ROTATION_CODE
         and target_rotation_code == symbol_text_rotation_code_for_degrees(0)
-    ):
-        return True
-    return False
+    )
 
 
 @dataclass(frozen=True, slots=True)

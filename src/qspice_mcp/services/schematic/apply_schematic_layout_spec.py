@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.services.schematic._layout import PlacedComponent, load_placed_components
@@ -14,9 +14,6 @@ from qspice_mcp.services.schematic._layout_spec import (
 )
 from qspice_mcp.services.schematic.add_component import AddedComponent, add_component
 from qspice_mcp.services.service_spec import ServiceSpec
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 SERVICE_SPEC = ServiceSpec(
     name="apply_schematic_layout_spec",
@@ -69,11 +66,7 @@ def _apply_resolved_row(
     skip_existing: bool,
     existing_refs: frozenset[str],
 ) -> tuple[AppliedLayoutComponent, Path | None, bool]:
-    if (
-        skip_existing
-        and row.reference is not None
-        and row.reference in existing_refs
-    ):
+    if skip_existing and row.reference is not None and row.reference in existing_refs:
         return (
             AppliedLayoutComponent(
                 reference=row.reference,
@@ -147,7 +140,7 @@ def apply_schematic_layout_spec(
     applied: list[AppliedLayoutComponent] = []
     skipped = 0
     latest_output: Path | None = None
-    current_output = output_path
+    current_output: Path | None = Path(output_path) if output_path is not None else None
     for row in resolved_rows:
         component_row, latest_output, was_skipped = _apply_resolved_row(
             schematic_path=resolved_schematic,
@@ -161,7 +154,7 @@ def apply_schematic_layout_spec(
         if was_skipped:
             skipped += 1
         else:
-            current_output = str(latest_output) if latest_output is not None else current_output
+            current_output = latest_output if latest_output is not None else current_output
             if component_row.reference is not None:
                 existing_refs = frozenset({*existing_refs, component_row.reference})
 

@@ -24,8 +24,11 @@ class QSpiceSettings(BaseSettings):
     exe: Path | None = None
     live_gui_bridge_command: tuple[str, ...] = ()
     transport: Literal["stdio", "sse"] = "stdio"
+    enable_sse: bool = False
     workspace_root: Path = Path.cwd()
     cache_dir: Path | None = None
+    log_folder: Path | None = None
+    recipe_path: Path | None = None
     log_level: Literal["debug", "info", "warning", "error"] = "info"
     timeout_s: float | None = 120.0
     max_cache_bytes: int | None = None
@@ -49,12 +52,18 @@ class QSpiceSettings(BaseSettings):
         live_gui_bridge_command = tuple(
             str(item).strip() for item in self.live_gui_bridge_command if str(item).strip()
         )
+        log_folder = self.log_folder.resolve(strict=False) if self.log_folder is not None else None
+        recipe_path = (
+            self.recipe_path.resolve(strict=False) if self.recipe_path is not None else None
+        )
         return self.model_copy(
             update={
                 "exe": exe,
                 "live_gui_bridge_command": live_gui_bridge_command,
                 "workspace_root": self.workspace_root.resolve(strict=False),
                 "cache_dir": cache_dir.resolve(strict=False),
+                "log_folder": log_folder,
+                "recipe_path": recipe_path,
             }
         )
 
@@ -79,6 +88,9 @@ class QSpiceSettings(BaseSettings):
         workspace_root: Path | None = None,
         log_level: Literal["debug", "info", "warning", "error"] | None = None,
         telemetry_enabled: bool | None = None,
+        log_folder: Path | None = None,
+        recipe_path: Path | None = None,
+        enable_sse: bool | None = None,
     ) -> Self:
         """Apply explicit CLI overrides on top of environment-loaded settings."""
 
@@ -93,6 +105,12 @@ class QSpiceSettings(BaseSettings):
             updates["log_level"] = log_level
         if telemetry_enabled is not None:
             updates["telemetry_enabled"] = telemetry_enabled
+        if log_folder is not None:
+            updates["log_folder"] = log_folder
+        if recipe_path is not None:
+            updates["recipe_path"] = recipe_path
+        if enable_sse is not None:
+            updates["enable_sse"] = enable_sse
         return self.model_copy(update=updates).normalized()
 
 
@@ -103,6 +121,9 @@ def build_settings(
     workspace_root: Path | None = None,
     log_level: Literal["debug", "info", "warning", "error"] | None = None,
     telemetry_enabled: bool | None = None,
+    log_folder: Path | None = None,
+    recipe_path: Path | None = None,
+    enable_sse: bool | None = None,
 ) -> QSpiceSettings:
     """Load settings from the environment and apply explicit CLI overrides."""
 
@@ -112,4 +133,7 @@ def build_settings(
         workspace_root=workspace_root,
         log_level=log_level,
         telemetry_enabled=telemetry_enabled,
+        log_folder=log_folder,
+        recipe_path=recipe_path,
+        enable_sse=enable_sse,
     )

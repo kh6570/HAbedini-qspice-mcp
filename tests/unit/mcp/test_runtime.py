@@ -213,8 +213,9 @@ class TestQSpiceToolRuntime:
             raw_output_path: str | Path | None = None,
             extra_switches: tuple[str, ...] = (),
             ascii_raw: bool = False,
+            run_id: str | None = None,
         ) -> SimulationRun:
-            del workspace_root, settings, dry_run, timeout_s, extra_switches, ascii_raw
+            del workspace_root, settings, dry_run, timeout_s, extra_switches, ascii_raw, run_id
             captured_trace_id["trace_id"] = telemetry.get_current_trace_id()
             resolved_netlist = Path(netlist_path).resolve(strict=False)
             resolved_log = Path(log_path or resolved_netlist.with_suffix(".log")).resolve(

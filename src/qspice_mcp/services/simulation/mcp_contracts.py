@@ -405,7 +405,17 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "netlist_output_path": {"type": "string"},
                 "ascii_raw": {"type": "boolean"},
                 "extra_switches": {"type": "array", "items": {"type": "string"}},
+                "run_id": {"type": "string"},
             },
+        },
+    },
+    "cancel_run": {
+        "title": "Cancel Run",
+        "description": "Request cancellation of an in-flight run_simulation invocation by its run_id.",
+        "input_schema": {
+            "type": "object",
+            "required": ["run_id"],
+            "properties": {"run_id": {"type": "string"}},
         },
     },
     "run_value_sweep": {

@@ -88,7 +88,8 @@ _CAPABILITY_CATALOG: tuple[TopologyCapabilityEntry, ...] = (
         supported=True,
         limitations=(
             "Layout spec v1 covers component coordinates only (not wires, junctions, or labels).",
-            "See describe_schematic_layout_spec for schema and bundled scratch_power_stage.v1.json.",
+            "See describe_schematic_layout_spec for schema and bundled "
+            "scratch_power_stage.v1.json.",
         ),
     ),
     TopologyCapabilityEntry(

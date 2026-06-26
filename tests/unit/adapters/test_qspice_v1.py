@@ -6,8 +6,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from qspice_mcp.adapters.cli.qspice_v1 import CurrentQSpiceCLIAdapter
+from qspice_mcp.adapters.cli.qspice_v1 import (
+    LOG_CLASSIFICATION_VERSION,
+    CurrentQSpiceCLIAdapter,
+)
 from qspice_mcp.adapters.probe import ProbeResult
+from qspice_mcp.core.exceptions import ConvergenceError, SimulationError
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -111,3 +115,75 @@ def test_build_simulation_command_rejects_positional_or_pathlike_switches(tmp_pa
             netlist,
             extra_switches=(r"-Config=C:\temp\outside.cfg",),
         )
+
+
+# ---------------------------------------------------------------------------
+# Log-classification contract
+# ---------------------------------------------------------------------------
+
+
+def test_log_classification_version_is_pinned() -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+
+    assert adapter.log_classification_version == LOG_CLASSIFICATION_VERSION
+    assert LOG_CLASSIFICATION_VERSION == 1
+
+
+def test_classify_clean_log_returns_none() -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+
+    result = adapter.classify_simulation_log(
+        "Total elapsed time: 0.5 seconds\n100% complete\n",
+        exit_code=0,
+    )
+
+    assert result is None
+
+
+@pytest.mark.parametrize(
+    "log_line",
+    [
+        "Internal timestep too small",
+        "Timestep too small",
+        "Failed to converge",
+        "No convergence in DC analysis",
+        "Convergence problem detected",
+        "Iteration limit reached",
+        "Singular matrix detected",
+        "Trouble with node N001",
+    ],
+)
+def test_classify_convergence_failures(log_line: str) -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+
+    result = adapter.classify_simulation_log(log_line, exit_code=1, stderr="boom")
+
+    assert isinstance(result, ConvergenceError)
+    assert result.exit_code == 1
+    assert "boom" in (result.stderr or "")
+
+
+def test_classify_fatal_error_returns_simulation_error() -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+
+    result = adapter.classify_simulation_log("Fatal error: missing model", exit_code=2)
+
+    assert isinstance(result, SimulationError)
+    assert not isinstance(result, ConvergenceError)
+    assert result.exit_code == 2
+
+
+def test_classify_prefers_convergence_over_fatal_on_same_line() -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+    # A single line that satisfies both the fatal (^error) and convergence
+    # patterns must be classified as the more specific convergence failure.
+    result = adapter.classify_simulation_log("Error: internal timestep too small", exit_code=1)
+
+    assert isinstance(result, ConvergenceError)
+
+
+def test_supports_probe_version_is_permissive_baseline() -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+
+    assert adapter.supports_probe_version(None) is True
+    assert adapter.supports_probe_version("2024.07") is True

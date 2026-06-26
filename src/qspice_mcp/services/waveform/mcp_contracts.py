@@ -4,6 +4,25 @@ from qspice_mcp.services._internals.mcp_schema_common import (
 )
 
 MCP_CONTRACTS: dict[str, dict[str, object]] = {
+    "evaluate_waveform_expression": {
+        "title": "Evaluate Waveform Expression",
+        "description": "Evaluate an arithmetic expression over one or more `.qraw` signals (for example `V(out)-V(in)` or `V(out)*I(L1)`) and return a budgeted result series. Supports signal tokens, numeric constants, parentheses, and the + - * / ** operators; all referenced signals must share one axis.",
+        "input_schema": {
+            "type": "object",
+            "required": ["raw_path", "expression"],
+            "properties": {
+                "raw_path": {"type": "string"},
+                "expression": {"type": "string"},
+                "step": {"type": "integer", "minimum": 0},
+                "step_filters": _STEP_FILTERS,
+                "component": _COMPONENT,
+                "t_start": {"type": "number"},
+                "t_end": {"type": "number"},
+                "max_points": {"type": "integer", "minimum": 1},
+                "max_bytes": {"type": "integer", "minimum": 1},
+            },
+        },
+    },
     "list_steps": {
         "title": "List Steps",
         "description": "Enumerate available simulation steps and their variable assignments without returning waveform samples; sibling `.log` metadata produces the richest step labels.",

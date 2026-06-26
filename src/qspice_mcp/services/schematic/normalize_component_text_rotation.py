@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING, Any, cast
 from qspice_mcp.services._backends.schematic_editor import (
     NormalizedSymbolTextRotation,
     component_rotation_index_to_degrees,
-    normalize_component_symbol_text_rotation as apply_symbol_text_normalization,
     symbol_text_rotation_code_for_degrees,
+)
+from qspice_mcp.services._backends.schematic_editor import (
+    normalize_component_symbol_text_rotation as apply_symbol_text_normalization,
 )
 from qspice_mcp.services._internals.schematic_edits import edit_schematic
 from qspice_mcp.services.service_spec import ServiceSpec

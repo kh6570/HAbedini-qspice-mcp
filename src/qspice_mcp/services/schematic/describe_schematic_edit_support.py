@@ -18,6 +18,7 @@ EditIntentName = Literal[
     "edit_symbol_pin",
     "edit_symbol_drawing",
     "delete_component",
+    "normalize_symbol_text_rotation",
 ]
 
 
@@ -89,8 +90,9 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         requires_backend=False,
         preconditions=("component reference must exist in the schematic",),
         limitations=(
-            "Re-check wire connectivity after moving a component; remove stale segments "
-            "with remove_wire and re-add with add_wire on pin selectors.",
+            "set_component_position leaves wire endpoints in place; use "
+            "move_component_preserving_connections to move a component and follow attached "
+            "wires, junctions, and net labels automatically.",
         ),
     ),
     IntentEntry(
@@ -101,9 +103,9 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         requires_backend=False,
         preconditions=("rotation_degrees must be a multiple of 45",),
         limitations=(
-            "Rotation updates pin attachment geometry; remove_wire + add_wire to refresh "
-            "connected segments. Use normalize_component_text_rotation after rotating for "
-            "readable refdes/value labels.",
+            "set_component_rotation leaves wire endpoints in place; use "
+            "move_component_preserving_connections to rotate and follow connected segments. "
+            "Use normalize_component_text_rotation after rotating for readable labels.",
         ),
     ),
     IntentEntry(
@@ -113,9 +115,7 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         supported=True,
         requires_backend=True,
         preconditions=("a compatible editor backend must be installed",),
-        limitations=(
-            "Adjusts embedded symbol text rotation only; does not move wire endpoints.",
-        ),
+        limitations=("Adjusts embedded symbol text rotation only; does not move wire endpoints.",),
     ),
     IntentEntry(
         intent="edit_symbol_text",

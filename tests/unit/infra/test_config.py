@@ -96,6 +96,40 @@ def test_build_settings_applies_cli_overrides(tmp_path: Path) -> None:
     assert settings.telemetry_enabled is True
 
 
+def test_settings_read_enable_sse_from_environment(monkeypatch: object) -> None:
+    typed_monkeypatch = monkeypatch
+    typed_monkeypatch.setenv("QSPICE_ENABLE_SSE", "true")
+
+    settings = QSpiceSettings().normalized()
+
+    assert settings.enable_sse is True
+
+
+def test_settings_resolve_log_folder_and_recipe_path(tmp_path: Path) -> None:
+    log_folder = tmp_path / "logs"
+    recipe_path = tmp_path / "recipes"
+
+    settings = QSpiceSettings(log_folder=log_folder, recipe_path=recipe_path).normalized()
+
+    assert settings.log_folder == log_folder.resolve()
+    assert settings.recipe_path == recipe_path.resolve()
+
+
+def test_build_settings_applies_log_folder_recipe_path_and_sse(tmp_path: Path) -> None:
+    log_folder = tmp_path / "logs"
+    recipe_path = tmp_path / "recipes"
+
+    settings = build_settings(
+        log_folder=log_folder,
+        recipe_path=recipe_path,
+        enable_sse=True,
+    )
+
+    assert settings.log_folder == log_folder.resolve()
+    assert settings.recipe_path == recipe_path.resolve()
+    assert settings.enable_sse is True
+
+
 def test_settings_default_simulation_timeout() -> None:
     settings = QSpiceSettings().normalized()
 

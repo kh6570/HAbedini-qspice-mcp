@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from importlib.resources import files
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.services._shared.paths import validate_existing_file
@@ -83,7 +83,8 @@ def example_layout_spec_document() -> dict[str, object]:
     """Return the canonical v1 example document shipped with the server."""
 
     bundled = files("qspice_mcp.data.layout_specs").joinpath("scratch_power_stage.v1.json")
-    return json.loads(bundled.read_text(encoding="utf-8"))
+    document: dict[str, object] = json.loads(bundled.read_text(encoding="utf-8"))
+    return document
 
 
 def layout_spec_json_schema() -> dict[str, object]:
@@ -147,6 +148,13 @@ def _optional_int(value: object, *, field_name: str) -> int | None:
     return value
 
 
+def _grid_int(grid: dict[str, object], key: str, default: int) -> int:
+    value = grid.get(key, default)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValidationError(f"grid.{key} must be an integer.")
+    return value
+
+
 def _parse_grid(raw: object) -> LayoutGridSpec:
     if raw is None:
         return LayoutGridSpec(
@@ -158,11 +166,11 @@ def _parse_grid(raw: object) -> LayoutGridSpec:
         )
     grid = _require_mapping(raw, field_name="grid")
     return LayoutGridSpec(
-        origin_x=int(grid.get("origin_x", DEFAULT_ORIGIN_X)),
-        origin_y=int(grid.get("origin_y", DEFAULT_ORIGIN_Y)),
-        step_x=int(grid.get("step_x", GRID_STEP_X)),
-        step_y=int(grid.get("step_y", GRID_STEP_Y)),
-        clearance_units=int(grid.get("clearance_units", DEFAULT_CLEARANCE)),
+        origin_x=_grid_int(grid, "origin_x", DEFAULT_ORIGIN_X),
+        origin_y=_grid_int(grid, "origin_y", DEFAULT_ORIGIN_Y),
+        step_x=_grid_int(grid, "step_x", GRID_STEP_X),
+        step_y=_grid_int(grid, "step_y", GRID_STEP_Y),
+        clearance_units=_grid_int(grid, "clearance_units", DEFAULT_CLEARANCE),
     )
 
 
@@ -170,9 +178,8 @@ def _infer_placement_mode(raw: dict[str, object]) -> str:
     explicit = raw.get("placement")
     if explicit is not None:
         if not isinstance(explicit, str) or explicit not in _SUPPORTED_PLACEMENT_MODES:
-            raise ValidationError(
-                f"components[].placement must be one of: {', '.join(sorted(_SUPPORTED_PLACEMENT_MODES))}."
-            )
+            allowed = ", ".join(sorted(_SUPPORTED_PLACEMENT_MODES))
+            raise ValidationError(f"components[].placement must be one of: {allowed}.")
         return explicit
     if raw.get("position_x") is not None or raw.get("position_y") is not None:
         return "absolute"
@@ -211,9 +218,7 @@ def _parse_component(raw: object, *, index: int) -> LayoutComponentSpec:
             f"components[{index}] with placement='absolute' requires position_x and position_y."
         )
     if placement == "grid" and grid_column is None:
-        raise ValidationError(
-            f"components[{index}] with placement='grid' requires grid_column."
-        )
+        raise ValidationError(f"components[{index}] with placement='grid' requires grid_column.")
     value = raw.get("value")
     normalized_kind = kind.strip().lower()
     if normalized_kind != "ground" and value is None:
@@ -293,10 +298,12 @@ def resolve_layout_component_placement(
     """Resolve one layout row to schematic coordinates."""
 
     if entry.placement == "absolute":
-        assert entry.position_x is not None and entry.position_y is not None
+        assert entry.position_x is not None
+        assert entry.position_y is not None
         return entry.position_x, entry.position_y
     if entry.placement == "grid":
         assert entry.grid_column is not None
+        assert entry.grid_row is not None
         return (
             grid.origin_x + entry.grid_column * grid.step_x,
             grid.origin_y + entry.grid_row * grid.step_y,

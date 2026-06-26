@@ -7,7 +7,12 @@ import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from qspice_mcp.infra.child_processes import register_process, unregister_process
+from qspice_mcp.infra.child_processes import (
+    register_process,
+    register_run,
+    unregister_process,
+    unregister_run,
+)
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -31,6 +36,7 @@ def run_subprocess(
     cwd: Path,
     timeout_s: float | None = None,
     env: dict[str, str] | None = None,
+    run_id: str | None = None,
 ) -> SubprocessResult:
     """Run a subprocess and return normalized execution metadata."""
 
@@ -45,6 +51,8 @@ def run_subprocess(
         env=env,
     )
     register_process(process)
+    if run_id is not None:
+        register_run(run_id, process)
     try:
         stdout, stderr = process.communicate(timeout=timeout_s)
     except subprocess.TimeoutExpired as exc:
@@ -55,6 +63,8 @@ def run_subprocess(
         raise
     finally:
         unregister_process(process.pid)
+        if run_id is not None:
+            unregister_run(run_id)
     return SubprocessResult(
         command=tuple(command),
         working_directory=cwd,

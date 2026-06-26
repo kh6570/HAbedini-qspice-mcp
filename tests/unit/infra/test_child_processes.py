@@ -52,6 +52,41 @@ def test_unregister_process_removes_tracked_pid() -> None:
     assert process.pid not in terminated
 
 
+def test_request_run_cancellation_terminates_tracked_run() -> None:
+    process = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(30)"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    child_processes.register_run("run-cancel", process)
+
+    assert child_processes.request_run_cancellation("run-cancel") is True
+    assert process.poll() is not None
+    assert child_processes.is_run_cancelled("run-cancel") is True
+    assert child_processes.consume_run_cancellation("run-cancel") is True
+    assert child_processes.is_run_cancelled("run-cancel") is False
+    child_processes.unregister_run("run-cancel")
+
+
+def test_request_run_cancellation_unknown_run_returns_false() -> None:
+    assert child_processes.request_run_cancellation("missing-run") is False
+
+
+def test_register_run_clears_stale_cancellation_flag() -> None:
+    process = subprocess.Popen(
+        [sys.executable, "-c", "print('done')"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    process.wait(timeout=5.0)
+    child_processes._CANCELLED_RUNS.add("reused-run")
+
+    child_processes.register_run("reused-run", process)
+
+    assert child_processes.is_run_cancelled("reused-run") is False
+    child_processes.unregister_run("reused-run")
+
+
 def test_install_shutdown_hooks_is_idempotent(monkeypatch) -> None:
     child_processes._SHUTDOWN_HOOKS_INSTALLED = False
     registrations: list[object] = []

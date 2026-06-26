@@ -8,6 +8,92 @@ from qspice_mcp.services._internals.mcp_schema_common import (
 )
 
 MCP_CONTRACTS: dict[str, dict[str, object]] = {
+    "read_net_connectivity": {
+        "title": "Read Net Connectivity",
+        "description": "Report electrical nets and the component pins attached to each for a supported clean-room `.qsch` schematic.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path"],
+            "properties": {"schematic_path": {"type": "string"}},
+        },
+    },
+    "check_schematic": {
+        "title": "Check Schematic",
+        "description": "Run read-only ERC-style checks on a supported `.qsch` schematic: missing ground reference, floating pins, duplicate reference designators, missing component value or model, and conflicting net labels.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path"],
+            "properties": {"schematic_path": {"type": "string"}},
+        },
+    },
+    "check_netlist": {
+        "title": "Check Netlist",
+        "description": "Run read-only ERC-style checks on a `.net` or `.cir` netlist: missing ground node 0, duplicate reference designators, and single-connection nodes.",
+        "input_schema": {
+            "type": "object",
+            "required": ["netlist_path"],
+            "properties": {"netlist_path": {"type": "string"}},
+        },
+    },
+    "compare_schematics": {
+        "title": "Compare Schematics",
+        "description": "Diff two supported `.qsch` schematics, reporting added, removed, and changed components (value, model, position) plus net-count differences.",
+        "input_schema": {
+            "type": "object",
+            "required": ["base_path", "revised_path"],
+            "properties": {
+                "base_path": {"type": "string"},
+                "revised_path": {"type": "string"},
+            },
+        },
+    },
+    "move_component_preserving_connections": {
+        "title": "Move Component Preserving Connections",
+        "description": "Move and/or rotate one placed component and follow attached wire endpoints, junctions, and net labels so existing connections stay intact. Provide at least one of position_x, position_y, or rotation_degrees.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "reference"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "reference": {"type": "string"},
+                "position_x": {"type": "integer"},
+                "position_y": {"type": "integer"},
+                "rotation_degrees": {"type": "integer"},
+                "output_path": {"type": "string"},
+            },
+        },
+    },
+    "add_library_component": {
+        "title": "Add Library Component",
+        "description": "Clone one component symbol (symbol name, library file, drawing primitives, and pins) from a reference template `.qsch` into a target schematic at a position, assigning a new reference designator.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "template_path", "template_reference", "reference"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "template_path": {"type": "string"},
+                "template_reference": {"type": "string"},
+                "reference": {"type": "string"},
+                "position_x": {"type": "integer"},
+                "position_y": {"type": "integer"},
+                "value": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+        },
+    },
+    "render_schematic_image": {
+        "title": "Render Schematic Image",
+        "description": "Render a supported `.qsch` schematic (wires, junctions, component anchors with refdes/value, and net labels) to a PNG image inside the workspace.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "output_path": {"type": "string"},
+                "overwrite": {"type": "boolean"},
+            },
+        },
+    },
     "materialize_reference_circuit": {
         "title": "Materialize Reference Circuit",
         "description": "Write server-bundled reference circuit files into the workspace so an empty folder can reproduce a canonical example (for example buck_converter_cpp) from bundled package data recipes.",

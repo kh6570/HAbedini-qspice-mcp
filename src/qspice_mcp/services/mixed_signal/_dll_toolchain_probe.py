@@ -131,21 +131,15 @@ def _dll_toolchain_notes(
             "(expected <install>/dm/bin/dmc.exe beside QSPICE64.exe)."
         )
     else:
-        notes.append(
-            "QSpice is configured but bundled DMC was not found beside the executable."
-        )
+        notes.append("QSpice is configured but bundled DMC was not found beside the executable.")
 
     if msvc_available:
         if cl_on_path:
             notes.append("MSVC `cl` is available on PATH.")
         else:
-            notes.append(
-                "MSVC `cl` is not on PATH, but vcvars64.bat was discovered for bootstrap."
-            )
+            notes.append("MSVC `cl` is not on PATH, but vcvars64.bat was discovered for bootstrap.")
     else:
-        notes.append(
-            "MSVC is unavailable: `cl` is not on PATH and no vcvars64.bat was discovered."
-        )
+        notes.append("MSVC is unavailable: `cl` is not on PATH and no vcvars64.bat was discovered.")
 
     if cmake_available:
         notes.append("CMake is available on PATH.")

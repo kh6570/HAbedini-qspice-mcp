@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING
 from qspice_mcp.adapters import select_adapter
 from qspice_mcp.adapters.probe import probe_qspice
 from qspice_mcp.core.exceptions import SimulationError, SimulationTimeoutError
+from qspice_mcp.infra.child_processes import consume_run_cancellation
 from qspice_mcp.infra.config import QSpiceSettings
 from qspice_mcp.infra.simulation_subprocess import run_subprocess_with_log_progress
 from qspice_mcp.services._internals.managed_outputs import (
@@ -167,6 +168,7 @@ def run_simulation(
     raw_output_path: str | Path | None = None,
     extra_switches: tuple[str, ...] = (),
     ascii_raw: bool = False,
+    run_id: str | None = None,
 ) -> SimulationRun:
     """Plan or execute a QSpice run for a derived `.net` or `.cir` file."""
 
@@ -260,6 +262,7 @@ def run_simulation(
                 cwd=plan.working_directory,
                 log_path=plan.log_file,
                 timeout_s=effective_timeout_s,
+                run_id=run_id,
             )
         except subprocess.TimeoutExpired as exc:
             stderr = (
@@ -271,6 +274,13 @@ def run_simulation(
                 f"QSpice timed out after {effective_timeout_s} seconds.",
                 stderr=stderr,
             ) from exc
+
+        if run_id is not None and consume_run_cancellation(run_id):
+            raise SimulationError(  # noqa: TRY301
+                f"Simulation run {run_id!r} was cancelled by request.",
+                exit_code=process.exit_code,
+                stderr=process.stderr,
+            )
 
         _classify_log_failure(
             adapter=adapter,

@@ -2,22 +2,21 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from qspice_mcp.infra.config import QSpiceSettings
+from qspice_mcp.mcp.tool_registry import build_runtime_tool_registry
 from qspice_mcp.mcp.tools.handler_bindings import (
     _build_service_call_kwargs,
     _normalize_tool_kwargs,
 )
 from qspice_mcp.mcp.tools.runtime import QSpiceToolRuntime
-from qspice_mcp.mcp.tool_registry import build_runtime_tool_registry
 from qspice_mcp.services.schematic.add_component import add_component
 from qspice_mcp.services.schematic.inspect_schematic import inspect_schematic
 from qspice_mcp.services.waveform.read_waveform import read_waveform
 
 if TYPE_CHECKING:
-    from qspice_mcp.mcp.tools.runtime import QSpiceToolRuntime as RuntimeType
+    from pathlib import Path
 
 
 def _runtime(tmp_path: Path) -> QSpiceToolRuntime:

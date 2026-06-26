@@ -24,7 +24,9 @@ def _invoke(
 
 
 def main() -> int:
-    workspace = Path(sys.argv[1]) if len(sys.argv) > 1 else Path.home() / "Desktop" / "qspice-mcp-test"
+    workspace = (
+        Path(sys.argv[1]) if len(sys.argv) > 1 else Path.home() / "Desktop" / "qspice-mcp-test"
+    )
     workspace.mkdir(parents=True, exist_ok=True)
     settings = QSpiceSettings(workspace_root=workspace)
     runtime = QSpiceToolRuntime(settings, build_runtime_tool_registry())

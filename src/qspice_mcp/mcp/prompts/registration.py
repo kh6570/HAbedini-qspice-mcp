@@ -15,18 +15,25 @@ def _messages_from_text(text: str) -> list[dict[str, object]]:
 
 
 def register_prompts(app: FastMCP, definitions: tuple[PromptDefinition, ...]) -> None:
-    """Bind prompt handlers for all bundled workflow definitions."""
+    """Bind prompt handlers, driving each prompt's metadata from ``definitions``.
 
-    del definitions
+    Every handler resolves its title and description from the matching
+    :class:`PromptDefinition`, so the registered MCP metadata cannot drift from
+    :func:`get_prompt_definitions`. A missing definition raises ``KeyError`` at
+    registration time rather than silently shipping a hard-coded prompt.
+    """
 
-    @app.prompt(
-        name="qspice_buck_converter_from_scratch",
-        title="Buck Converter From Scratch",
-        description=(
-            "Guide authoring a buck converter schematic, generating a netlist, "
-            "and running a transient simulation."
-        ),
-    )
+    by_name = {definition.name: definition for definition in definitions}
+
+    def _meta(name: str) -> tuple[str, str, str]:
+        definition = by_name.get(name)
+        if definition is None:
+            raise KeyError(f"No PromptDefinition registered for prompt {name!r}.")
+        return definition.name, definition.title, definition.description
+
+    buck_name, buck_title, buck_description = _meta("qspice_buck_converter_from_scratch")
+
+    @app.prompt(name=buck_name, title=buck_title, description=buck_description)
     def buck_prompt(vin: str = "12", vout: str = "5", iout: str = "1") -> list[dict[str, object]]:
         return _messages_from_text(
             render_prompt_message(
@@ -37,21 +44,17 @@ def register_prompts(app: FastMCP, definitions: tuple[PromptDefinition, ...]) ->
             )
         )
 
-    @app.prompt(
-        name="qspice_debug_convergence",
-        title="Debug Convergence",
-        description="Structured workflow for diagnosing a non-converging QSpice simulation.",
-    )
+    debug_name, debug_title, debug_description = _meta("qspice_debug_convergence")
+
+    @app.prompt(name=debug_name, title=debug_title, description=debug_description)
     def debug_prompt(log_path: str) -> list[dict[str, object]]:
         return _messages_from_text(
             render_prompt_message("qspice_debug_convergence", log_path=log_path)
         )
 
-    @app.prompt(
-        name="qspice_run_and_measure",
-        title="Run And Measure",
-        description="Run a simulation and read bounded waveform measurements for key signals.",
-    )
+    measure_name, measure_title, measure_description = _meta("qspice_run_and_measure")
+
+    @app.prompt(name=measure_name, title=measure_title, description=measure_description)
     def measure_prompt(schematic_path: str, signals: str = "V(out)") -> list[dict[str, object]]:
         return _messages_from_text(
             render_prompt_message(
@@ -61,21 +64,17 @@ def register_prompts(app: FastMCP, definitions: tuple[PromptDefinition, ...]) ->
             )
         )
 
-    @app.prompt(
-        name="qspice_author_dll_device",
-        title="Author DLL Device",
-        description="Scaffold and build a mixed-signal C-block/DLL device for QSpice.",
-    )
+    dll_name, dll_title, dll_description = _meta("qspice_author_dll_device")
+
+    @app.prompt(name=dll_name, title=dll_title, description=dll_description)
     def dll_prompt(device_kind: str = "control") -> list[dict[str, object]]:
         return _messages_from_text(
             render_prompt_message("qspice_author_dll_device", device_kind=device_kind)
         )
 
-    @app.prompt(
-        name="qspice_sweep_design",
-        title="Sweep Design Parameter",
-        description="Plan and execute a parameter sweep on an existing schematic.",
-    )
+    sweep_name, sweep_title, sweep_description = _meta("qspice_sweep_design")
+
+    @app.prompt(name=sweep_name, title=sweep_title, description=sweep_description)
     def sweep_prompt(schematic_path: str, param: str, sweep_range: str) -> list[dict[str, object]]:
         return _messages_from_text(
             render_prompt_message(

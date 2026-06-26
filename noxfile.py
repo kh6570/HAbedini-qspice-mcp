@@ -92,10 +92,44 @@ def quality(session: nox.Session) -> None:
         "check-mcp-env-drift",
         "check-markdown-docs",
         "check-tool-metadata-casing",
+        "check-service-spec-annotation-drift",
+        "check-prompts-drift",
     ):
         session.run("pre-commit", "run", hook_id, "--all-files", "--show-diff-on-failure")
     session.run("python", "-m", "mypy", "--strict", "src/")
     _run_non_integration_tests(session)
+
+
+@nox.session(name="ci-parity")
+def ci_parity(session: nox.Session) -> None:
+    """Run the unit suite against a clean ``git archive HEAD`` export.
+
+    This catches files that are present in the working tree but missing from
+    version control (a common source of "passes locally, fails in CI" drift).
+    """
+    import tarfile  # noqa: PLC0415
+    import tempfile  # noqa: PLC0415
+    from pathlib import Path  # noqa: PLC0415
+
+    export_root = Path(tempfile.mkdtemp(prefix="qspice-ci-parity-"))
+    archive_path = export_root / "HEAD.tar"
+    session.run(
+        "git",
+        "archive",
+        "--format=tar",
+        "-o",
+        str(archive_path),
+        "HEAD",
+        external=True,
+    )
+    extract_root = export_root / "tree"
+    extract_root.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(archive_path) as archive:
+        archive.extractall(extract_root)  # noqa: S202
+
+    session.install(f"{extract_root}[dev,backends]")
+    session.chdir(extract_root)
+    session.run("python", "-m", "pytest", "-m", "not integration", *session.posargs)
 
 
 @nox.session(name="cold-start")

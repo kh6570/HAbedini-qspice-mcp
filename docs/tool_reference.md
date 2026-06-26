@@ -91,6 +91,10 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `list_workflow_instructions` | implemented | List bundled workflow build instructions (for example buck-converter-cpp). |
 | `read_workflow_instruction` | implemented | Read one bundled workflow instruction document with build steps and coordinate tables. |
 | `inspect_schematic` | implemented | Summarize a `.qsch` file and the analyses it defines. |
+| `read_net_connectivity` | implemented | Report electrical nets and the component pins attached to each for a supported `.qsch`. |
+| `check_schematic` | implemented | Run read-only ERC-style checks on a supported `.qsch` (ground, floating pins, duplicate refdes, missing value, conflicting labels). |
+| `check_netlist` | implemented | Run read-only ERC-style checks on a `.net`/`.cir` netlist (ground node 0, duplicate refdes, single-connection nodes). |
+| `compare_schematics` | implemented | Diff two supported `.qsch` schematics by components and net counts. |
 | `list_components` | implemented | Enumerate normalized component summaries from a `.qsch` file. |
 | `list_subcircuits` | implemented | Enumerate subcircuit instances and indicate whether their definitions resolve. |
 | `read_component` | implemented | Return a normalized view of one component, including nodes and parameters. |
@@ -100,6 +104,9 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `set_component_value` | implemented | Update the value field of one schematic component. |
 | `set_component_rotation` | implemented | Rotate one placed component in 45-degree steps without moving it. |
 | `set_component_position` | implemented | Move one placed component to new coordinates, optionally updating rotation. |
+| `move_component_preserving_connections` | implemented | Move/rotate one component and follow attached wires, junctions, and net labels. |
+| `add_library_component` | implemented | Clone one component symbol from a template `.qsch` into a target schematic. |
+| `render_schematic_image` | implemented | Render a supported `.qsch` (wires, junctions, components, labels) to a PNG. |
 | `set_component_parameters` | implemented | Update one or more component-local parameters. |
 | `set_component_symbol_drawing` | implemented | Update one embedded symbol drawing item by replacing its raw tag name or arguments. |
 | `set_component_symbol_text` | implemented | Update one embedded symbol text item, including safe layout/style attributes. |
@@ -137,6 +144,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `prepare_worst_case` | implemented | Persist explicit worst-case corner assignments with shared component preset expansion. |
 | `list_plot_suggestions` | implemented | Surface `.plot`, `.print`, `.probe`, and `.abscissa` hints from a source netlist. |
 | `run_simulation` | implemented | Plan or execute a simulation from a `.qsch`, `.cir`, or `.net` source path. |
+| `cancel_run` | implemented | Request cancellation of an in-flight `run_simulation` invocation by its `run_id`. |
 | `run_value_sweep` | implemented | Run one schematic across multiple component values and optionally resume a matching retained batch with caller-selected retained-artifact policy. |
 | `run_param_sweep` | implemented | Run one schematic across the Cartesian product of parameter values and optionally resume a matching retained batch with caller-selected retained-artifact policy. |
 | `run_monte_carlo` | implemented | Execute one prepared Monte Carlo plan through the copy-on-write batch runner, with optional manifest-based resume and retained-artifact policy control. |
@@ -149,6 +157,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `filter_device_operating_points` | implemented | Filter device operating-point entries by family, model, reference, or metric presence. |
 | `summarize_device_operating_points` | implemented | Return compact family-level and extremum summaries for an Operating Point raw file. |
 | `read_waveform` | implemented | Return bounded samples for one signal and selected component. |
+| `evaluate_waveform_expression` | implemented | Evaluate an arithmetic expression over `.qraw` signals and return a budgeted series. |
 | `measure_waveform` | implemented | Compute scalar measurements from one signal component. |
 | `measure_bode_response` | implemented | Sample magnitude and phase from a frequency-domain waveform trace. |
 | `measure_stability_margins` | implemented | Compute crossover frequency, phase margin, and gain margin from a loop-gain trace. |
@@ -453,6 +462,8 @@ skip runs whose output artifacts already exist (unless `retain_artifacts` is
 re-attempted on resume when their artifacts are missing or stale. Submitted
 batch IDs now also persist a registry entry so later server instances in the
 same workspace can reload completed status and terminal results by `batch_id`.
+The `schematic_path` must be a `.qsch` source; `.net`/`.cir` inputs are
+rejected because clean-room netlist editing for sweeps is not yet implemented.
 
 ## get_batch_status
 
@@ -1301,6 +1312,146 @@ Notes:
 This tool should favor inspection over transformation. It is the default entry
 point for understanding a project because the repository is intentionally
 `qsch` first.
+
+## read_net_connectivity
+
+Purpose:
+Report the electrical nets of a supported clean-room `.qsch` and the component
+pins attached to each, without mutating the schematic.
+
+Typical inputs:
+- `schematic_path` (path to a `.qsch` file within the workspace)
+
+Expected outputs:
+- `node_count`
+- `component_count`
+- `ground_present`
+- `nets` (each with `net`, `labeled`, `pin_count`, and `pins` of `{reference, pin}`)
+
+Notes:
+Connectivity is derived from the repo-owned clean-room parser, so it covers the
+supported schematic subset. Ground nets (`GND`/`0`) normalize to `0`.
+
+## check_schematic
+
+Purpose:
+Run read-only ERC-style checks on a supported `.qsch` schematic.
+
+Typical inputs:
+- `schematic_path` (path to a `.qsch` file within the workspace)
+
+Expected outputs:
+- `ok`
+- `error_count`, `warning_count`, `info_count`
+- `findings` (each with `severity`, `code`, `message`)
+
+Notes:
+Checks include missing ground reference (`missing_ground`), floating pins
+(`floating_pin`), duplicate reference designators (`duplicate_reference`),
+missing value/model (`missing_value`), and conflicting net labels
+(`conflicting_net_labels`). This is a static lint and does not run a simulation.
+
+## check_netlist
+
+Purpose:
+Run conservative read-only ERC-style checks on a `.net` or `.cir` netlist body.
+
+Typical inputs:
+- `netlist_path` (path to a `.net` or `.cir` file within the workspace)
+
+Expected outputs:
+- `ok`
+- `error_count`, `warning_count`, `info_count`
+- `findings` (each with `severity`, `code`, `message`)
+
+Notes:
+Checks include missing ground node `0` (`missing_ground`), duplicate reference
+designators (`duplicate_reference`), and single-connection nodes
+(`single_connection_node`). Node extraction is heuristic per element type.
+
+## compare_schematics
+
+Purpose:
+Diff two supported clean-room `.qsch` schematics.
+
+Typical inputs:
+- `base_path` (path to the baseline `.qsch`)
+- `revised_path` (path to the revised `.qsch`)
+
+Expected outputs:
+- `added_components`, `removed_components`
+- `changed_components` (each with `reference`, `field`, `base`, `revised`)
+- `base_node_count`, `revised_node_count`
+- `identical`
+
+Notes:
+Component changes cover `kind`, `value`, `position`, `rotation_degrees`, and
+`nodes`. Net differences are surfaced through the node counts.
+
+## move_component_preserving_connections
+
+Purpose:
+Move and/or rotate one placed component while keeping its attached wiring intact.
+
+Typical inputs:
+- `schematic_path`
+- `reference`
+- `position_x` / `position_y` (optional; default to the current anchor)
+- `rotation_degrees` (optional, multiple of 45)
+- `output_path` (optional)
+
+Expected outputs:
+- `position_x`, `position_y`, `rotation_degrees`
+- `rewired_endpoints` (count of wire/junction/net points moved to follow pins)
+
+Notes:
+Pin coordinates are snapshotted before the transform; any wire endpoint,
+junction, or net-label point that matched an old pin coordinate is rewritten to
+the new coordinate. Provide at least one of `position_x`, `position_y`, or
+`rotation_degrees`.
+
+## add_library_component
+
+Purpose:
+Clone one component symbol from a reference template `.qsch` into a target
+schematic, assigning a new reference designator.
+
+Typical inputs:
+- `schematic_path` (target schematic)
+- `template_path` (reference schematic to clone from)
+- `template_reference` (component reference within the template)
+- `reference` (new reference designator in the target)
+- `position_x` / `position_y` (optional placement; default `(0, 0)`)
+- `value` (optional override; defaults to the template value)
+- `output_path` (optional)
+
+Expected outputs:
+- `reference`, `symbol_name`, `type_name`, `library_file`, `value`
+- `pin_names`
+
+Notes:
+This is a clean-room template clone: the full symbol subtree (symbol name,
+`library file:`, drawing primitives, and pins) is deep-copied, so no `.asy`
+library parser is required.
+
+## render_schematic_image
+
+Purpose:
+Render a supported `.qsch` schematic to a PNG preview image.
+
+Typical inputs:
+- `schematic_path`
+- `output_path` (optional)
+- `overwrite` (optional)
+
+Expected outputs:
+- `image_path`, `format`
+- `component_count`, `wire_count`, `net_label_count`
+
+Notes:
+The render draws wire segments, junction dots, component pins and
+refdes/value labels, and net labels parsed from the clean-room subset. It uses
+the same matplotlib dependency as `plot_waveforms`.
 
 ## list_components
 
@@ -2170,6 +2321,7 @@ Typical inputs:
 - `netlist_output_path` (optional derived netlist override for schematic inputs)
 - `ascii_raw` (optional boolean)
 - `extra_switches` (optional validated CLI switches)
+- `run_id` (optional caller-supplied identifier enabling `cancel_run`)
 
 Expected outputs:
 - `source_path`
@@ -2207,6 +2359,30 @@ the cached `.log`/`.qraw` pair instead of rerunning QSpice. Failed or timed-out
 executions restore any previous `.log` or `.qraw` artifact that existed at the
 requested output paths so partial replacement files are not left behind.
 
+When a caller supplies `run_id`, the in-flight process is tracked so a
+concurrent `cancel_run` request with the same identifier can terminate it.
+
+## cancel_run
+
+Purpose:
+Request cancellation of an in-flight `run_simulation` invocation by the
+caller-supplied `run_id`, terminating the tracked QSpice process.
+
+Typical inputs:
+- `run_id` (the identifier passed to the in-flight `run_simulation` call)
+
+Expected outputs:
+- `run_id`
+- `cancelled`
+
+Failure modes:
+- `ValidationError` (blank `run_id`, or no active run is tracked for `run_id`)
+
+Notes:
+Cancellation is only possible while the run is executing; once the process has
+exited or was never started with that `run_id`, the request fails. The cancelled
+`run_simulation` call raises `SimulationError` to report the interruption.
+
 ## run_value_sweep
 
 Purpose:
@@ -2239,6 +2415,8 @@ Notes:
 This is a synchronous convenience wrapper around `submit_batch` with
 `batch_kind=value`. It blocks until all runs complete or the combined
 timeout elapses. For background execution, use `submit_batch` directly.
+The `schematic_path` must be a `.qsch` source; `.net`/`.cir` inputs are
+rejected because clean-room netlist editing for sweeps is not yet implemented.
 
 ## run_param_sweep
 
@@ -2272,6 +2450,8 @@ The Cartesian product of all parameter lists determines the run count. Each
 run edits the schematic with the assigned `.param` combination via a
 factory-produced closure, executes QSpice on the edited copy, and records
 results in the batch manifest.
+The `schematic_path` must be a `.qsch` source; `.net`/`.cir` inputs are
+rejected because clean-room netlist editing for sweeps is not yet implemented.
 
 ## run_model_sweep
 
@@ -2304,6 +2484,8 @@ Notes:
 Each run edits the referenced component's model text before execution.
 This is useful for comparing device model variants (e.g., different MOSFET
 or op-amp models) under identical operating conditions.
+The `schematic_path` must be a `.qsch` source; `.net`/`.cir` inputs are
+rejected because clean-room netlist editing for sweeps is not yet implemented.
 
 ## submit_remote_simulation
 
@@ -2583,6 +2765,34 @@ is not a supported MCP response shape. Complex traces are projected to a
 single real-valued series through the requested `component`, with `auto`
 defaulting to magnitude for complex data and real values for real traces.
 `step_filters` provide a step-aware alternative to manual numeric step indices.
+
+## evaluate_waveform_expression
+
+Purpose:
+Evaluate an arithmetic expression over one or more `.qraw` signals and return a
+budgeted result series (for example `V(out)-V(in)` or `V(out)*I(L1)`).
+
+Typical inputs:
+- `raw_path`
+- `expression` (signal tokens like `V(out)`, numeric constants, parentheses, and `+ - * / **`)
+- `step` (optional)
+- `step_filters` (optional)
+- `component` (optional: `auto`, `real`, `imag`, `magnitude`, `phase`)
+- `t_start` / `t_end` (optional)
+- `max_points` / `max_bytes` (optional override within allowed budget)
+
+Expected outputs:
+- `expression`
+- `signals` (resolved signal names referenced by the expression)
+- `x_values`, `y_values`
+- `x_unit`
+- `point_count`, `original_point_count`, `downsampled`
+
+Notes:
+The expression is parsed with a restricted AST evaluator (no `eval`); only
+signal tokens, numeric constants, parentheses, and the `+ - * / **` operators
+are allowed. All referenced signals must share one axis (same raw, step, and
+window). The standard `read_waveform` budget caps the response.
 
 ## measure_waveform
 

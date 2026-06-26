@@ -26,6 +26,17 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`prepare_dc_sweep` tool** — stage a schematic or netlist with a documented `.dc` directive.
 - **`prepare_loop_gain_analysis` tool** — stage `.ac` plus Tian/Middlebrook loop-gain guidance.
 - **`set_component_position` tool** — move one placed schematic component to new coordinates.
+- **`move_component_preserving_connections` tool** — move or rotate one component and follow attached wires, junctions, and net labels to the new pin coordinates.
+- **`add_library_component` tool** — clone one component symbol from a template `.qsch` into a target schematic (generic library parts beyond the built-in kinds).
+- **`render_schematic_image` tool** — render a supported `.qsch` (wires, junctions, components, labels) to a PNG preview.
+- **`read_net_connectivity` tool** — report electrical nets and the component pins connected to each (read-only).
+- **`check_schematic` / `check_netlist` tools** — read-only ERC-style checks (missing ground, floating/single-connection nets, duplicate refdes, missing values, conflicting labels) on `.qsch` and `.net`/`.cir` sources.
+- **`compare_schematics` tool** — diff two supported `.qsch` files by components, field changes, and net counts.
+- **`evaluate_waveform_expression` tool** — compute a derived trace from an arithmetic expression over existing signals (e.g. `V(out)-V(in)`, `V(n1)*I(L1)`).
+- **`cancel_run` tool** — request cancellation of an in-flight `run_simulation` invocation by its `run_id`.
+- **CLI `--setup`, `--log-folder`, `--recipe-path`** — bootstrap diagnostics, optional file-log folder (`QSPICE_LOG_FOLDER`), and private recipe catalog override (`QSPICE_RECIPE_PATH`).
+- **Experimental SSE transport gate** — `--transport sse` is gated behind `QSPICE_ENABLE_SSE=true`.
+- **Companion agent skills** — `qspice-waveform-analysis`, `qspice-mixed-signal-dll`, and `qspice-power-electronics` added to the bundled `qspice-core` skill group.
 - **`prepare_noise` / `prepare_transfer_function` / `prepare_sensitivity` / `prepare_temperature_sweep` tools** — analysis-prep helpers for remaining directive types.
 - **MCP argument completions** — autocomplete for recipe IDs, instruction IDs, recipe documents, and workspace artifact paths.
 - **`workspace-artifact://{relpath}` resource template** — sandbox-validated workspace artifact pull (`~` encodes `/` in nested paths).

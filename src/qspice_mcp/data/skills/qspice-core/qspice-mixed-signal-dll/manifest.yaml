@@ -1,0 +1,22 @@
+schema_version: 1
+license: MIT
+scope: cross-product
+version: "1.0"
+human-description: Author, scaffold, build, and validate QSpice `.DLL` custom-device blocks for mixed-signal C/C++ models.
+requires-tools:
+  - describe_mixed_signal_support
+  - add_dll_block
+  - add_dll_block_pin
+  - remove_dll_block_pin
+  - set_dll_block_pin_role
+  - scaffold_dll_device_from_symbol
+  - write_workspace_text_file
+  - build_dll_device
+  - validate_dll_symbol_signature
+  - generate_dll_variables
+  - generate_netlist
+  - run_simulation
+requires-skills:
+  - qspice-getting-started
+requires-products: []
+toolkit: qspice-mcp

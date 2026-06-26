@@ -22,5 +22,6 @@
   "files.watcherExclude": {
     "**/work_dir/**": true,
     "**/.qspice_cache/**": true
-  }
+  },
+  "cursorpyright.analysis.typeCheckingMode": "strict"
 }

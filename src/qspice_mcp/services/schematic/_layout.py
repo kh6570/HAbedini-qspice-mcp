@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 GRID_STEP_X = 900
 GRID_STEP_Y = 500
 DEFAULT_CLEARANCE = 80
-# Extra margin so refdes/value text (offset ~100–200 from anchor) does not overlap.
+# Extra margin so refdes/value text (offset ~100-200 from anchor) does not overlap.
 _TEXT_LABEL_MARGIN_X = 200
 _TEXT_LABEL_MARGIN_Y = 140
 DEFAULT_ORIGIN_X = 400
@@ -106,10 +106,8 @@ def _collides(
     clearance: int,
 ) -> bool:
     return (
-        abs(position_x - placed.position_x)
-        < half_width + placed.half_width + clearance
-        and abs(position_y - placed.position_y)
-        < half_height + placed.half_height + clearance
+        abs(position_x - placed.position_x) < half_width + placed.half_width + clearance
+        and abs(position_y - placed.position_y) < half_height + placed.half_height + clearance
     )
 
 

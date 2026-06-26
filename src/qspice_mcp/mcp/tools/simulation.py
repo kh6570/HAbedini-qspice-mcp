@@ -455,6 +455,7 @@ class SimulationToolMixin:
         ascii_raw: bool = False,
         extra_switches: list[str] | None = None,
         netlist_output_path: str | None = None,
+        run_id: str | None = None,
     ) -> dict[str, object]:
         resolved_source = resolve_workspace_path(
             source_path, workspace_root=self.settings.workspace_root
@@ -489,6 +490,7 @@ class SimulationToolMixin:
             raw_output_path=raw_output_path,
             extra_switches=tuple(extra_switches or ()),
             ascii_raw=ascii_raw,
+            run_id=run_id,
         )
         payload = to_json_object(result)
         payload["source_path"] = str(resolved_source)

@@ -8,19 +8,23 @@ representation.  No third-party schematic packages are required.
 from __future__ import annotations
 
 import re
+import time
 from typing import TYPE_CHECKING, Any
 
+import structlog
+
 from qspice_mcp.core.exceptions import QSpiceError
-from qspice_mcp.services._backends.directive_placement import compute_directive_position
 from qspice_mcp.services._backends._qsch_support import (
     QSCH_COMPONENT_POS,
     QSCH_COMPONENT_ROTATION,
     QSCH_SYMBOL_PIN_NET,
     QSCH_SYMBOL_PIN_NET_BEHAVIORAL,
     QSCH_TEXT_INSTR_QUALIFIER,
+    QSCH_TEXT_POS,
     QSCH_TEXT_STR_ATTR,
     QschTag,
 )
+from qspice_mcp.services._backends.directive_placement import compute_directive_position
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -32,6 +36,10 @@ if TYPE_CHECKING:
 _QSCH_BINARY_PREFIX = b"\xff\xd8\xff\xdb"
 _QOPEN = "\u00ab"  # «
 _QCLOSE = "\u00bb"  # »
+
+_SAVE_MAX_ATTEMPTS = 3
+_SAVE_RETRY_DELAY_S = 0.2
+_logger = structlog.get_logger(__name__)
 
 
 def _decode_qsch_bytes(raw_bytes: bytes) -> str:
@@ -729,17 +737,34 @@ class QschEditor:
         path.parent.mkdir(parents=True, exist_ok=True)
         temp_path = path.with_name(f"{path.name}.tmp")
         last_error: OSError | None = None
-        for _attempt in range(3):
+        for attempt in range(1, _SAVE_MAX_ATTEMPTS + 1):
             try:
                 temp_path.write_bytes(data)
                 temp_path.replace(path)
             except OSError as exc:
                 last_error = exc
                 temp_path.unlink(missing_ok=True)
+                _logger.warning(
+                    "qsch_save_attempt_failed",
+                    path=str(path),
+                    attempt=attempt,
+                    max_attempts=_SAVE_MAX_ATTEMPTS,
+                    error=str(exc),
+                )
+                if attempt < _SAVE_MAX_ATTEMPTS:
+                    time.sleep(_SAVE_RETRY_DELAY_S)
             else:
+                if attempt > 1:
+                    _logger.info("qsch_save_succeeded_after_retry", path=str(path), attempt=attempt)
                 self.updated = False
                 return
         if last_error is not None:
+            _logger.error(
+                "qsch_save_retries_exhausted",
+                path=str(path),
+                attempts=_SAVE_MAX_ATTEMPTS,
+                error=str(last_error),
+            )
             raise last_error
 
     def save_netlist(self, path: str) -> None:
