@@ -1,0 +1,25 @@
+# .mcpb bundle excludes (uv server type: dependencies are resolved by the host,
+# never bundle a venv or server/lib).
+.venv/
+**/__pycache__/
+**/*.pyc
+.git/
+.github/
+.cursor/
+.vscode/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.nox/
+htmlcov/
+dist/
+build/
+*.egg-info/
+tests/
+local-dev-docs/
+terminals/
+node_modules/
+server/lib/
+server/venv/
+.coverage
+coverage.xml

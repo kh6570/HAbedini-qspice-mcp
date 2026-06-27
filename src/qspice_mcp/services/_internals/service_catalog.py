@@ -24,6 +24,7 @@ _SERVICE_PACKAGE_ORDER: tuple[str, ...] = (
     "workspace",
     "instructions",
     "recipes",
+    "topology",
 )
 
 

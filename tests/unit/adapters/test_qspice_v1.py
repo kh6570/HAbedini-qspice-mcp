@@ -126,7 +126,7 @@ def test_log_classification_version_is_pinned() -> None:
     adapter = CurrentQSpiceCLIAdapter()
 
     assert adapter.log_classification_version == LOG_CLASSIFICATION_VERSION
-    assert LOG_CLASSIFICATION_VERSION == 1
+    assert LOG_CLASSIFICATION_VERSION == 2
 
 
 def test_classify_clean_log_returns_none() -> None:

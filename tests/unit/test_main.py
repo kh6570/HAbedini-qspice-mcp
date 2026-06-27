@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from qspice_mcp.__main__ import build_arg_parser, run_watchdog_mode
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -63,3 +65,49 @@ def test_cli_sse_transport_requires_enable_flag() -> None:
 
     assert result.returncode == 2
     assert "QSPICE_ENABLE_SSE" in result.stderr
+
+
+def test_watchdog_flags_parse_parent_and_child_pids() -> None:
+    parser = build_arg_parser()
+    args = parser.parse_args(
+        ["--watchdog", "--parent-pid", "123", "--child-pid", "10", "--child-pid", "11"]
+    )
+
+    assert args.watchdog is True
+    assert args.parent_pid == 123
+    assert args.child_pids == [10, 11]
+
+
+def test_run_watchdog_mode_requires_parent_pid() -> None:
+    parser = build_arg_parser()
+    args = parser.parse_args(["--watchdog"])
+
+    assert run_watchdog_mode(args) == 2
+
+
+def test_run_watchdog_mode_reaps_child_when_parent_absent() -> None:
+    child = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(30)"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    parser = build_arg_parser()
+    args = parser.parse_args(
+        [
+            "--watchdog",
+            "--parent-pid",
+            "999999998",
+            "--child-pid",
+            str(child.pid),
+            "--watchdog-poll-interval",
+            "0.05",
+        ]
+    )
+    try:
+        assert run_watchdog_mode(args) == 0
+        child.wait(timeout=5.0)
+        assert child.poll() is not None
+    finally:
+        if child.poll() is None:
+            child.kill()
+        child.wait(timeout=5.0)

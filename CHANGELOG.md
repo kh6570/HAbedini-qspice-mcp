@@ -13,6 +13,33 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Added
 
+- **Topology knowledge pack** — bundled clean-room converter blueprints
+  (`list_topology_blocks`, `describe_topology_block`, `search_topology_blocks`,
+  `validate_topology_contribution`) for buck, boost, and buck-boost stages, with
+  parameterized design equations and control notes. Cites J. Marcos Alonso,
+  *Modelling, Control and Simulation of DC-DC Converters* (ISBN 979-8278321743)
+  as a theoretical reference; no third-party schematic/netlist/source files are
+  copied or redistributed.
+- **Scratch-authored buck e2e** — `tests/integration/test_scratch_buck_authoring.py`
+  authors the full buck from an empty workspace via MCP tools only (shared
+  `scratch_buck.blueprint.json`), builds the DLL, generates the netlist, runs the
+  sim, and asserts `V(out) > 4V`; `scripts/verify_scratch_buck.py` drives the same
+  blueprint manually.
+- **Detached orphan watchdog** — Windows Job Object (kill-on-close) joins all
+  simulator children so they are reaped even on a hard IDE kill, plus a
+  cross-platform `--watchdog` CLI route (`--parent-pid` / `--child-pid`) as the
+  fallback reaper.
+- **Version-keyed log classification** — `classify_simulation_log` now resolves
+  convergence/fatal regex rules by `probe.version` over a base rule set, ignores
+  recoverable `Warning:` lines (fixes a singular-matrix false positive), and is
+  pinned by a committed QSpice log corpus (`tests/data/qspice_logs/`).
+- **`QSPICE_SESSION_MODE` / `--session-mode`** — `cold` (default) always
+  cold-launches a fresh simulation; `auto` reuses an available live-GUI session
+  first (pure resolver in `infra/session_mode.py`).
+- **One-click `.mcpb` install bundle** — repo-root `manifest.json` (MCPB `uv`
+  server type) plus `scripts/build_mcpb.ps1` produce a single-file bundle that
+  prompts the host for the QSpice executable, workspace, and session mode on
+  install (`docs/user-guide.md`).
 - **MCP Roots workspace fallback** — when neither `--workspace-root` nor
   `QSPICE_WORKSPACE_ROOT` is set, the server now falls back to the MCP client's
   first advertised filesystem root (best-effort, cached, graceful when the client

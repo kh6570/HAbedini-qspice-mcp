@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 # Bump whenever the log-classification rulesets below change. Contract tests
 # pin this value so behavior changes are deliberate and reviewable.
-LOG_CLASSIFICATION_VERSION = 1
+LOG_CLASSIFICATION_VERSION = 2
 
 _SUPPORTED_NETLIST_SUFFIXES = frozenset({".cir", ".net"})
 _RESERVED_SWITCHES = frozenset({"-o", "-r"})
@@ -40,6 +40,60 @@ _FATAL_PATTERNS = (
     re.compile(r"\bfatal\s+error\b", re.IGNORECASE),
     re.compile(r"^\s*error\b", re.IGNORECASE),
 )
+# Lines matching an ignore pattern are never classified as failures even when
+# they also match a convergence/fatal pattern. Real local QSpice builds emit
+# recoverable diagnostics (for example "Warning: Singular matrix. Check node A"
+# followed by successful Gmin stepping) that must not abort a passing run.
+_IGNORE_PATTERNS = (re.compile(r"^\s*warning\b", re.IGNORECASE),)
+
+
+@dataclass(frozen=True, slots=True)
+class _LogRuleSet:
+    """Resolved convergence/fatal/ignore patterns for one QSpice build."""
+
+    convergence: tuple[re.Pattern[str], ...]
+    fatal: tuple[re.Pattern[str], ...]
+    ignore: tuple[re.Pattern[str], ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _LogRuleOverride:
+    """Version-specific additions layered on top of the base rule set."""
+
+    extra_convergence: tuple[re.Pattern[str], ...] = ()
+    extra_fatal: tuple[re.Pattern[str], ...] = ()
+    extra_ignore: tuple[re.Pattern[str], ...] = ()
+
+
+_BASE_LOG_RULES = _LogRuleSet(
+    convergence=_CONVERGENCE_PATTERNS,
+    fatal=_FATAL_PATTERNS,
+    ignore=_IGNORE_PATTERNS,
+)
+
+# Convergence/fatal regex overrides keyed by ``ProbeResult.version``. Seeded with
+# the QSpice build whose real log corpus is captured under
+# ``tests/data/qspice_logs/`` and pinned by the adapter contract tests. Newly
+# observed build-specific signatures are added here without touching the base.
+_VERSION_LOG_OVERRIDES: dict[str, _LogRuleOverride] = {
+    # QSpice 2026-06-04 build: the base rule set (with the recoverable-warning
+    # skip) classifies its real healthy/fatal/singular logs correctly, so no
+    # extra signatures are required. Recorded as an explicit, tested key.
+    "20260604": _LogRuleOverride(),
+}
+
+
+def resolve_log_rules(version: str | None) -> _LogRuleSet:
+    """Return the base log rule set merged with any version-specific overrides."""
+
+    override = _VERSION_LOG_OVERRIDES.get(version) if version is not None else None
+    if override is None:
+        return _BASE_LOG_RULES
+    return _LogRuleSet(
+        convergence=_BASE_LOG_RULES.convergence + override.extra_convergence,
+        fatal=_BASE_LOG_RULES.fatal + override.extra_fatal,
+        ignore=_BASE_LOG_RULES.ignore + override.extra_ignore,
+    )
 
 
 def _default_capabilities() -> AdapterCapabilities:
@@ -108,16 +162,18 @@ def _combine_diagnostics(stderr: str, matched_line: str) -> str:
     return f"{cleaned_stderr}\n{cleaned_line}"
 
 
-def _match_failure_line(log_text: str) -> tuple[str, str] | None:
+def _match_failure_line(log_text: str, rules: _LogRuleSet) -> tuple[str, str] | None:
     """Return the first clear failure line from the simulation log."""
 
     for raw_line in log_text.splitlines():
         line = raw_line.strip()
         if not line:
             continue
-        if any(pattern.search(line) for pattern in _CONVERGENCE_PATTERNS):
+        if any(pattern.search(line) for pattern in rules.ignore):
+            continue
+        if any(pattern.search(line) for pattern in rules.convergence):
             return ("convergence", line)
-        if any(pattern.search(line) for pattern in _FATAL_PATTERNS):
+        if any(pattern.search(line) for pattern in rules.fatal):
             return ("fatal", line)
     return None
 
@@ -172,10 +228,16 @@ class CurrentQSpiceCLIAdapter:
         *,
         exit_code: int | None = None,
         stderr: str = "",
+        probe_version: str | None = None,
     ) -> SimulationError | None:
-        """Map clear log-level failures to domain exceptions."""
+        """Map clear log-level failures to domain exceptions.
 
-        matched = _match_failure_line(log_text)
+        ``probe_version`` selects any version-specific regex overrides for the
+        QSpice build that produced the log; ``None`` uses the base rule set.
+        """
+
+        rules = resolve_log_rules(probe_version)
+        matched = _match_failure_line(log_text, rules)
         if matched is None:
             return None
 

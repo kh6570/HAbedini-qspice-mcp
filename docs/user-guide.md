@@ -72,6 +72,16 @@ Call describe_server_capabilities for the qspice MCP server and summarize the av
 
 Same pattern: `command` = venv `qspice-mcp.exe`, `env.QSPICE_EXE` = QSpice path. Restart Claude after editing `claude_desktop_config.json`.
 
+### One-click `.mcpb` bundle
+
+For MCPB-aware clients (e.g. Claude Desktop **Settings → Extensions**), build a single-file bundle and drag it in:
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\scripts\build_mcpb.ps1
+```
+
+This writes `dist\qspice-mcp.mcpb`. It uses the official `mcpb` CLI when `npx` is available and otherwise falls back to a dependency-free staged zip (pass `-ForceZip` to force the fallback). The bundle uses the MCPB `uv` server type, so the host resolves Python dependencies from `pyproject.toml` at install time — nothing is vendored. On install the client prompts for the **QSPICE64.exe path** and a **simulation workspace** (and optional **session mode**), then wires the server up with no manual JSON editing. `uv` must be available to the host for this server type.
+
 ### Inspector CLI
 
 Let Inspector spawn the server — do not start `qspice-mcp` in the same terminal first.
@@ -199,6 +209,7 @@ from your shell, the MCP launcher `env` block, or a local `.env`).
 | --- | --- | --- |
 | `--transport` | `QSPICE_TRANSPORT` | Transport (`stdio` default, `sse` experimental) |
 | _(none)_ | `QSPICE_ENABLE_SSE` | Must be `true` to allow `--transport sse` |
+| `--session-mode` | `QSPICE_SESSION_MODE` | `cold` (default) always cold-launches; `auto` reuses an available live-GUI session first |
 | `--qspice-exe` | `QSPICE_EXE` | Path to `QSPICE64.exe` |
 | `--workspace-root` | `QSPICE_WORKSPACE_ROOT` | Folder for schematics and derived artifacts |
 | `--log-level` | `QSPICE_LOG_LEVEL` | `debug`, `info`, `warning`, or `error` |
@@ -292,3 +303,5 @@ skill more reliably when fewer are loaded.
 | [CHANGELOG](../CHANGELOG.md) | Release history |
 
 Bundled recipes: `list_reference_circuit_recipes` / `describe_reference_circuit_recipe` / `materialize_reference_circuit`.
+
+Topology knowledge pack (clean-room DC-DC converter design references): `list_topology_blocks` / `describe_topology_block` / `search_topology_blocks`, plus `validate_topology_contribution` for proposing new data-only blocks. New converters are added as bundled data, not as new tools.

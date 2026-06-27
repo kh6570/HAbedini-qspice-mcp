@@ -85,6 +85,7 @@ class QSpiceAdapter(Protocol):
         *,
         exit_code: int | None = None,
         stderr: str = "",
+        probe_version: str | None = None,
     ) -> SimulationError | None: ...
 
     def build_simulation_command(

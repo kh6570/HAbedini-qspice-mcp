@@ -129,6 +129,7 @@ def _classify_log_failure(
     plan: SimulationCommand,
     process_exit_code: int,
     stderr: str,
+    probe_version: str | None = None,
 ) -> None:
     """Raise a domain error when the adapter finds a decisive log failure signature."""
 
@@ -142,6 +143,7 @@ def _classify_log_failure(
         log_text,
         exit_code=process_exit_code,
         stderr=stderr,
+        probe_version=probe_version,
     )
     if error is not None:
         raise error
@@ -287,6 +289,7 @@ def run_simulation(
             plan=plan,
             process_exit_code=process.exit_code,
             stderr=process.stderr,
+            probe_version=probe.version,
         )
 
         if process.exit_code != 0:

@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "attribution": {
+    "primary_reference": {
+      "author": "J. Marcos Alonso",
+      "title": "Modelling, Control and Simulation of DC-DC Converters",
+      "isbn": "979-8278321743",
+      "publisher": "Amazon KDP",
+      "year": 2025,
+      "repository": "https://github.com/marcosalonsoelectronics/Modelling-Control-and-Simulation-of-DC-DC-Converters",
+      "note": "Cited as a theoretical reference with the author's permission. Every blueprint in this pack is a repo-owned, clean-room description of standard continuous-conduction-mode converter theory; no schematic, netlist, or source files from the referenced repository are copied or redistributed."
+    }
+  },
+  "blocks": [
+    {
+      "block_id": "buck_converter",
+      "title": "Buck Converter (step-down)",
+      "category": "non_isolated_dc_dc",
+      "tags": ["buck", "step-down", "smps", "ccm", "pwm", "voltage-mode"],
+      "summary": "Non-isolated step-down converter; output voltage equals the input scaled by duty cycle D.",
+      "directory": "buck_converter"
+    },
+    {
+      "block_id": "boost_converter",
+      "title": "Boost Converter (step-up)",
+      "category": "non_isolated_dc_dc",
+      "tags": ["boost", "step-up", "smps", "ccm", "pwm", "rhp-zero"],
+      "summary": "Non-isolated step-up converter; output voltage equals the input divided by (1 - D).",
+      "directory": "boost_converter"
+    },
+    {
+      "block_id": "buck_boost_converter",
+      "title": "Buck-Boost Converter (inverting)",
+      "category": "non_isolated_dc_dc",
+      "tags": ["buck-boost", "inverting", "smps", "ccm", "pwm", "rhp-zero"],
+      "summary": "Non-isolated inverting converter; output magnitude equals the input scaled by D / (1 - D).",
+      "directory": "buck_boost_converter"
+    }
+  ]
+}

@@ -25,6 +25,7 @@ class QSpiceSettings(BaseSettings):
     live_gui_bridge_command: tuple[str, ...] = ()
     transport: Literal["stdio", "sse"] = "stdio"
     enable_sse: bool = False
+    session_mode: Literal["cold", "auto"] = "cold"
     workspace_root: Path = Path.cwd()
     cache_dir: Path | None = None
     log_folder: Path | None = None
@@ -91,12 +92,15 @@ class QSpiceSettings(BaseSettings):
         log_folder: Path | None = None,
         recipe_path: Path | None = None,
         enable_sse: bool | None = None,
+        session_mode: Literal["cold", "auto"] | None = None,
     ) -> Self:
         """Apply explicit CLI overrides on top of environment-loaded settings."""
 
         updates: dict[str, object] = {}
         if transport is not None:
             updates["transport"] = transport
+        if session_mode is not None:
+            updates["session_mode"] = session_mode
         if exe is not None:
             updates["exe"] = exe
         if workspace_root is not None:
@@ -124,6 +128,7 @@ def build_settings(
     log_folder: Path | None = None,
     recipe_path: Path | None = None,
     enable_sse: bool | None = None,
+    session_mode: Literal["cold", "auto"] | None = None,
 ) -> QSpiceSettings:
     """Load settings from the environment and apply explicit CLI overrides."""
 
@@ -136,4 +141,5 @@ def build_settings(
         log_folder=log_folder,
         recipe_path=recipe_path,
         enable_sse=enable_sse,
+        session_mode=session_mode,
     )

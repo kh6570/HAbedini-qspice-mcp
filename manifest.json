@@ -1,0 +1,80 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
+  "name": "qspice-mcp",
+  "display_name": "QSpice MCP",
+  "version": "0.0.1",
+  "description": "Professional MCP server for the QSpice circuit simulator.",
+  "long_description": "QSpice MCP lets an MCP client author and edit `.qsch` schematics, build DLL/C-block devices, generate netlists, run simulations, and read bounded waveform summaries against a local QSpice install. The `.qsch` file is the source of truth; netlists, logs, and `.qraw` waveforms are derived artifacts. Ships clean-room schematic and waveform fallbacks plus a bundled topology knowledge pack and reference recipes.",
+  "author": {
+    "name": "Hossein Abedini",
+    "email": "k.h6570@gmail.com",
+    "url": "https://github.com/kh6570/HAbedini-qspice-mcp"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kh6570/HAbedini-qspice-mcp.git"
+  },
+  "homepage": "https://github.com/kh6570/HAbedini-qspice-mcp",
+  "documentation": "https://github.com/kh6570/HAbedini-qspice-mcp/blob/main/docs/user-guide.md",
+  "support": "https://github.com/kh6570/HAbedini-qspice-mcp/issues",
+  "license": "MIT",
+  "keywords": ["mcp", "qspice", "spice", "simulation", "eda", "circuit"],
+  "server": {
+    "type": "uv",
+    "entry_point": "src/qspice_mcp/__main__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "python",
+        "-u",
+        "-m",
+        "qspice_mcp",
+        "--workspace-root",
+        "${user_config.workspace_root}",
+        "--session-mode",
+        "${user_config.session_mode}",
+        "--log-level",
+        "error"
+      ],
+      "env": {
+        "QSPICE_EXE": "${user_config.qspice_exe}",
+        "QSPICE_LOG_LEVEL": "error",
+        "QSPICE_DEV_WATCH": "0"
+      }
+    }
+  },
+  "tools_generated": true,
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["win32", "linux", "darwin"],
+    "runtimes": {
+      "python": ">=3.11,<4.0"
+    }
+  },
+  "user_config": {
+    "qspice_exe": {
+      "type": "file",
+      "title": "QSPICE64.exe path",
+      "description": "Absolute path to the QSpice executable (QSPICE64.exe). Required for netlist generation and simulation.",
+      "required": true
+    },
+    "workspace_root": {
+      "type": "directory",
+      "title": "Simulation workspace",
+      "description": "Folder that holds your .qsch schematics and derived artifacts. All tool file access is sandboxed to this folder.",
+      "required": true,
+      "default": "${HOME}/qspice-mcp-workspace"
+    },
+    "session_mode": {
+      "type": "string",
+      "title": "Session mode",
+      "description": "cold always cold-launches a fresh simulation; auto reuses an available live-GUI session first.",
+      "required": false,
+      "default": "cold"
+    }
+  }
+}

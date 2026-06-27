@@ -1,0 +1,37 @@
+{
+  "block_id": "buck_boost_converter",
+  "title": "Buck-Boost Converter (inverting)",
+  "category": "non_isolated_dc_dc",
+  "tags": ["buck-boost", "inverting", "smps", "ccm", "pwm", "rhp-zero"],
+  "summary": "Non-isolated inverting converter; in continuous conduction the output magnitude equals the input scaled by D / (1 - D), with inverted polarity.",
+  "ports": [
+    { "name": "in", "role": "input", "description": "Positive input supply rail feeding the high-side switch." },
+    { "name": "sw", "role": "internal", "description": "Switching node shared by the switch, the inductor, and the rectifier." },
+    { "name": "out", "role": "output", "description": "Inverted (negative) regulated output rail across the filter capacitor and load." },
+    { "name": "gnd", "role": "reference", "description": "Common ground reference." },
+    { "name": "pwm", "role": "control", "description": "Gate-drive command for the switch from the controller." }
+  ],
+  "parameters": [
+    { "name": "Vin", "description": "Input supply voltage.", "unit": "V" },
+    { "name": "Vout", "description": "Target regulated output voltage magnitude (output polarity is inverted).", "unit": "V" },
+    { "name": "Iout", "description": "Nominal load current.", "unit": "A" },
+    { "name": "fsw", "description": "Switching frequency.", "unit": "Hz" },
+    { "name": "L", "description": "Energy-transfer inductor value.", "unit": "H" },
+    { "name": "C", "description": "Output filter capacitor value.", "unit": "F" },
+    { "name": "D", "description": "Steady-state duty cycle of the switch.", "unit": "1" }
+  ],
+  "design_equations": [
+    { "name": "conversion_ratio", "expression": "Vout / Vin = -D / (1 - D)", "description": "Ideal CCM DC conversion ratio (inverting; magnitude can be below or above Vin)." },
+    { "name": "inductor_current", "expression": "I_L = Iout / (1 - D)", "description": "Average inductor current; the inductor carries both input and output current contributions." },
+    { "name": "inductor_ripple", "expression": "dI_L = Vin * D / (L * fsw)", "description": "Peak-to-peak inductor current ripple." },
+    { "name": "output_ripple", "expression": "dVout = Iout * D / (C * fsw)", "description": "Peak-to-peak output voltage ripple for an ideal capacitor (capacitor supplies the load during the on-time)." },
+    { "name": "rhp_zero", "expression": "f_rhpz = (1 - D)^2 * R_load / (2 * pi * D * L)", "description": "Right-half-plane zero frequency that limits the achievable loop bandwidth." }
+  ],
+  "control_notes": "Like the boost, the inverting buck-boost has a right-half-plane zero that constrains loop bandwidth, plus a higher-stress switch that must block Vin + |Vout|. Current-mode control is the usual choice. Note the inverted output polarity when wiring feedback and when interpreting V(out) in simulation.",
+  "reference": {
+    "source": "J. Marcos Alonso, Modelling, Control and Simulation of DC-DC Converters",
+    "isbn": "979-8278321743",
+    "url": "https://github.com/marcosalonsoelectronics/Modelling-Control-and-Simulation-of-DC-DC-Converters"
+  },
+  "document": "blueprint.md"
+}

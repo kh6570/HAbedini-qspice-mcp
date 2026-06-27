@@ -20,6 +20,7 @@ USER_GUIDE = REPO_ROOT / "docs" / "user-guide.md"
 # Authoritative mapping: CLI flag -> QSpiceSettings field it overrides (CLI wins).
 CLI_FLAG_TO_FIELD = {
     "--transport": "transport",
+    "--session-mode": "session_mode",
     "--qspice-exe": "exe",
     "--workspace-root": "workspace_root",
     "--log-level": "log_level",
@@ -30,8 +31,18 @@ CLI_FLAG_TO_FIELD = {
 # Settings exposed only through the environment (no CLI flag).
 ENV_ONLY_FIELDS = ("enable_sse",)
 
-# Action-only flags that carry no setting/env mirror.
-ACTION_ONLY_FLAGS = {"-h", "--help", "--version", "--describe", "--setup"}
+# Action-only flags that carry no setting/env mirror (mode switches, reports).
+ACTION_ONLY_FLAGS = {
+    "-h",
+    "--help",
+    "--version",
+    "--describe",
+    "--setup",
+    "--watchdog",
+    "--parent-pid",
+    "--child-pid",
+    "--watchdog-poll-interval",
+}
 
 
 def _field_to_env(field: str) -> str:

@@ -4,16 +4,25 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import sys
 from importlib.resources import files
 from pathlib import Path
+from typing import Any
 
 from qspice_mcp.adapters.probe import discover_executable
 from qspice_mcp.infra.config import QSpiceSettings
 from qspice_mcp.mcp.server import create_server
 
 DEFAULT_WORKSPACE = Path.home() / "Desktop" / "qspice-mcp-test"
+_RECIPE_PACKAGE = "qspice_mcp.data.recipes.buck_converter_cpp"
+
+
+def _load_blueprint() -> dict[str, Any]:
+    raw = (files(_RECIPE_PACKAGE) / "scratch_buck.blueprint.json").read_text(encoding="utf-8")
+    blueprint: dict[str, Any] = json.loads(raw)
+    return blueprint
 
 
 def _parse_args() -> argparse.Namespace:
@@ -124,6 +133,7 @@ def _build_scratch_schematic(
     output_name: str,
     results: list[tuple[str, str, str]],
 ) -> Path | None:
+    blueprint = _load_blueprint()
     try:
         created = server.invoke_tool(
             "create_schematic",
@@ -136,49 +146,86 @@ def _build_scratch_schematic(
         return None
 
     schematic_name = schematic_path.name
-    parts = (
-        ("inductor", "L1", "50µ"),
-        ("nmos", "M1", "BSC123N08NS3"),
-        ("pmos", "M2", "PMOS"),
-        ("behavioral", "B1", "V=V(PWM)"),
-    )
     try:
-        for kind, reference, value in parts:
+        for block in blueprint["dll_blocks"]:
+            server.invoke_tool(
+                "add_dll_block",
+                schematic_path=schematic_name,
+                reference=block["reference"],
+                device_name=block["device_name"],
+                input_pin_names=list(block["input_pin_names"]),
+                output_pin_names=list(block["output_pin_names"]),
+                position_x=block["position_x"],
+                position_y=block["position_y"],
+                rotation_degrees=block["rotation_degrees"],
+            )
+        for component in blueprint["components"]:
             server.invoke_tool(
                 "add_component",
                 schematic_path=schematic_name,
-                component_kind=kind,
-                reference=reference,
-                value=value,
-                auto_place=True,
+                component_kind=component["kind"],
+                reference=component["reference"],
+                value=component["value"],
+                position_x=component["position_x"],
+                position_y=component["position_y"],
+                rotation_degrees=component["rotation_degrees"],
             )
-        server.invoke_tool(
-            "add_junction",
-            schematic_path=schematic_name,
-            position_x=1200,
-            position_y=0,
-        )
-        server.invoke_tool(
-            "set_component_rotation",
-            schematic_path=schematic_name,
-            reference="M1",
-            rotation_index=1,
-        )
+        for junction in blueprint["junctions"]:
+            server.invoke_tool(
+                "add_junction",
+                schematic_path=schematic_name,
+                position_x=junction["position_x"],
+                position_y=junction["position_y"],
+            )
+        for label in blueprint["net_labels"]:
+            server.invoke_tool(
+                "add_net_label",
+                schematic_path=schematic_name,
+                position_x=label["position_x"],
+                position_y=label["position_y"],
+                net_name=label["net"],
+            )
+        for wire in blueprint["wires"]:
+            server.invoke_tool(
+                "add_wire",
+                schematic_path=schematic_name,
+                start_x=wire["start_x"],
+                start_y=wire["start_y"],
+                end_x=wire["end_x"],
+                end_y=wire["end_y"],
+                net_name=wire["net"],
+            )
+        for parameter in blueprint["parameters"]:
+            server.invoke_tool(
+                "set_parameter",
+                schematic_path=schematic_name,
+                name=parameter["name"],
+                value=parameter["value"],
+            )
+        for instruction in blueprint["instructions"]:
+            server.invoke_tool(
+                "add_instruction",
+                schematic_path=schematic_name,
+                instruction=instruction,
+            )
         listed = server.invoke_tool("list_components", schematic_path=schematic_name)
         references = {
             item["reference"]
             for item in listed.get("components", [])
             if isinstance(item, dict) and isinstance(item.get("reference"), str)
         }
-        ok = references >= {"L1", "M1", "M2", "B1"}
+        expected = {block["reference"] for block in blueprint["dll_blocks"]}
+        expected |= {component["reference"] for component in blueprint["components"]}
+        ok = references >= expected
+        missing = sorted(expected - references)
         _record(
             results,
-            "scratch power-stage placement",
+            "scratch full-buck placement",
             ok,
-            f"references={sorted(references)}",
+            f"placed={len(references)} expected={len(expected)} missing={missing}",
         )
     except Exception as exc:
-        _record(results, "scratch power-stage placement", False, str(exc))
+        _record(results, "scratch full-buck placement", False, str(exc))
         return schematic_path
     return schematic_path
 

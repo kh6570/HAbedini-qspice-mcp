@@ -135,6 +135,14 @@ _TOPOLOGY_AUTHORING_TOOLS = frozenset(
         "build_dll_device",
     }
 )
+_TOPOLOGY_KNOWLEDGE_TOOLS = frozenset(
+    {
+        "list_topology_blocks",
+        "describe_topology_block",
+        "search_topology_blocks",
+        "validate_topology_contribution",
+    }
+)
 
 
 def _selected_adapter_summary(probe: ProbeResult) -> dict[str, object] | None:
@@ -259,6 +267,17 @@ def _build_tool_groups(
                 title="Topology Authoring",
                 state="healthy",
                 tools=topology_authoring_tools,
+            )
+        )
+
+    topology_knowledge_tools = _supported_tools(available_tools, _TOPOLOGY_KNOWLEDGE_TOOLS)
+    if topology_knowledge_tools:
+        groups.append(
+            _group_summary(
+                name="topology_knowledge_pack",
+                title="Topology Knowledge Pack",
+                state="healthy",
+                tools=topology_knowledge_tools,
             )
         )
 

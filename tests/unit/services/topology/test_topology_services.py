@@ -1,0 +1,104 @@
+"""Unit tests for the topology knowledge-pack services."""
+
+from __future__ import annotations
+
+import pytest
+
+from qspice_mcp.core.exceptions import ValidationError
+from qspice_mcp.services.topology._catalog import load_topology_manifest
+from qspice_mcp.services.topology.describe_topology_block import describe_topology_block
+from qspice_mcp.services.topology.list_topology_blocks import list_topology_blocks
+from qspice_mcp.services.topology.search_topology_blocks import search_topology_blocks
+from qspice_mcp.services.topology.validate_topology_contribution import (
+    validate_topology_contribution,
+)
+
+_EXPECTED_BLOCK_IDS = {"buck_converter", "boost_converter", "buck_boost_converter"}
+
+
+def test_list_topology_blocks_returns_all_blocks_with_attribution() -> None:
+    catalog = list_topology_blocks()
+    assert {block.block_id for block in catalog.blocks} == _EXPECTED_BLOCK_IDS
+    assert catalog.attribution["primary_reference"]["author"] == "J. Marcos Alonso"
+
+
+def test_describe_topology_block_includes_equations_and_document() -> None:
+    detail = describe_topology_block("boost_converter")
+    assert detail.block_id == "boost_converter"
+    equation_names = {equation["name"] for equation in detail.design_equations}
+    assert "conversion_ratio" in equation_names
+    assert "rhp_zero" in equation_names
+    assert detail.document_name == "blueprint.md"
+    assert "Boost converter" in detail.document
+    assert detail.reference["isbn"] == "979-8278321743"
+
+
+def test_describe_topology_block_rejects_unknown_block() -> None:
+    with pytest.raises(ValidationError, match="Unknown topology block_id"):
+        describe_topology_block("flyback")
+
+
+def test_search_ranks_boost_for_step_up_keywords() -> None:
+    result = search_topology_blocks("step up rhp")
+    assert result.matches
+    assert result.matches[0].block_id == "boost_converter"
+    assert result.matches[0].score >= 1
+    assert all(match.matched_terms for match in result.matches)
+
+
+def test_search_matches_buck_boost_on_inverting() -> None:
+    result = search_topology_blocks("inverting")
+    assert {match.block_id for match in result.matches} == {"buck_boost_converter"}
+
+
+def test_search_rejects_empty_query() -> None:
+    with pytest.raises(ValidationError, match="must not be empty"):
+        search_topology_blocks("   ")
+
+
+def test_search_with_no_match_returns_empty() -> None:
+    result = search_topology_blocks("transformer galvanic isolation")
+    assert result.matches == ()
+
+
+@pytest.mark.parametrize("block_id", sorted(_EXPECTED_BLOCK_IDS))
+def test_bundled_manifests_pass_their_own_validator(block_id: str) -> None:
+    manifest = load_topology_manifest(block_id)
+    outcome = validate_topology_contribution(manifest)
+    assert outcome.is_valid, outcome.errors
+    assert outcome.block_id == block_id
+    assert outcome.errors == ()
+
+
+def test_validate_reports_missing_required_fields() -> None:
+    outcome = validate_topology_contribution({"block_id": "demo"})
+    assert outcome.is_valid is False
+    assert outcome.block_id == "demo"
+    joined = " ".join(outcome.errors)
+    assert "'title'" in joined
+    assert "'tags'" in joined
+    assert "'ports'" in joined
+    assert "'reference'" in joined
+
+
+def test_validate_rejects_non_object_manifest() -> None:
+    outcome = validate_topology_contribution(["not", "a", "manifest"])  # type: ignore[arg-type]
+    assert outcome.is_valid is False
+    assert outcome.block_id is None
+    assert outcome.errors == ("manifest must be a JSON object.",)
+
+
+def test_validate_flags_bad_block_id_characters() -> None:
+    manifest = dict(load_topology_manifest("buck_converter"))
+    manifest["block_id"] = "bad id!"
+    outcome = validate_topology_contribution(manifest)
+    assert outcome.is_valid is False
+    assert any("alphanumeric" in error for error in outcome.errors)
+
+
+def test_validate_warns_when_reference_lacks_traceability() -> None:
+    manifest = dict(load_topology_manifest("buck_converter"))
+    manifest["reference"] = {"source": "Some textbook"}
+    outcome = validate_topology_contribution(manifest)
+    assert outcome.is_valid is True
+    assert any("url" in warning or "isbn" in warning for warning in outcome.warnings)

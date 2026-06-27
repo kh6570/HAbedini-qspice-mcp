@@ -1,0 +1,37 @@
+{
+  "block_id": "boost_converter",
+  "title": "Boost Converter (step-up)",
+  "category": "non_isolated_dc_dc",
+  "tags": ["boost", "step-up", "smps", "ccm", "pwm", "rhp-zero"],
+  "summary": "Non-isolated step-up converter; in continuous conduction the output voltage equals the input divided by (1 - D).",
+  "ports": [
+    { "name": "in", "role": "input", "description": "Positive input supply rail feeding the inductor." },
+    { "name": "sw", "role": "internal", "description": "Switching node between the inductor, the low-side switch, and the rectifier." },
+    { "name": "out", "role": "output", "description": "Regulated step-up output rail across the filter capacitor and load." },
+    { "name": "gnd", "role": "reference", "description": "Common ground reference." },
+    { "name": "pwm", "role": "control", "description": "Gate-drive command for the low-side switch from the controller." }
+  ],
+  "parameters": [
+    { "name": "Vin", "description": "Input supply voltage.", "unit": "V" },
+    { "name": "Vout", "description": "Target regulated output voltage (Vout > Vin).", "unit": "V" },
+    { "name": "Iout", "description": "Nominal load current.", "unit": "A" },
+    { "name": "fsw", "description": "Switching frequency.", "unit": "Hz" },
+    { "name": "L", "description": "Boost inductor value.", "unit": "H" },
+    { "name": "C", "description": "Output filter capacitor value.", "unit": "F" },
+    { "name": "D", "description": "Steady-state duty cycle of the low-side switch.", "unit": "1" }
+  ],
+  "design_equations": [
+    { "name": "conversion_ratio", "expression": "Vout / Vin = 1 / (1 - D)", "description": "Ideal CCM DC conversion ratio." },
+    { "name": "inductor_current", "expression": "I_L = Iout / (1 - D)", "description": "Average inductor current equals the input current." },
+    { "name": "inductor_ripple", "expression": "dI_L = Vin * D / (L * fsw)", "description": "Peak-to-peak inductor current ripple." },
+    { "name": "output_ripple", "expression": "dVout = Iout * D / (C * fsw)", "description": "Peak-to-peak output voltage ripple for an ideal capacitor (capacitor supplies the load during the on-time)." },
+    { "name": "rhp_zero", "expression": "f_rhpz = (1 - D)^2 * R_load / (2 * pi * L)", "description": "Right-half-plane zero frequency that limits the achievable loop bandwidth." }
+  ],
+  "control_notes": "The boost control-to-output transfer function contains a right-half-plane (RHP) zero whose frequency drops with load and duty cycle. Voltage-mode loop bandwidth must stay well below f_rhpz (typically below a third of it), which forces a slow loop. Current-mode control is preferred because it removes the inductor pole from the voltage loop, though the RHP zero remains.",
+  "reference": {
+    "source": "J. Marcos Alonso, Modelling, Control and Simulation of DC-DC Converters",
+    "isbn": "979-8278321743",
+    "url": "https://github.com/marcosalonsoelectronics/Modelling-Control-and-Simulation-of-DC-DC-Converters"
+  },
+  "document": "blueprint.md"
+}

@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Any
 
 import structlog
 
+from qspice_mcp.infra.job_object import assign_process_to_kill_on_close_job
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -25,10 +27,15 @@ _logger = structlog.get_logger(__name__)
 
 
 def register_process(process: subprocess.Popen[Any]) -> None:
-    """Track one spawned child process for lifecycle cleanup."""
+    """Track one spawned child process for lifecycle cleanup.
+
+    On Windows the child is also assigned to a kill-on-close job object so the OS
+    reaps it even if the server is hard-killed before its shutdown hooks run.
+    """
 
     with _ACTIVE_LOCK:
         _ACTIVE_PROCESSES[process.pid] = process
+    assign_process_to_kill_on_close_job(process.pid)
 
 
 def unregister_process(pid: int) -> None:

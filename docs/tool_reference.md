@@ -71,6 +71,10 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `import_circuit_bundle` | implemented | Copy a workspace-local `.qsch` schematic and sibling sidecars into a destination folder. |
 | `list_reference_circuit_recipes` | implemented | List bundled reference-circuit recipe ids and short summaries (Track B discovery). |
 | `describe_reference_circuit_recipe` | implemented | Return one bundled recipe manifest, workflow entries, file list, and topology digest. |
+| `list_topology_blocks` | implemented | List bundled composable DC-DC converter topology blocks plus pack attribution. |
+| `describe_topology_block` | implemented | Return one topology block manifest (ports, parameters, design equations) and its blueprint. |
+| `search_topology_blocks` | implemented | Keyword-search bundled topology blocks by id, title, summary, category, and tags. |
+| `validate_topology_contribution` | implemented | Validate a candidate topology-block manifest against the knowledge-pack schema. |
 | `create_schematic` | implemented | Create a blank `.qsch` file so later schematic tools can build from scratch. |
 | `create_starter_schematic` | implemented | Create a runnable source-load starter schematic in one call. |
 | `add_component` | implemented | Insert one supported part (`R/C/D/V/L/B/nmos/pmos`) or a `GND` ground label; optional `auto_place` uses the layout grid. |
@@ -3931,6 +3935,64 @@ The following are intentionally outside the planned public surface:
 - Returning complete raw waveform dumps without budgeting
 - Treating netlist editing as the default user workflow
 - Exposing QSpice subprocess details directly through MCP
+
+## list_topology_blocks
+
+Purpose:
+List the bundled composable DC-DC converter topology blocks (a clean-room knowledge
+pack) without writing files into the workspace.
+
+Typical inputs:
+- none
+
+Expected outputs:
+- `blocks` (each with `block_id`, `title`, `category`, `summary`, `tags`)
+- `attribution` (knowledge-pack citation and clean-room note)
+
+## describe_topology_block
+
+Purpose:
+Return one bundled topology block manifest and its clean-room blueprint document.
+
+Typical inputs:
+- `block_id` (for example `buck_converter`)
+
+Expected outputs:
+- `block_id`, `title`, `category`, `summary`, `tags`
+- `ports` (each with `name`, `role`, `description`)
+- `parameters` (each with `name`, `description`, optional `unit`)
+- `design_equations` (each with `name`, `expression`, `description`)
+- `control_notes`
+- `reference` (`source`, optional `isbn`, `url`)
+- `document_name`, `document` (blueprint markdown)
+- `attribution`
+
+## search_topology_blocks
+
+Purpose:
+Keyword-search the bundled topology blocks by id, title, summary, category, and tags.
+
+Typical inputs:
+- `query` (whitespace-separated keywords, for example `step up rhp`)
+
+Expected outputs:
+- `query`
+- `matches` (each with `block_id`, `title`, `category`, `summary`, `tags`, `score`, `matched_terms`), ranked by score
+
+## validate_topology_contribution
+
+Purpose:
+Validate a candidate topology-block manifest object against the knowledge-pack schema
+so new contributions stay data-driven (no new tool per block).
+
+Typical inputs:
+- `manifest` (candidate topology-block manifest object)
+
+Expected outputs:
+- `is_valid`
+- `block_id` (when present)
+- `errors` (schema violations)
+- `warnings` (non-blocking suggestions)
 
 ## Future Extension Points
 

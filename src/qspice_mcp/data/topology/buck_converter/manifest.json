@@ -1,0 +1,37 @@
+{
+  "block_id": "buck_converter",
+  "title": "Buck Converter (step-down)",
+  "category": "non_isolated_dc_dc",
+  "tags": ["buck", "step-down", "smps", "ccm", "pwm", "voltage-mode"],
+  "summary": "Non-isolated step-down converter; in continuous conduction the output voltage equals the input scaled by the duty cycle D.",
+  "ports": [
+    { "name": "in", "role": "input", "description": "Positive input supply rail." },
+    { "name": "sw", "role": "internal", "description": "Switching node between the high-side switch, the freewheeling diode/synchronous switch, and the inductor." },
+    { "name": "out", "role": "output", "description": "Regulated step-down output rail across the filter capacitor and load." },
+    { "name": "gnd", "role": "reference", "description": "Common ground reference." },
+    { "name": "pwm", "role": "control", "description": "Gate-drive command for the high-side switch from the controller." }
+  ],
+  "parameters": [
+    { "name": "Vin", "description": "Input supply voltage.", "unit": "V" },
+    { "name": "Vout", "description": "Target regulated output voltage (Vout < Vin).", "unit": "V" },
+    { "name": "Iout", "description": "Nominal load current.", "unit": "A" },
+    { "name": "fsw", "description": "Switching frequency.", "unit": "Hz" },
+    { "name": "L", "description": "Filter inductor value.", "unit": "H" },
+    { "name": "C", "description": "Output filter capacitor value.", "unit": "F" },
+    { "name": "D", "description": "Steady-state duty cycle of the high-side switch.", "unit": "1" }
+  ],
+  "design_equations": [
+    { "name": "conversion_ratio", "expression": "Vout / Vin = D", "description": "Ideal CCM DC conversion ratio." },
+    { "name": "inductor_current", "expression": "I_L = Iout", "description": "Average inductor current equals the load current." },
+    { "name": "inductor_ripple", "expression": "dI_L = (Vin - Vout) * D / (L * fsw)", "description": "Peak-to-peak inductor current ripple." },
+    { "name": "output_ripple", "expression": "dVout = dI_L / (8 * C * fsw)", "description": "Peak-to-peak output voltage ripple for an ideal capacitor." },
+    { "name": "critical_inductance", "expression": "L_crit = (1 - D) * R_load / (2 * fsw)", "description": "Minimum inductance to stay in continuous conduction at the given load." }
+  ],
+  "control_notes": "The buck control-to-output transfer function is a second-order low-pass with a complex pole pair at the LC resonance and an ESR zero; it has no right-half-plane zero, so voltage-mode control with a Type-II/Type-III compensator is straightforward. Peak/average current-mode control reduces the plant to first order and eases loop design.",
+  "reference": {
+    "source": "J. Marcos Alonso, Modelling, Control and Simulation of DC-DC Converters",
+    "isbn": "979-8278321743",
+    "url": "https://github.com/marcosalonsoelectronics/Modelling-Control-and-Simulation-of-DC-DC-Converters"
+  },
+  "document": "blueprint.md"
+}
