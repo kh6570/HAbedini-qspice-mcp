@@ -15,3 +15,17 @@ deliberate. Regenerate by running the corresponding netlist through
 | `healthy.log` | RC `.tran`, clean run | none (success) |
 | `fatal.log` | unresolved subcircuit | fatal `SimulationError` |
 | `singular.log` | floating node, recovered via Gmin stepping | none (warning, recovered) |
+
+## Synthetic second build (`v2_20271231/`)
+
+We do not have a second real QSpice build, so the `v2_20271231/` logs are
+**synthetic** and hand-authored to exercise the per-version classification seam
+(`_VERSION_LOG_OVERRIDES` keyed by build `20271231`). They prove that build-specific
+signatures classify only when that version is probed and stay invisible to both the
+base rules and the real `20260604` corpus.
+
+| File | Scenario | Base rules | Build `20271231` |
+| --- | --- | --- | --- |
+| `v2_20271231/healthy.log` | clean run | none | none |
+| `v2_20271231/convergence.log` | `Gmin stepping did not converge` | none | `ConvergenceError` |
+| `v2_20271231/fatal.log` | `Simulation aborted` | none | fatal `SimulationError` |

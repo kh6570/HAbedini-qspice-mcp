@@ -66,3 +66,28 @@ def test_resolve_for_settings_uses_session_mode_and_platform(
     )
     plan = resolve_session_plan_for_settings(settings)
     assert plan.strategy is SessionStrategy.REUSE_LIVE_GUI
+
+
+def test_resolve_for_settings_gates_reuse_on_running_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(session_mode.sys, "platform", "win32")
+    settings = QSpiceSettings(
+        workspace_root=Path.cwd(),
+        session_mode="auto",
+        live_gui_bridge_command=("bridge.exe",),
+    )
+    reachable = resolve_session_plan_for_settings(settings, running_session_available=True)
+    unreachable = resolve_session_plan_for_settings(settings, running_session_available=False)
+    assert reachable.strategy is SessionStrategy.REUSE_LIVE_GUI
+    assert unreachable.strategy is SessionStrategy.COLD_LAUNCH
+
+
+def test_bridge_configured_matches_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(session_mode.sys, "platform", "win32")
+    settings = QSpiceSettings(
+        workspace_root=Path.cwd(),
+        live_gui_bridge_command=("bridge.exe",),
+    )
+    assert session_mode.bridge_configured(settings) is True
+    assert session_mode.live_gui_session_available(settings) is True

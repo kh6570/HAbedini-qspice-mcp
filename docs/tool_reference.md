@@ -73,8 +73,9 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `describe_reference_circuit_recipe` | implemented | Return one bundled recipe manifest, workflow entries, file list, and topology digest. |
 | `list_topology_blocks` | implemented | List bundled composable DC-DC converter topology blocks plus pack attribution. |
 | `describe_topology_block` | implemented | Return one topology block manifest (ports, parameters, design equations) and its blueprint. |
-| `search_topology_blocks` | implemented | Keyword-search bundled topology blocks by id, title, summary, category, and tags. |
+| `search_topology_blocks` | implemented | Lexical TF-IDF search over bundled topology blocks (index fields + manifest detail + blueprint text), ranked by cosine relevance. |
 | `validate_topology_contribution` | implemented | Validate a candidate topology-block manifest against the knowledge-pack schema. |
+| `ingest_topology_contribution` | implemented | Validate and stage a clean-room topology contribution (manifest + blueprint + index entry) into a sandboxed workspace folder for PR review. |
 | `create_schematic` | implemented | Create a blank `.qsch` file so later schematic tools can build from scratch. |
 | `create_starter_schematic` | implemented | Create a runnable source-load starter schematic in one call. |
 | `add_component` | implemented | Insert one supported part (`R/C/D/V/L/B/nmos/pmos`) or a `GND` ground label; optional `auto_place` uses the layout grid. |
@@ -94,7 +95,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `suggest_component_placement` | implemented | Suggest collision-free coordinates for the next component on a readable left-to-right grid (0° rotation). |
 | `list_workflow_instructions` | implemented | List bundled workflow build instructions (for example buck-converter-cpp). |
 | `read_workflow_instruction` | implemented | Read one bundled workflow instruction document with build steps and coordinate tables. |
-| `inspect_schematic` | implemented | Summarize a `.qsch` file and the analyses it defines. |
+| `inspect_schematic` | implemented | Summarize a `.qsch` file and the analyses it defines; optionally fold in `.param` directives and net connectivity. |
 | `read_net_connectivity` | implemented | Report electrical nets and the component pins attached to each for a supported `.qsch`. |
 | `check_schematic` | implemented | Run read-only ERC-style checks on a supported `.qsch` (ground, floating pins, duplicate refdes, missing value, conflicting labels). |
 | `check_netlist` | implemented | Run read-only ERC-style checks on a `.net`/`.cir` netlist (ground node 0, duplicate refdes, single-connection nodes). |
@@ -1304,18 +1305,25 @@ Provide a read-only summary of the source schematic before any simulation runs.
 
 Typical inputs:
 - `schematic_path` (path to a `.qsch` file within the workspace)
+- `include_parameters` (optional, default `false`) — also return schematic-level `.param` directives
+- `include_connectivity` (optional, default `false`) — also attach the net-to-pin connectivity report
 
 Expected outputs:
 - `title`
 - `analyses`
 - `component_count`
 - `components` or a condensed component summary
-- `warnings` about unsupported or ambiguous constructs
+- `parameters` (`.param` directives; empty unless `include_parameters=true`)
+- `connectivity` (a `read_net_connectivity` report, or `null` unless `include_connectivity=true`)
 
 Notes:
 This tool should favor inspection over transformation. It is the default entry
 point for understanding a project because the repository is intentionally
-`qsch` first.
+`qsch` first. The optional `include_parameters` and `include_connectivity`
+sections collapse the common "inspect, then read connectivity/params" pattern
+into a single call. `include_connectivity` reuses the clean-room
+`read_net_connectivity` parser and degrades to `null` when the schematic is
+outside the supported subset, so it never fails the base inspection.
 
 ## read_net_connectivity
 
@@ -3999,14 +4007,20 @@ Expected outputs:
 ## search_topology_blocks
 
 Purpose:
-Keyword-search the bundled topology blocks by id, title, summary, category, and tags.
+Lexical (TF-IDF) retrieval over the bundled topology blocks. The corpus for each
+block spans the catalog index fields (id, title, summary, category, tags) plus the
+manifest detail (control notes, ports, parameters, design equations) and the
+clean-room blueprint document, so terms that only appear in the blueprint still
+match. This is offline lexical retrieval only; neural-embedding RAG (which would
+require bundled model weights) remains deferred.
 
 Typical inputs:
-- `query` (whitespace-separated keywords, for example `step up rhp`)
+- `query` (whitespace-separated keywords, for example `step up rhp zero`)
+- `limit` (optional, default `10`) — maximum number of ranked matches to return
 
 Expected outputs:
 - `query`
-- `matches` (each with `block_id`, `title`, `category`, `summary`, `tags`, `score`, `matched_terms`), ranked by score
+- `matches` (each with `block_id`, `title`, `category`, `summary`, `tags`, `score`, `matched_terms`, `matched_fields`), ranked by descending cosine relevance (`score` is a cosine similarity in `[0, 1]`); `matched_fields` reports which corpus fields contained query terms
 
 ## validate_topology_contribution
 
@@ -4022,6 +4036,34 @@ Expected outputs:
 - `block_id` (when present)
 - `errors` (schema violations)
 - `warnings` (non-blocking suggestions)
+
+## ingest_topology_contribution
+
+Purpose:
+Validate a candidate topology-block manifest plus its clean-room blueprint and stage
+them into the workspace so a maintainer can review and open a pull request. This never
+mutates the bundled (package-data) knowledge pack.
+
+Typical inputs:
+- `manifest` (candidate topology-block manifest object; same schema as `validate_topology_contribution`)
+- `blueprint` (clean-room blueprint document text; its file name must match `manifest['document']`)
+- `output_dir` (optional, workspace-relative; defaults to the workspace root)
+- `overwrite` (optional, default `false`)
+
+Expected outputs:
+- `block_id`
+- `output_dir` (the staged `topology_contributions/<block_id>/` folder)
+- `written_files` (`manifest.json`, the blueprint document, `index_entry.json`)
+- `is_valid`
+- `warnings` (validator warnings plus a bundled-id collision notice when applicable)
+- `collides_with_bundled_block`
+
+Notes:
+The tool raises a validation error (writing nothing) when the manifest fails
+validation, the blueprint is empty, or `manifest['document']` is not a bare file name.
+Writes are sandboxed to the workspace root, and `block_id` is restricted to
+alphanumerics and underscores by the validator, so the staged path cannot escape the
+workspace. A maintainer merges `index_entry.json` into the pack index during review.
 
 ## Future Extension Points
 

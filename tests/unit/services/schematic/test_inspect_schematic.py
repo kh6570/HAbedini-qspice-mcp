@@ -123,3 +123,57 @@ def test_inspect_schematic_handles_real_example_file() -> None:
     assert summary.component_count > 0
     assert any(component.refdes == "X1" for component in summary.components)
     assert any(analysis.kind is AnalysisKind.TRAN for analysis in summary.analyses)
+
+
+def _write_param_schematic(tmp_path: Path) -> Path:
+    schematic = tmp_path / "params.qsch"
+    schematic.write_bytes(
+        b"".join(
+            (
+                b"\xabschematic\r\n",
+                b"  \xabcomponent (0,0) 0 0\r\n",
+                b"    \xabsymbol R\r\n",
+                b"      \xabtype: R\xbb\r\n",
+                b'      \xabtext (100,150) 1 7 0 0x1000000 -1 -1 "R1"\xbb\r\n',
+                b'      \xabtext (100,-150) 1 7 0 0x1000000 -1 -1 "{rload}"\xbb\r\n',
+                b"    \xbb\r\n",
+                b'  \xabtext (0,0) 1 7 0 0x1000000 -1 -1 ".param rload=1k"\xbb\r\n',
+                b'  \xabtext (0,0) 1 7 0 0x1000000 -1 -1 ".tran 5m"\xbb\r\n',
+                b"\xbb\r\n",
+            )
+        )
+    )
+    return schematic
+
+
+def test_inspect_schematic_optional_sections_default_off(tmp_path: Path) -> None:
+    schematic = _write_param_schematic(tmp_path)
+
+    summary = inspect_schematic(schematic, workspace_root=tmp_path)
+
+    assert summary.parameters == ()
+    assert summary.connectivity is None
+
+
+def test_inspect_schematic_include_parameters_surfaces_param_directives(tmp_path: Path) -> None:
+    schematic = _write_param_schematic(tmp_path)
+
+    summary = inspect_schematic(schematic, workspace_root=tmp_path, include_parameters=True)
+
+    assert summary.parameters == (".param rload=1k",)
+
+
+def test_inspect_schematic_include_connectivity_attaches_report() -> None:
+    repo_root = Path(__file__).resolve().parents[4]
+    schematic = repo_root / "tests" / "fixtures" / "schematics" / "comparator-test.qsch"
+    assert schematic.is_file()
+
+    summary = inspect_schematic(
+        schematic,
+        workspace_root=repo_root,
+        include_connectivity=True,
+    )
+
+    assert summary.connectivity is not None
+    assert summary.connectivity.component_count > 0
+    assert summary.connectivity.node_count >= 0

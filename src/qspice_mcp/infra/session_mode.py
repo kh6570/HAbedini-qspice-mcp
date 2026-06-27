@@ -58,11 +58,13 @@ def resolve_session_plan(
     )
 
 
-def live_gui_session_available(settings: QSpiceSettings) -> bool:
-    """Return whether a live-GUI session could be reused on this host.
+def bridge_configured(settings: QSpiceSettings) -> bool:
+    """Return whether a live-GUI bridge *could* run on this host.
 
-    A live-GUI session needs the Windows host and a configured bridge command,
-    mirroring ``describe_live_gui_support`` without inverting the dependency rule.
+    This only checks the static prerequisites (Windows host plus a configured bridge
+    command), mirroring ``describe_live_gui_support`` without inverting the dependency
+    rule. It does **not** prove that a session is currently running and reachable — use
+    ``running_session_available`` for that runtime check.
     """
 
     bridge_command = tuple(
@@ -71,12 +73,32 @@ def live_gui_session_available(settings: QSpiceSettings) -> bool:
     return sys.platform == "win32" and bool(bridge_command)
 
 
-def resolve_session_plan_for_settings(settings: QSpiceSettings) -> SessionPlan:
-    """Resolve the session plan for one settings object."""
+# Backwards-compatible alias: historically this name meant "bridge configured".
+def live_gui_session_available(settings: QSpiceSettings) -> bool:
+    """Deprecated alias for :func:`bridge_configured` (static prerequisite check)."""
 
+    return bridge_configured(settings)
+
+
+def resolve_session_plan_for_settings(
+    settings: QSpiceSettings,
+    *,
+    running_session_available: bool | None = None,
+) -> SessionPlan:
+    """Resolve the session plan for one settings object.
+
+    When ``running_session_available`` is provided it gates reuse on an actually
+    reachable session (bridge configured **and** a running session), matching the
+    documented ``auto`` semantics. When omitted, only the static bridge prerequisite is
+    considered (used by callers that have no live registry to inspect).
+    """
+
+    available = bridge_configured(settings)
+    if running_session_available is not None:
+        available = available and running_session_available
     return resolve_session_plan(
         session_mode=settings.session_mode,
-        live_gui_available=live_gui_session_available(settings),
+        live_gui_available=available,
     )
 
 
@@ -84,6 +106,7 @@ __all__ = [
     "SessionMode",
     "SessionPlan",
     "SessionStrategy",
+    "bridge_configured",
     "live_gui_session_available",
     "resolve_session_plan",
     "resolve_session_plan_for_settings",

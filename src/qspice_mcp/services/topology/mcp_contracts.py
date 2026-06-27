@@ -24,15 +24,19 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "search_topology_blocks": {
         "title": "Search Topology Blocks",
-        "description": "Keyword-search bundled topology blocks by id, title, summary, category, and tags; returns ranked matches.",
+        "description": "Lexical TF-IDF search over bundled topology blocks (id, title, summary, category, tags, control notes, ports, parameters, design equations, and blueprint text); returns matches ranked by cosine relevance.",
         "input_schema": {
             "type": "object",
             "required": ["query"],
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "Whitespace-separated keywords, for example 'step up rhp'.",
-                }
+                    "description": "Whitespace-separated keywords, for example 'step up rhp zero'.",
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "Maximum number of ranked matches to return (default 10).",
+                },
             },
         },
     },
@@ -47,6 +51,32 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                     "type": "object",
                     "description": "Candidate topology-block manifest to validate.",
                 }
+            },
+        },
+    },
+    "ingest_topology_contribution": {
+        "title": "Ingest Topology Contribution",
+        "description": "Validate a candidate topology-block manifest plus its blueprint document and stage them (manifest.json, blueprint, index_entry.json) into a sandboxed topology_contributions/<block_id>/ folder under the workspace for PR review. Does not modify the bundled knowledge pack.",
+        "input_schema": {
+            "type": "object",
+            "required": ["manifest", "blueprint"],
+            "properties": {
+                "manifest": {
+                    "type": "object",
+                    "description": "Candidate topology-block manifest (same schema as validate_topology_contribution).",
+                },
+                "blueprint": {
+                    "type": "string",
+                    "description": "Clean-room blueprint document text; its file name must match manifest['document'].",
+                },
+                "output_dir": {
+                    "type": "string",
+                    "description": "Optional workspace-relative directory to stage under (defaults to the workspace root).",
+                },
+                "overwrite": {
+                    "type": "boolean",
+                    "description": "Overwrite existing staged files for this block_id (default false).",
+                },
             },
         },
     },

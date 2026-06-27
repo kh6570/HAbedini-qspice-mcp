@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from re import fullmatch
 from shutil import which
+from time import monotonic, sleep
 from typing import TYPE_CHECKING, Literal, cast
 from uuid import uuid4
 
@@ -43,6 +44,28 @@ _LIVE_GUI_REGISTRY_DIRNAME = "_sessions"
 _LIVE_GUI_SUMMARY_NAME = "session.json"
 _LIVE_GUI_COMMAND_QUEUE_NAME = "bridge.commands.jsonl"
 _LIVE_GUI_EVENT_LOG_NAME = "bridge.events.jsonl"
+
+_RUN_NETLIST_COMMAND = "run_netlist"
+_RUN_NETLIST_COMPLETE_EVENT = "run_netlist_complete"
+_RUN_NETLIST_FAILED_EVENT = "run_netlist_failed"
+_DEFAULT_RUN_NETLIST_TIMEOUT_S = 300.0
+_RUN_NETLIST_POLL_INTERVAL_S = 0.05
+
+LiveGuiNetlistRunStatus = Literal["completed", "failed", "timeout"]
+
+
+@dataclass(frozen=True, slots=True)
+class LiveGuiNetlistRun:
+    """Outcome of dispatching one netlist run through a live GUI bridge session."""
+
+    session_id: str
+    command_id: int
+    status: LiveGuiNetlistRunStatus
+    netlist_path: Path
+    log_path: Path
+    raw_path: Path
+    event_payload: dict[str, object]
+    note: str
 
 
 @dataclass(slots=True)
@@ -398,6 +421,149 @@ class LiveGuiSessionManager:
             notes=tuple(notes),
         )
 
+    def find_reusable_session(
+        self,
+        *,
+        schematic_path: str | Path | None = None,
+    ) -> str | None:
+        """Return the id of a reusable (running) persisted session, if any.
+
+        Scans the on-disk session registry for sessions still marked ``running`` and
+        returns the most recently submitted match. When ``schematic_path`` is given it is
+        used as a best-effort filter against the session manifest's schematic reference;
+        sessions whose manifest cannot be inspected are still considered.
+        """
+
+        registry_root = _live_gui_registry_root(workspace_root=self.settings.workspace_root)
+        if not registry_root.is_dir():
+            return None
+        wanted_schematic = (
+            resolve_workspace_path(schematic_path, workspace_root=self.settings.workspace_root)
+            if schematic_path is not None
+            else None
+        )
+        candidates: list[_ManagedLiveGuiSession] = []
+        for registry_file in registry_root.glob("livegui-*.json"):
+            try:
+                session = self._load_persisted_session(registry_file.stem)
+            except (ValidationError, OSError, json.JSONDecodeError):
+                continue
+            if session.status != "running":
+                continue
+            if wanted_schematic is not None and not self._session_matches_schematic(
+                session, wanted_schematic
+            ):
+                continue
+            candidates.append(session)
+        if not candidates:
+            return None
+        candidates.sort(key=lambda item: item.submitted_at, reverse=True)
+        return candidates[0].session_id
+
+    def _session_matches_schematic(
+        self,
+        session: _ManagedLiveGuiSession,
+        wanted_schematic: Path,
+    ) -> bool:
+        """Best-effort comparison of a session manifest's schematic to ``wanted``."""
+
+        try:
+            manifest = json.loads(session.manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return True
+        if not isinstance(manifest, dict):
+            return True
+        raw_schematic = manifest.get("schematic_path") or manifest.get("schematic")
+        if not isinstance(raw_schematic, str) or not raw_schematic.strip():
+            return True
+        try:
+            candidate = Path(raw_schematic).resolve(strict=False)
+        except (OSError, ValueError):
+            return True
+        return candidate == wanted_schematic.resolve(strict=False)
+
+    def run_simulation_in_session(
+        self,
+        session_id: str,
+        *,
+        netlist_path: str | Path,
+        log_path: str | Path,
+        raw_path: str | Path,
+        extra_switches: tuple[str, ...] = (),
+        timeout_s: float | None = None,
+    ) -> LiveGuiNetlistRun:
+        """Dispatch a ``run_netlist`` command to a live session and await its result.
+
+        Appends a documented ``run_netlist`` command to the session command queue, then
+        polls the bridge event log for a ``run_netlist_complete`` / ``run_netlist_failed``
+        event carrying the matching ``command_id`` (or returns a ``timeout`` result). The
+        external bridge must implement the ``run_netlist`` command for this to actually
+        execute through the GUI.
+        """
+
+        resolved_netlist = Path(netlist_path)
+        resolved_log = Path(log_path)
+        resolved_raw = Path(raw_path)
+        dispatch = self.send_live_gui_session_command(
+            session_id,
+            command=_RUN_NETLIST_COMMAND,
+            payload={
+                "netlist_path": str(resolved_netlist),
+                "log_path": str(resolved_log),
+                "raw_path": str(resolved_raw),
+                "extra_switches": list(extra_switches),
+            },
+        )
+        session = self._require_session(session_id)
+        event_path = _live_gui_event_log_path(session.output_root)
+        effective_timeout = (
+            timeout_s if timeout_s is not None and timeout_s > 0 else _DEFAULT_RUN_NETLIST_TIMEOUT_S
+        )
+        deadline = monotonic() + effective_timeout
+        terminal_events = {_RUN_NETLIST_COMPLETE_EVENT, _RUN_NETLIST_FAILED_EVENT}
+
+        while monotonic() < deadline:
+            for record in _read_jsonl_records(event_path):
+                if record.get("command_id") != dispatch.command_id:
+                    continue
+                event_name = str(record.get("event", ""))
+                if event_name not in terminal_events:
+                    continue
+                payload_value = record.get("payload")
+                event_payload = (
+                    {str(key): value for key, value in payload_value.items()}
+                    if isinstance(payload_value, dict)
+                    else {}
+                )
+                status: LiveGuiNetlistRunStatus = (
+                    "completed" if event_name == _RUN_NETLIST_COMPLETE_EVENT else "failed"
+                )
+                return LiveGuiNetlistRun(
+                    session_id=session.session_id,
+                    command_id=dispatch.command_id,
+                    status=status,
+                    netlist_path=resolved_netlist,
+                    log_path=resolved_log,
+                    raw_path=resolved_raw,
+                    event_payload=event_payload,
+                    note=f"Live GUI bridge reported {event_name!r}.",
+                )
+            sleep(_RUN_NETLIST_POLL_INTERVAL_S)
+
+        return LiveGuiNetlistRun(
+            session_id=session.session_id,
+            command_id=dispatch.command_id,
+            status="timeout",
+            netlist_path=resolved_netlist,
+            log_path=resolved_log,
+            raw_path=resolved_raw,
+            event_payload={},
+            note=(
+                f"Live GUI bridge did not report a {_RUN_NETLIST_COMMAND} result within "
+                f"{effective_timeout:g}s."
+            ),
+        )
+
     def send_live_gui_session_command(
         self,
         session_id: str,
@@ -533,4 +699,4 @@ class LiveGuiSessionManager:
         )
 
 
-__all__ = ["LiveGuiSessionManager"]
+__all__ = ["LiveGuiNetlistRun", "LiveGuiSessionManager"]

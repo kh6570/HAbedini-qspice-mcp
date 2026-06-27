@@ -13,6 +13,20 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Added
 
+- **`ingest_topology_contribution`** — validates a candidate topology-block manifest
+  plus its clean-room blueprint and stages them (`manifest.json`, blueprint,
+  `index_entry.json`) into a sandboxed `topology_contributions/<block_id>/` folder
+  under the workspace for PR review. Never mutates the bundled knowledge pack; writes
+  are sandbox-validated.
+- **`inspect_schematic` merged sections** — optional `include_parameters` (returns
+  schematic-level `.param` directives) and `include_connectivity` (attaches the
+  net-to-pin `read_net_connectivity` report, degrading to `null` for unsupported
+  schematics) collapse the common inspect-then-read pattern into one call.
+- **Live-GUI `run_netlist` reuse (server side)** — with `session_mode=auto` plus a
+  configured bridge, `run_simulation` dispatches a documented `run_netlist` command to
+  a running live-GUI session and reports `session_strategy="reuse_live_gui"`; any
+  timeout, missing session, or bridge unavailability safely falls back to a cold launch
+  (behavior unchanged when no bridge ships). See the user guide bridge-contract section.
 - **Topology knowledge pack** — bundled clean-room converter blueprints
   (`list_topology_blocks`, `describe_topology_block`, `search_topology_blocks`,
   `validate_topology_contribution`) for buck, boost, and buck-boost stages, with
@@ -107,6 +121,19 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Changed
 
+- **Topology search is now lexical TF-IDF retrieval** — `search_topology_blocks` ranks
+  blocks by cosine relevance over the full corpus (index fields + manifest detail +
+  blueprint text) instead of index-only substring scoring, so blueprint-only terms now
+  match. `score` is a float in `[0, 1]`; results add `matched_fields`, and an optional
+  `limit` (default 10) caps the result set. Neural-embedding RAG (needs bundled model
+  weights) remains deferred.
+- **Robust per-version log classification** — `resolve_log_rules` now normalizes the
+  probed version and matches override keys/aliases with a prefix rule, fixing a latent
+  bug where Windows dotted-quad/CLI versions never matched the timestamp-style override
+  key and silently fell back to the base rules. Added a clearly-labeled synthetic
+  second-build corpus (`tests/data/qspice_logs/v2_20271231/`) proving cross-build
+  divergence handling; `LOG_CLASSIFICATION_VERSION` bumped to 3. The committed log
+  corpus is now tracked in git (previously gitignored).
 - **Unified, safe-by-default placement edits** — `set_component_position` is now the
   single move/rotate tool: pass `position_x`/`position_y` and/or `rotation_degrees`
   (at least one). By default it preserves attached connections (wires, junctions, net

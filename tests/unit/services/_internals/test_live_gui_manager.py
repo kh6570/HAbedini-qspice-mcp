@@ -71,13 +71,23 @@ def _write_bridge_script(path: Path, *, exit_immediately: bool) -> Path:
                 "        for raw_command in lines[processed:]:",
                 "            command = json.loads(raw_command)",
                 "            sequence += 1",
+                "            command_payload = command.get('payload', {})",
+                "            event_name = 'command_ack'",
+                "            if command.get('command') == 'run_netlist':",
+                "                event_name = 'run_netlist_complete'",
+                "                for key in ('log_path', 'raw_path'):",
+                "                    target = command_payload.get(key)",
+                "                    if target:",
+                "                        target_path = pathlib.Path(target)",
+                "                        target_path.parent.mkdir(parents=True, exist_ok=True)",
+                "                        target_path.write_text('ok', encoding='utf-8')",
                 "            event = {",
                 "                'sequence': sequence,",
-                "                'event': 'command_ack',",
+                "                'event': event_name,",
                 "                'command_id': command.get('command_id'),",
                 "                'command': command.get('command'),",
                 "                'signal': command.get('signal'),",
-                "                'payload': command.get('payload', {}),",
+                "                'payload': command_payload,",
                 "                'created_at': datetime.datetime.now().astimezone().isoformat(),",
                 "            }",
                 "            with events_path.open('a', encoding='utf-8') as handle:",
@@ -277,6 +287,100 @@ def test_live_gui_manager_dispatches_commands_and_reads_bridge_events(
     assert events.events[0].event == "command_ack"
     assert events.events[0].signal == "V(out)"
     assert events.events[0].payload["waveform"] == "V(out)"
+
+
+def test_run_simulation_in_session_completes_via_bridge(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(live_gui_manager_service.sys, "platform", "win32")
+
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+    schematic = tmp_path / "demo.qsch"
+    schematic.write_text("schematic", encoding="utf-8")
+    bridge_script = _write_bridge_script(tmp_path / "bridge_run.py", exit_immediately=False)
+
+    manager = live_gui_manager_service.LiveGuiSessionManager(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            live_gui_bridge_command=(sys.executable, str(bridge_script)),
+        )
+    )
+    launched = manager.launch_live_gui_session(
+        session_name="buck-debug", schematic_path=str(schematic)
+    )
+
+    netlist = tmp_path / "demo.net"
+    netlist.write_text("* netlist\n", encoding="utf-8")
+    log_path = tmp_path / "demo.log"
+    raw_path = tmp_path / "demo.qraw"
+    try:
+        _wait_for_file(launched.output_root / "bridge.ready")
+        reusable = manager.find_reusable_session(schematic_path=str(schematic))
+        assert reusable == launched.session_id
+
+        run = manager.run_simulation_in_session(
+            launched.session_id,
+            netlist_path=netlist,
+            log_path=log_path,
+            raw_path=raw_path,
+            timeout_s=5.0,
+        )
+    finally:
+        manager.close_live_gui_session(launched.session_id, delete_manifest=True)
+
+    assert run.status == "completed"
+    assert run.command_id >= 1
+    assert log_path.read_text(encoding="utf-8") == "ok"
+    assert raw_path.read_text(encoding="utf-8") == "ok"
+
+
+def test_run_simulation_in_session_times_out_without_bridge_result(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(live_gui_manager_service.sys, "platform", "win32")
+
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+    # A bridge that exits immediately never emits a run_netlist_complete event.
+    bridge_script = _write_bridge_script(tmp_path / "bridge_idle.py", exit_immediately=True)
+
+    manager = live_gui_manager_service.LiveGuiSessionManager(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            live_gui_bridge_command=(sys.executable, str(bridge_script)),
+        )
+    )
+    launched = manager.launch_live_gui_session(session_name="idle")
+    _wait_for_terminal_status(manager, launched.session_id)
+
+    # Force the session record back to running so the command can be queued.
+    session = manager._require_session(launched.session_id)
+    session.status = "running"
+
+    netlist = tmp_path / "demo.net"
+    netlist.write_text("* netlist\n", encoding="utf-8")
+    run = manager.run_simulation_in_session(
+        launched.session_id,
+        netlist_path=netlist,
+        log_path=tmp_path / "demo.log",
+        raw_path=tmp_path / "demo.qraw",
+        timeout_s=0.2,
+    )
+    assert run.status == "timeout"
+
+
+def test_find_reusable_session_returns_none_without_running_sessions(
+    tmp_path: Path,
+) -> None:
+    manager = live_gui_manager_service.LiveGuiSessionManager(
+        QSpiceSettings(workspace_root=tmp_path)
+    )
+    assert manager.find_reusable_session() is None
 
 
 def test_live_gui_manager_requires_configured_bridge_command(

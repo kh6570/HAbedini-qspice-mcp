@@ -7,7 +7,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
-from qspice_mcp.core.exceptions import BackendUnavailableError, ValidationError
+from qspice_mcp.core.exceptions import (
+    BackendUnavailableError,
+    SimulationError,
+    ValidationError,
+)
+from qspice_mcp.infra.session_mode import SessionStrategy, resolve_session_plan_for_settings
 from qspice_mcp.services._internals.service_catalog import build_service_callable_catalog
 from qspice_mcp.services._shared.paths import resolve_workspace_path
 from qspice_mcp.services.mixed_signal._dll_toolchain_probe import dll_build_degradation_hints
@@ -150,6 +155,82 @@ def _describe_server_capabilities_handler(runtime: QSpiceToolRuntime) -> ToolHan
     return handler
 
 
+def _attempt_live_gui_reuse(
+    runtime: QSpiceToolRuntime,
+    *,
+    netlist_path: Path,
+    original_source: Path,
+    log_path: str | None,
+    raw_output_path: str | None,
+    extra_switches: tuple[str, ...],
+    timeout_s: float | None,
+) -> dict[str, object] | None:
+    """Try to run the simulation through a reusable live-GUI session.
+
+    Returns a result payload when the bridge ran the netlist, ``None`` to signal the
+    caller should cold-launch (no reusable session, timeout, or a recoverable error),
+    and raises ``SimulationError`` when the bridge reported a decisive run failure.
+    """
+
+    settings = runtime.settings
+    workspace_root = settings.workspace_root
+    manager = runtime._live_gui_manager
+    schematic = original_source if original_source.suffix.lower() == ".qsch" else None
+    try:
+        session_id = manager.find_reusable_session(schematic_path=schematic)
+    except (BackendUnavailableError, ValidationError, OSError):
+        session_id = None
+    plan = resolve_session_plan_for_settings(
+        settings, running_session_available=session_id is not None
+    )
+    if plan.strategy is not SessionStrategy.REUSE_LIVE_GUI or session_id is None:
+        return None
+
+    resolved_log = (
+        resolve_workspace_path(log_path, workspace_root=workspace_root)
+        if log_path
+        else netlist_path.with_suffix(".log")
+    )
+    resolved_raw = (
+        resolve_workspace_path(raw_output_path, workspace_root=workspace_root)
+        if raw_output_path
+        else netlist_path.with_suffix(".qraw")
+    )
+    try:
+        run = manager.run_simulation_in_session(
+            session_id,
+            netlist_path=netlist_path,
+            log_path=resolved_log,
+            raw_path=resolved_raw,
+            extra_switches=extra_switches,
+            timeout_s=timeout_s,
+        )
+    except (BackendUnavailableError, ValidationError):
+        return None
+    if run.status == "timeout":
+        return None
+    if run.status == "failed":
+        message = str(run.event_payload.get("error") or run.note)
+        raise SimulationError(f"Live GUI bridge failed to run the netlist: {message}")
+
+    return {
+        "adapter_key": "live_gui_bridge",
+        "netlist_path": str(run.netlist_path),
+        "log_path": str(run.log_path),
+        "raw_path": str(run.raw_path),
+        "dry_run": False,
+        "exit_code": 0,
+        "log_exists": run.log_path.is_file(),
+        "raw_exists": run.raw_path.is_file(),
+        "cached": False,
+        "session_strategy": plan.strategy.value,
+        "session_reason": plan.reason,
+        "live_gui_session_id": run.session_id,
+        "live_gui_event": run.event_payload,
+        "note": run.note,
+    }
+
+
 def _run_simulation_handler(runtime: QSpiceToolRuntime) -> ToolHandler:
     def handler(
         source_path: str,
@@ -188,6 +269,24 @@ def _run_simulation_handler(runtime: QSpiceToolRuntime) -> ToolHandler:
                 "netlist_output_path is ignored when source_path already points "
                 "to a .net or .cir file."
             )
+
+        if not dry_run and runtime.settings.session_mode == "auto":
+            reuse_payload = _attempt_live_gui_reuse(
+                runtime,
+                netlist_path=simulation_input,
+                original_source=resolved_source,
+                log_path=log_path,
+                raw_output_path=raw_output_path,
+                extra_switches=tuple(extra_switches or ()),
+                timeout_s=timeout_s,
+            )
+            if reuse_payload is not None:
+                reuse_payload["source_path"] = str(resolved_source)
+                if generated_netlist is not None:
+                    reuse_payload["generated_netlist"] = generated_netlist
+                if warnings:
+                    reuse_payload["warnings"] = warnings
+                return reuse_payload
 
         run_simulation_service = resolve_mcp_service_callable("run_simulation")
         result = run_simulation_service(

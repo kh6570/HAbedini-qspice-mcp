@@ -69,6 +69,55 @@ def test_resolve_log_rules_returns_registered_version_entry() -> None:
     assert rules.ignore == qspice_v1._BASE_LOG_RULES.ignore
 
 
+_V2_CORPUS_VERSION = "20271231"
+_V2_CORPUS_DIR = _CORPUS_DIR / "v2_20271231"
+
+
+def _read_v2_log(name: str) -> str:
+    return (_V2_CORPUS_DIR / name).read_text(encoding="utf-8")
+
+
+def test_synthetic_second_build_healthy_log_is_success() -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+    assert (
+        adapter.classify_simulation_log(
+            _read_v2_log("healthy.log"), exit_code=0, probe_version=_V2_CORPUS_VERSION
+        )
+        is None
+    )
+
+
+def test_synthetic_second_build_convergence_log_diverges_from_base() -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+    log_text = _read_v2_log("convergence.log")
+    # The base/real-build rules do not recognize this build's signature.
+    assert adapter.classify_simulation_log(log_text, exit_code=1, probe_version=None) is None
+    assert (
+        adapter.classify_simulation_log(log_text, exit_code=1, probe_version=_CORPUS_VERSION)
+        is None
+    )
+    # The second build classifies it as a convergence failure.
+    classified = adapter.classify_simulation_log(
+        log_text, exit_code=1, probe_version=_V2_CORPUS_VERSION
+    )
+    assert isinstance(classified, ConvergenceError)
+
+
+def test_synthetic_second_build_fatal_log_diverges_from_base() -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+    log_text = _read_v2_log("fatal.log")
+    assert adapter.classify_simulation_log(log_text, exit_code=1, probe_version=None) is None
+    classified = adapter.classify_simulation_log(
+        log_text, exit_code=1, probe_version=_V2_CORPUS_VERSION
+    )
+    assert isinstance(classified, SimulationError)
+    assert not isinstance(classified, ConvergenceError)
+
+
+def test_resolve_log_rules_normalizes_dotted_version() -> None:
+    assert resolve_log_rules("2026.06.04") == resolve_log_rules(_CORPUS_VERSION)
+
+
 def test_version_override_seam_adds_build_specific_fatal_signature(monkeypatch) -> None:
     fake_version = "29991231"
     monkeypatch.setitem(

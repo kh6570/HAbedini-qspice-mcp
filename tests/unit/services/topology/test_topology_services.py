@@ -42,8 +42,24 @@ def test_search_ranks_boost_for_step_up_keywords() -> None:
     result = search_topology_blocks("step up rhp")
     assert result.matches
     assert result.matches[0].block_id == "boost_converter"
-    assert result.matches[0].score >= 1
+    assert result.matches[0].score > 0.0
     assert all(match.matched_terms for match in result.matches)
+
+
+def test_search_matches_blueprint_only_term() -> None:
+    """A term that appears only in the blueprint document still retrieves the block."""
+
+    result = search_topology_blocks("inrush")
+    assert {match.block_id for match in result.matches} == {"boost_converter"}
+    top = result.matches[0]
+    assert top.score > 0.0
+    assert "inrush" in top.matched_terms
+    assert "blueprint" in top.matched_fields
+
+
+def test_search_respects_limit() -> None:
+    result = search_topology_blocks("converter", limit=1)
+    assert len(result.matches) == 1
 
 
 def test_search_matches_buck_boost_on_inverting() -> None:

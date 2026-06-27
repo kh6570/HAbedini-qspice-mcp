@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from qspice_mcp.adapters.cli import qspice_v1
 from qspice_mcp.adapters.cli.qspice_v1 import (
     LOG_CLASSIFICATION_VERSION,
     CurrentQSpiceCLIAdapter,
@@ -126,7 +127,7 @@ def test_log_classification_version_is_pinned() -> None:
     adapter = CurrentQSpiceCLIAdapter()
 
     assert adapter.log_classification_version == LOG_CLASSIFICATION_VERSION
-    assert LOG_CLASSIFICATION_VERSION == 2
+    assert LOG_CLASSIFICATION_VERSION == 3
 
 
 def test_classify_clean_log_returns_none() -> None:
@@ -187,3 +188,42 @@ def test_supports_probe_version_is_permissive_baseline() -> None:
 
     assert adapter.supports_probe_version(None) is True
     assert adapter.supports_probe_version("2024.07") is True
+
+
+def test_normalize_version_key_strips_separators() -> None:
+    assert qspice_v1._normalize_version_key("2026.06.04") == "20260604"
+    assert qspice_v1._normalize_version_key("20260604") == "20260604"
+    assert qspice_v1._normalize_version_key("v2026-06-04") == "v20260604"
+
+
+def test_resolve_log_rules_maps_dotted_version_to_timestamp_override() -> None:
+    # The 2026-06-04 entry and its dotted alias resolve to the same rules, fixing
+    # the prior bug where only the exact timestamp key matched.
+    timestamp_rules = qspice_v1.resolve_log_rules("20260604")
+    dotted_rules = qspice_v1.resolve_log_rules("2026.06.04")
+    assert dotted_rules == timestamp_rules
+
+
+def test_resolve_log_rules_prefix_matches_trailing_build_number() -> None:
+    # A PE dotted-quad with a trailing build number still resolves via prefix match.
+    rules = qspice_v1.resolve_log_rules("2027.12.31.4096")
+    assert any("did" in pattern.pattern for pattern in rules.convergence)
+
+
+def test_second_build_divergent_signatures_only_apply_to_that_version() -> None:
+    adapter = CurrentQSpiceCLIAdapter()
+    convergence_line = "Gmin stepping did not converge after 100 steps."
+    fatal_line = "Simulation aborted: thermal runaway detected at device M3."
+
+    # Invisible to the base rules and the real 2026-06-04 build.
+    assert adapter.classify_simulation_log(convergence_line, probe_version=None) is None
+    assert adapter.classify_simulation_log(fatal_line, probe_version="20260604") is None
+
+    # Classified once the synthetic second build is probed.
+    convergence = adapter.classify_simulation_log(
+        convergence_line, exit_code=1, probe_version="20271231"
+    )
+    fatal = adapter.classify_simulation_log(fatal_line, exit_code=1, probe_version="2027.12.31")
+    assert isinstance(convergence, ConvergenceError)
+    assert isinstance(fatal, SimulationError)
+    assert not isinstance(fatal, ConvergenceError)

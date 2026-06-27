@@ -70,3 +70,7 @@ local-dev-docs/
 # extensions (*.qraw, *.net, *.cir, *.log). Anything under tests/fixtures/ is
 # curated input, not a generated artifact.
 !tests/fixtures/**
+
+# Keep the curated QSpice log-classification corpus (real + synthetic) tracked
+# even though *.log is otherwise ignored. These pin the adapter contract tests.
+!tests/data/qspice_logs/**

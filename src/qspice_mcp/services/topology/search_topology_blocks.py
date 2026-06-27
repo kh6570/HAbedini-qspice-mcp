@@ -1,4 +1,4 @@
-"""Service performing keyword search across bundled topology blocks."""
+"""Service performing lexical (TF-IDF) retrieval across bundled topology blocks."""
 
 from __future__ import annotations
 
@@ -6,25 +6,28 @@ from dataclasses import dataclass
 
 from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.services.service_spec import ServiceSpec
-from qspice_mcp.services.topology._catalog import list_topology_index_entries
+from qspice_mcp.services.topology._search_index import _tokenize, search_topology_index
+
+_DEFAULT_LIMIT = 10
 
 
 @dataclass(frozen=True, slots=True)
 class TopologyBlockMatch:
-    """One ranked keyword-search hit for a topology block."""
+    """One ranked retrieval hit for a topology block."""
 
     block_id: str
     title: str
     category: str
     summary: str
     tags: tuple[str, ...]
-    score: int
+    score: float
     matched_terms: tuple[str, ...]
+    matched_fields: tuple[str, ...]
 
 
 @dataclass(frozen=True, slots=True)
 class TopologyBlockSearchResult:
-    """Keyword-search result set for one query."""
+    """Retrieval result set for one query."""
 
     query: str
     matches: tuple[TopologyBlockMatch, ...]
@@ -33,52 +36,45 @@ class TopologyBlockSearchResult:
 SERVICE_SPEC = ServiceSpec(
     name="search_topology_blocks",
     title="Search Topology Blocks",
-    summary="Keyword-search bundled topology blocks by id, title, summary, category, and tags.",
+    summary=(
+        "Lexical TF-IDF search over bundled topology blocks across id, title, summary, "
+        "category, tags, control notes, ports, parameters, equations, and blueprint text."
+    ),
     phase="implemented",
     read_only=True,
 )
 
 
-def _query_terms(query: str) -> tuple[str, ...]:
-    return tuple(dict.fromkeys(term for term in query.lower().split() if term))
+def search_topology_blocks(query: str, limit: int = _DEFAULT_LIMIT) -> TopologyBlockSearchResult:
+    """Rank bundled topology blocks against ``query`` by TF-IDF cosine relevance.
 
-
-def search_topology_blocks(query: str) -> TopologyBlockSearchResult:
-    """Return topology blocks matching any whitespace-separated keyword in ``query``."""
+    The corpus for each block spans the catalog index fields plus the manifest detail
+    (control notes, ports, parameters, design equations) and the clean-room blueprint
+    document, so a term that appears only in the blueprint still matches. ``score`` is a
+    cosine similarity in ``[0, 1]``; ``matched_fields`` reports where query terms landed.
+    """
 
     normalized_query = query.strip()
     if not normalized_query:
         raise ValidationError("query must not be empty.")
-    terms = _query_terms(normalized_query)
+    query_tokens = tuple(_tokenize(normalized_query))
+    effective_limit = limit if limit and limit > 0 else _DEFAULT_LIMIT
 
-    matches: list[TopologyBlockMatch] = []
-    for entry in list_topology_index_entries():
-        haystacks = {
-            "id": entry.block_id.lower().replace("_", " "),
-            "title": entry.title.lower(),
-            "summary": entry.summary.lower(),
-            "category": entry.category.lower().replace("_", " "),
-            "tags": " ".join(tag.lower() for tag in entry.tags),
-        }
-        combined = " ".join(haystacks.values())
-        matched_terms = tuple(term for term in terms if term in combined)
-        if not matched_terms:
-            continue
-        score = sum(combined.count(term) for term in matched_terms)
-        matches.append(
-            TopologyBlockMatch(
-                block_id=entry.block_id,
-                title=entry.title,
-                category=entry.category,
-                summary=entry.summary,
-                tags=entry.tags,
-                score=score,
-                matched_terms=matched_terms,
-            )
+    hits = search_topology_index(query_tokens, limit=effective_limit)
+    matches = tuple(
+        TopologyBlockMatch(
+            block_id=hit.block_id,
+            title=hit.title,
+            category=hit.category,
+            summary=hit.summary,
+            tags=hit.tags,
+            score=hit.score,
+            matched_terms=hit.matched_terms,
+            matched_fields=hit.matched_fields,
         )
-
-    matches.sort(key=lambda match: (-match.score, match.block_id))
-    return TopologyBlockSearchResult(query=normalized_query, matches=tuple(matches))
+        for hit in hits
+    )
+    return TopologyBlockSearchResult(query=normalized_query, matches=matches)
 
 
 __all__ = [

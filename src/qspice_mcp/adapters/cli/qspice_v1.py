@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 # Bump whenever the log-classification rulesets below change. Contract tests
 # pin this value so behavior changes are deliberate and reviewable.
-LOG_CLASSIFICATION_VERSION = 2
+LOG_CLASSIFICATION_VERSION = 3
 
 _SUPPORTED_NETLIST_SUFFIXES = frozenset({".cir", ".net"})
 _RESERVED_SWITCHES = frozenset({"-o", "-r"})
@@ -58,11 +58,21 @@ class _LogRuleSet:
 
 @dataclass(frozen=True, slots=True)
 class _LogRuleOverride:
-    """Version-specific additions layered on top of the base rule set."""
+    """Version-specific additions layered on top of the base rule set.
+
+    ``match_aliases`` lists additional raw version strings that should resolve to
+    this override. The dict key and every alias are compared after normalization
+    (digits/letters only) with a prefix match, so a single date-style build maps
+    across the probe's reporting forms — timestamp ``20260604``, dotted CLI
+    ``2026.06.04``, and a dotted PE quad with a trailing build number all resolve
+    to the same entry. This fixes the prior bug where only the exact timestamp key
+    matched and Windows dotted-quad versions silently fell back to the base rules.
+    """
 
     extra_convergence: tuple[re.Pattern[str], ...] = ()
     extra_fatal: tuple[re.Pattern[str], ...] = ()
     extra_ignore: tuple[re.Pattern[str], ...] = ()
+    match_aliases: tuple[str, ...] = ()
 
 
 _BASE_LOG_RULES = _LogRuleSet(
@@ -71,6 +81,15 @@ _BASE_LOG_RULES = _LogRuleSet(
     ignore=_IGNORE_PATTERNS,
 )
 
+# Synthetic second-build signatures. We do not have a real divergent QSpice build,
+# so this clearly-labeled entry proves the version seam handles cross-build
+# divergence: these signatures classify only when the matching version is probed
+# and stay invisible to the base rules and the real 2026-06-04 corpus. The
+# corresponding logs live under ``tests/data/qspice_logs/v2_20271231/`` (marked
+# synthetic in that folder's README).
+_V2_EXTRA_CONVERGENCE = (re.compile(r"\bgmin\s+stepping\s+did\s+not\s+converge\b", re.IGNORECASE),)
+_V2_EXTRA_FATAL = (re.compile(r"\bsimulation\s+aborted\b", re.IGNORECASE),)
+
 # Convergence/fatal regex overrides keyed by ``ProbeResult.version``. Seeded with
 # the QSpice build whose real log corpus is captured under
 # ``tests/data/qspice_logs/`` and pinned by the adapter contract tests. Newly
@@ -78,15 +97,51 @@ _BASE_LOG_RULES = _LogRuleSet(
 _VERSION_LOG_OVERRIDES: dict[str, _LogRuleOverride] = {
     # QSpice 2026-06-04 build: the base rule set (with the recoverable-warning
     # skip) classifies its real healthy/fatal/singular logs correctly, so no
-    # extra signatures are required. Recorded as an explicit, tested key.
-    "20260604": _LogRuleOverride(),
+    # extra signatures are required. Aliases cover the dotted CLI/PE forms.
+    "20260604": _LogRuleOverride(match_aliases=("2026.06.04",)),
+    # Synthetic divergent second build (see note above).
+    "20271231": _LogRuleOverride(
+        extra_convergence=_V2_EXTRA_CONVERGENCE,
+        extra_fatal=_V2_EXTRA_FATAL,
+        match_aliases=("2027.12.31",),
+    ),
 }
 
 
-def resolve_log_rules(version: str | None) -> _LogRuleSet:
-    """Return the base log rule set merged with any version-specific overrides."""
+def _normalize_version_key(value: str) -> str:
+    """Reduce a version string to a comparable token (lowercase alphanumerics)."""
 
-    override = _VERSION_LOG_OVERRIDES.get(version) if version is not None else None
+    return re.sub(r"[^0-9a-z]", "", value.lower())
+
+
+def _override_matches(normalized_version: str, raw_keys: tuple[str, ...]) -> bool:
+    """Return whether a normalized probe version matches any of an override's keys."""
+
+    for raw_key in raw_keys:
+        normalized_key = _normalize_version_key(raw_key)
+        if not normalized_key:
+            continue
+        if normalized_version == normalized_key or normalized_version.startswith(normalized_key):
+            return True
+    return False
+
+
+def resolve_log_rules(version: str | None) -> _LogRuleSet:
+    """Return the base log rule set merged with any version-specific overrides.
+
+    Matching normalizes the probed version and each override's key/aliases, then
+    accepts an exact or prefix match so the same build resolves regardless of how
+    the executable reports its version (timestamp, dotted CLI, or PE quad).
+    """
+
+    override: _LogRuleOverride | None = None
+    if version is not None:
+        normalized_version = _normalize_version_key(version)
+        if normalized_version:
+            for raw_key, candidate in _VERSION_LOG_OVERRIDES.items():
+                if _override_matches(normalized_version, (raw_key, *candidate.match_aliases)):
+                    override = candidate
+                    break
     if override is None:
         return _BASE_LOG_RULES
     return _LogRuleSet(

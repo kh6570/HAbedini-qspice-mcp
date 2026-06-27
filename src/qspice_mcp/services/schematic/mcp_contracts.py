@@ -385,11 +385,15 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "inspect_schematic": {
         "title": "Inspect Schematic",
-        "description": "Summarize a QSpice schematic before simulation.",
+        "description": "Summarize a QSpice schematic before simulation. Set include_parameters=true to also return schematic-level `.param` directives, and include_connectivity=true to attach the net-to-pin connectivity report in the same call.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path"],
-            "properties": {"schematic_path": {"type": "string"}},
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "include_parameters": {"type": "boolean"},
+                "include_connectivity": {"type": "boolean"},
+            },
         },
     },
     "list_components": {

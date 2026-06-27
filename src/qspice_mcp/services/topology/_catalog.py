@@ -50,6 +50,12 @@ def clear_topology_root_cache() -> None:
     _topology_root.cache_clear()
     load_topology_index.cache_clear()
     load_topology_manifest.cache_clear()
+    # Local import avoids a module-level import cycle (_search_index imports this module).
+    from qspice_mcp.services.topology._search_index import (  # noqa: PLC0415
+        clear_search_index_cache,
+    )
+
+    clear_search_index_cache()
 
 
 @cache

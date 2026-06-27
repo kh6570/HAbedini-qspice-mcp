@@ -141,6 +141,7 @@ _TOPOLOGY_KNOWLEDGE_TOOLS = frozenset(
         "describe_topology_block",
         "search_topology_blocks",
         "validate_topology_contribution",
+        "ingest_topology_contribution",
     }
 )
 

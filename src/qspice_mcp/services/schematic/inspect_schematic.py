@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, TypedDict
 
+from qspice_mcp.core.exceptions import QSpiceError
 from qspice_mcp.core.models import Analysis, AnalysisKind
 from qspice_mcp.services._backends._qsch_editor import (
     _QCLOSE,
@@ -14,6 +15,10 @@ from qspice_mcp.services._backends._qsch_editor import (
     _decode_qsch_bytes,
 )
 from qspice_mcp.services._shared.paths import validate_existing_file
+from qspice_mcp.services.schematic.read_net_connectivity import (
+    NetConnectivityReport,
+    read_net_connectivity,
+)
 from qspice_mcp.services.service_spec import ServiceSpec
 
 if TYPE_CHECKING:
@@ -57,6 +62,8 @@ class SchematicInspection:
     format_hint: str | None
     line_count: int
     size_bytes: int
+    parameters: tuple[str, ...] = field(default_factory=tuple)
+    connectivity: NetConnectivityReport | None = None
 
 
 class _ComponentAccumulator(TypedDict, total=False):
@@ -233,12 +240,32 @@ def inspect_schematic_bytes(raw_bytes: bytes) -> SchematicContentInspection:
     )
 
 
+def _maybe_read_connectivity(
+    schematic_path: Path,
+    *,
+    workspace_root: Path,
+) -> NetConnectivityReport | None:
+    """Best-effort connectivity read; returns None when the schematic is unsupported."""
+
+    try:
+        return read_net_connectivity(schematic_path, workspace_root=workspace_root)
+    except (QSpiceError, ValueError, OSError):
+        return None
+
+
 def inspect_schematic(
     raw_path: str | Path,
     *,
     workspace_root: Path,
+    include_connectivity: bool = False,
+    include_parameters: bool = False,
 ) -> SchematicInspection:
-    """Inspect a `.qsch` file with a conservative text-scanning pass."""
+    """Inspect a `.qsch` file with a conservative text-scanning pass.
+
+    Optional sections fold in detail that otherwise needs separate read calls:
+    ``include_parameters`` surfaces schematic-level ``.param`` directives, and
+    ``include_connectivity`` attaches the net-to-pin connectivity report.
+    """
 
     schematic_path = validate_existing_file(
         raw_path,
@@ -252,6 +279,11 @@ def inspect_schematic(
     )
     non_empty_lines = tuple(line for line in cleaned_lines if line)
     format_hint = non_empty_lines[0] if non_empty_lines else None
+    connectivity = (
+        _maybe_read_connectivity(schematic_path, workspace_root=workspace_root)
+        if include_connectivity
+        else None
+    )
     return SchematicInspection(
         schematic_path=schematic_path,
         title=schematic_path.stem,
@@ -261,6 +293,8 @@ def inspect_schematic(
         format_hint=format_hint,
         line_count=len(cleaned_lines),
         size_bytes=content.size_bytes,
+        parameters=content.parameters if include_parameters else (),
+        connectivity=connectivity,
     )
 
 

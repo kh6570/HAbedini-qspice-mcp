@@ -209,7 +209,7 @@ from your shell, the MCP launcher `env` block, or a local `.env`).
 | --- | --- | --- |
 | `--transport` | `QSPICE_TRANSPORT` | Transport (`stdio` default, `sse` experimental) |
 | _(none)_ | `QSPICE_ENABLE_SSE` | Must be `true` to allow `--transport sse` |
-| `--session-mode` | `QSPICE_SESSION_MODE` | `cold` (default) always cold-launches; `auto` reuses an available live-GUI session first |
+| `--session-mode` | `QSPICE_SESSION_MODE` | `cold` (default) always cold-launches; `auto` reuses a running live-GUI session first (see [Live-GUI session reuse](#live-gui-session-reuse)) |
 | `--qspice-exe` | `QSPICE_EXE` | Path to `QSPICE64.exe` |
 | `--workspace-root` | `QSPICE_WORKSPACE_ROOT` | Folder for schematics and derived artifacts |
 | `--log-level` | `QSPICE_LOG_LEVEL` | `debug`, `info`, `warning`, or `error` |
@@ -218,6 +218,39 @@ from your shell, the MCP launcher `env` block, or a local `.env`).
 
 The experimental `sse` transport is gated: `--transport sse` exits with an error
 unless `QSPICE_ENABLE_SSE=true` is also set.
+
+---
+
+## Live-GUI session reuse
+
+By default (`session_mode=cold`) every `run_simulation` cold-launches a fresh QSpice
+CLI process. With `session_mode=auto` plus a configured live-GUI bridge
+(`QSPICE_LIVE_GUI_BRIDGE_COMMAND`), the server will try to reuse an already-running
+live-GUI session before cold-launching. Reuse is gated on a session actually being
+reachable; if none is running, the bridge is unavailable, or the run times out, the
+server **falls back to a normal cold launch**, so behavior is unchanged when no bridge
+is present.
+
+To participate in reuse, the external bridge process must implement a `run_netlist`
+command on the JSONL command/event protocol that the live-GUI session tools already
+use (`bridge.commands.jsonl` / `bridge.events.jsonl`):
+
+- The server appends a command record to `bridge.commands.jsonl`:
+
+```json
+{"command_id": 7, "command": "run_netlist", "payload": {"netlist_path": "…/demo.net", "log_path": "…/demo.log", "raw_path": "…/demo.qraw", "extra_switches": []}}
+```
+
+- The bridge runs the netlist through the live GUI and then appends one terminal event
+  to `bridge.events.jsonl`, echoing the same `command_id`:
+  - `{"event": "run_netlist_complete", "command_id": 7, "payload": {…}}` on success, or
+  - `{"event": "run_netlist_failed", "command_id": 7, "payload": {"error": "…"}}` on failure.
+
+On `run_netlist_complete` the `run_simulation` result reports
+`session_strategy = "reuse_live_gui"` plus `live_gui_session_id`. A
+`run_netlist_failed` event surfaces as a simulation error; a timeout or missing session
+silently falls back to a cold launch. Bundling such a bridge is out of scope for this
+server — only the server side of the contract ships here.
 
 ---
 
