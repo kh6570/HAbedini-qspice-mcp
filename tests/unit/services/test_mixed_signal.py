@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import importlib
-import os
 from importlib.resources import files
 from pathlib import Path
 
 import pytest
 
+from qspice_mcp.adapters.probe import probe_qspice
 from qspice_mcp.core.exceptions import BackendUnavailableError, ValidationError
 from qspice_mcp.infra.config import QSpiceSettings
 from qspice_mcp.infra.subprocess import SubprocessResult
@@ -779,13 +779,13 @@ def test_build_dll_device_reports_missing_toolchain(
 
 @pytest.mark.integration
 def test_build_dll_device_dmc_integration(tmp_path: Path) -> None:
-    qspice_exe = os.environ.get("QSPICE_EXE")
-    if not qspice_exe:
-        pytest.skip("QSPICE_EXE not set")
-    qspice_path = Path(qspice_exe)
+    probe = probe_qspice(QSpiceSettings(workspace_root=tmp_path))
+    if probe.executable is None or not probe.exists:
+        pytest.skip("QSpice executable is not available for integration tests.")
+    qspice_path = probe.executable
     dmc = qspice_path.parent / "dm" / "bin" / "dmc.exe"
     if not dmc.is_file():
-        pytest.skip("bundled DMC not found beside QSPICE_EXE")
+        pytest.skip("bundled DMC not found beside the QSpice install")
 
     workspace = tmp_path / "workspace"
     workspace.mkdir()

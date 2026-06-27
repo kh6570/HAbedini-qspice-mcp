@@ -69,6 +69,8 @@ jobs:
           pre-commit run check-mcp-env-drift --all-files --show-diff-on-failure
           pre-commit run check-markdown-docs --all-files --show-diff-on-failure
           pre-commit run check-tool-metadata-casing --all-files --show-diff-on-failure
+          pre-commit run check-service-spec-annotation-drift --all-files --show-diff-on-failure
+          pre-commit run check-prompts-drift --all-files --show-diff-on-failure
 
       - name: Lint (ruff check)
         run: ruff check . --output-format=github
@@ -92,3 +94,30 @@ jobs:
         with:
           files: coverage.xml
           fail_ci_if_error: false
+
+  ci-parity:
+    name: Clean-archive parity (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install nox
+        run: |
+          python -m pip install --upgrade pip
+          pip install nox
+
+      - name: Unit suite against clean git archive HEAD
+        run: nox -s ci-parity

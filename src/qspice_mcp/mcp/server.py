@@ -44,6 +44,8 @@ from .tool_registry import (
 )
 from .tools import QSpiceToolRuntime
 from .tools.workspace import (
+    choose_effective_workspace_root,
+    pick_workspace_root_from_roots,
     reset_pending_workspace_root,
     resolve_workspace_override,
     set_pending_workspace_root,
@@ -51,10 +53,21 @@ from .tools.workspace import (
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
 
     from qspice_mcp.adapters.base import AdapterDescription
 
 _QSPICE_TOOL_ERROR_CODE = 0
+
+# The workspace-root value used when neither ``--workspace-root`` nor
+# ``QSPICE_WORKSPACE_ROOT`` is provided (bound once at settings-class import).
+_PROCESS_DEFAULT_WORKSPACE_ROOT = cast(
+    "Path", QSpiceSettings.model_fields["workspace_root"].default
+)
+
+
+class _Unset:
+    """Sentinel marking an advertised-root lookup that has not run yet."""
 
 
 def _resolve_mcp_log_level(
@@ -133,6 +146,35 @@ class _QSpiceFastMCP(FastMCP):
     ) -> None:
         super().__init__(*args, **kwargs)
         self._tool_runtime = tool_runtime
+        self._advertised_root: Path | None | _Unset = _Unset()
+
+    async def _resolve_advertised_root(self, context: Any) -> Path | None:
+        """Best-effort: use the client's advertised MCP root when no root is configured.
+
+        Only consulted when the server workspace root is the process default
+        (neither ``--workspace-root`` nor ``QSPICE_WORKSPACE_ROOT`` was set). The
+        result is cached for the session and failures degrade silently.
+        """
+
+        if self._tool_runtime is None:
+            return None
+        configured = self._tool_runtime.settings.workspace_root
+        process_default = _PROCESS_DEFAULT_WORKSPACE_ROOT.resolve(strict=False)
+        if configured.resolve(strict=False) != process_default:
+            return None
+        if not isinstance(self._advertised_root, _Unset):
+            return self._advertised_root
+
+        resolved: Path | None = None
+        try:
+            result = await context.session.list_roots()
+        except Exception:
+            result = None
+        if result is not None:
+            uris = [str(root.uri) for root in getattr(result, "roots", None) or []]
+            resolved = pick_workspace_root_from_roots(uris)
+        self._advertised_root = resolved
+        return resolved
 
     async def call_tool(
         self,
@@ -145,9 +187,22 @@ class _QSpiceFastMCP(FastMCP):
             raise ToolError(f"Unknown tool: {name}")
 
         effective_arguments = dict(arguments)
-        workspace_token = set_pending_workspace_root(
-            resolve_workspace_override(effective_arguments.pop("workspace_root", None))
+        raw_override = resolve_workspace_override(effective_arguments.pop("workspace_root", None))
+        configured_root = (
+            self._tool_runtime.settings.workspace_root
+            if self._tool_runtime is not None
+            else _PROCESS_DEFAULT_WORKSPACE_ROOT
         )
+        effective_root = choose_effective_workspace_root(
+            override=raw_override,
+            configured=configured_root,
+            process_default=_PROCESS_DEFAULT_WORKSPACE_ROOT,
+            advertised_root=await self._resolve_advertised_root(context),
+        )
+        pending_root = (
+            None if raw_override is None and effective_root == configured_root else effective_root
+        )
+        workspace_token = set_pending_workspace_root(pending_root)
         progress_token = bind_context(context)
         log_token = bind_mcp_client_log_context(context)
         try:

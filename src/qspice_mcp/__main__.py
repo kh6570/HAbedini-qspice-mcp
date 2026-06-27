@@ -24,15 +24,22 @@ def _configure_stdio_utf8() -> None:
                 continue
 
 
-def main() -> None:
-    """Parse CLI arguments and run the MCP server."""
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser.
+
+    Each setting-bearing flag mirrors a ``QSPICE_*`` environment variable
+    (``QSPICE_`` + the matching :class:`~qspice_mcp.infra.config.QSpiceSettings`
+    field, upper-cased); the CLI value wins. The mapping is documented in
+    ``docs/user-guide.md`` and enforced by ``tests/unit/test_cli_env_alias_mapping.py``.
+    """
+
     parser = argparse.ArgumentParser(description="QSpice MCP server")
     parser.add_argument(
         "--version",
         action="version",
         version=f"qspice-mcp {version('qspice-mcp')}",
     )
-    parser.add_argument("--transport", choices=("stdio", "sse"), default="stdio")
+    parser.add_argument("--transport", choices=("stdio", "sse"), default=None)
     parser.add_argument("--qspice-exe", type=Path, default=None)
     parser.add_argument("--workspace-root", type=Path, default=None)
     parser.add_argument("--log-folder", type=Path, default=None)
@@ -52,6 +59,12 @@ def main() -> None:
         action="store_true",
         help="Print an environment readiness report as JSON and exit.",
     )
+    return parser
+
+
+def main() -> None:
+    """Parse CLI arguments and run the MCP server."""
+    parser = build_arg_parser()
     args = parser.parse_args()
     _configure_stdio_utf8()
     settings = build_settings(
@@ -70,9 +83,9 @@ def main() -> None:
         print(json.dumps(describe_environment_readiness(settings), indent=2))
         raise SystemExit(0)
 
-    if args.transport == "sse" and not settings.enable_sse:
+    if settings.transport == "sse" and not settings.enable_sse:
         print(
-            "ERROR: --transport sse is gated behind QSPICE_ENABLE_SSE=true. "
+            "ERROR: the sse transport is gated behind QSPICE_ENABLE_SSE=true. "
             "Set the environment variable to opt in to the experimental SSE transport.",
             file=sys.stderr,
         )

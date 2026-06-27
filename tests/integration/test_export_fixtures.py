@@ -27,7 +27,6 @@ FIXTURE_ROOT = REPO_ROOT / "tests" / "fixtures"
 def _require_local_qspice_runtime(workspace_root: Path) -> Path:
     """Skip when the local machine cannot run QSpice-backed integration tests."""
 
-    pytest.skip("optional backend unavailable")
     probe = probe_qspice(QSpiceSettings(workspace_root=workspace_root))
     if probe.executable is None or not probe.exists:
         pytest.skip("QSpice executable is not available for integration tests.")

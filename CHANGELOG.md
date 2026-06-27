@@ -13,6 +13,13 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Added
 
+- **MCP Roots workspace fallback** — when neither `--workspace-root` nor
+  `QSPICE_WORKSPACE_ROOT` is set, the server now falls back to the MCP client's
+  first advertised filesystem root (best-effort, cached, graceful when the client
+  has no roots) before using the process default.
+- **CLI↔env alias guard** — the documented `QSPICE_*` mirror for every launcher
+  flag is enforced by a unit test (`tests/unit/test_cli_env_alias_mapping.py`),
+  and `QSPICE_TRANSPORT` now takes effect when `--transport` is omitted.
 - **Default simulation timeout** — `QSPICE_TIMEOUT_S` (default 120s) in settings;
   applies when tools omit `timeout_s`; set to `0` to disable.
 - **CLI `--version`** — `python -m qspice_mcp --version` prints the installed package version.
