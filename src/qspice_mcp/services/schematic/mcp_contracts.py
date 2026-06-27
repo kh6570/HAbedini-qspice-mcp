@@ -49,7 +49,7 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "move_component_preserving_connections": {
         "title": "Move Component Preserving Connections",
-        "description": "Move and/or rotate one placed component and follow attached wire endpoints, junctions, and net labels so existing connections stay intact. Provide at least one of position_x, position_y, or rotation_degrees.",
+        "description": "Deprecated alias: prefer set_component_position, which now preserves connections by default. Move and/or rotate one placed component and follow attached wire endpoints, junctions, and net labels so existing connections stay intact. Provide at least one of position_x, position_y, or rotation_degrees.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference"],
@@ -578,13 +578,14 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "remove_component": {
         "title": "Remove Component",
-        "description": "Remove one schematic component by reference and persist the edited schematic.",
+        "description": "Remove one schematic component by reference and persist the edited schematic. Set remove_orphan_wires=true to also prune wires, junctions, and net labels left dangling by the deletion (off by default).",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference"],
             "properties": {
                 "schematic_path": {"type": "string"},
                 "reference": {"type": "string"},
+                "remove_orphan_wires": {"type": "boolean"},
                 "output_path": {"type": "string"},
             },
         },
@@ -635,7 +636,7 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "set_component_rotation": {
         "title": "Set Component Rotation",
-        "description": "Rotate one placed schematic component in 45-degree steps without changing its position.",
+        "description": "Deprecated alias for set_component_position (rotation only). Rotate one placed component in 45-degree steps; attached wires/junctions/net labels follow the pins and refdes/value text is reset upright by default. Set preserve_connections=false or normalize_text=false to opt out.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference", "rotation_degrees"],
@@ -643,24 +644,32 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "schematic_path": {"type": "string"},
                 "reference": {"type": "string"},
                 "rotation_degrees": {"type": "integer"},
+                "preserve_connections": {"type": "boolean"},
+                "normalize_text": {"type": "boolean"},
                 "output_path": {"type": "string"},
             },
         },
     },
     "set_component_position": {
         "title": "Set Component Position",
-        "description": "Move one placed schematic component to new coordinates, optionally updating rotation.",
+        "description": "Unified placement tool: move and/or rotate one placed component. Attached wires, junctions, and net labels follow the pins by default (preserve_connections) and refdes/value text is reset to upright readability by default (normalize_text). Provide at least one of position_x, position_y, or rotation_degrees. Set preserve_connections=false or normalize_text=false to opt out.",
         "input_schema": {
             "type": "object",
-            "required": ["schematic_path", "reference", "position_x", "position_y"],
+            "required": ["schematic_path", "reference"],
             "properties": {
                 "schematic_path": {"type": "string"},
                 "reference": {"type": "string"},
                 "position_x": {"type": "integer"},
                 "position_y": {"type": "integer"},
                 "rotation_degrees": {"type": "integer"},
+                "preserve_connections": {"type": "boolean"},
+                "normalize_text": {"type": "boolean"},
                 "output_path": {"type": "string"},
             },
+            "anyOf": [
+                {"required": ["position_x", "position_y"]},
+                {"required": ["rotation_degrees"]},
+            ],
         },
     },
     "set_component_parameters": {
@@ -758,6 +767,8 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                         "change_value",
                         "change_model",
                         "edit_parameters",
+                        "move_component",
+                        "rotate_component",
                         "edit_symbol_text",
                         "edit_symbol_pin",
                         "edit_symbol_drawing",

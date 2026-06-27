@@ -90,9 +90,13 @@ def test_set_component_position_service_persists_edit(monkeypatch, tmp_path: Pat
         reference="R1",
         position_x=100,
         position_y=200,
+        preserve_connections=False,
+        normalize_text=False,
         output_path=saved,
     )
 
     assert result.position_x == 100
     assert result.position_y == 200
     assert result.rotation_degrees == 90
+    assert result.preserve_connections is False
+    assert result.rewired_endpoints == 0

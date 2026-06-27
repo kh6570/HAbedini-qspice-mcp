@@ -1110,6 +1110,43 @@ def test_describe_edit_capability_change_value_supports_voltage_source(
     assert result.suggested_parameters.get("value") == "10"
 
 
+def test_describe_edit_capability_move_component_targets_unified_tool(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    schematic = _patch_read_component(monkeypatch, tmp_path)
+    _patch_backend_unavailable(monkeypatch)
+
+    result = describe_edit_capability(
+        schematic,
+        workspace_root=tmp_path,
+        reference="R1",
+        intent="move_component",
+    )
+
+    assert result.supported is True
+    assert result.suggested_tool == "set_component_position"
+    assert result.suggested_parameters.get("position_x") == 400
+    assert result.suggested_parameters.get("position_y") == 400
+
+
+def test_describe_edit_capability_rotate_component_targets_unified_tool(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    schematic = _patch_read_component(monkeypatch, tmp_path)
+    _patch_backend_unavailable(monkeypatch)
+
+    result = describe_edit_capability(
+        schematic,
+        workspace_root=tmp_path,
+        reference="R1",
+        intent="rotate_component",
+    )
+
+    assert result.supported is True
+    assert result.suggested_tool == "set_component_position"
+    assert result.suggested_parameters.get("rotation_degrees") == 0
+
+
 def test_describe_edit_capability_delete_component_supported(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -1207,43 +1244,57 @@ def test_remove_component_delegates_to_editor(
 # ---------------------------------------------------------------------------
 
 
-def test_set_component_rotation_delegates_to_backend(
+def test_set_component_rotation_delegates_to_unified_placement(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    from qspice_mcp.services.schematic.set_component_position import (  # noqa: PLC0415
+        ComponentPositionUpdate,
+    )
+
     schematic = tmp_path / "demo.qsch"
     output = tmp_path / "edited.qsch"
     schematic.write_text("schematic", encoding="utf-8")
-    calls: list[tuple[str, object]] = []
+    calls: list[dict[str, object]] = []
 
-    def fake_set_component_rotation(
-        editor: object,
-        *,
-        reference: str,
-        rotation_degrees: int,
-    ) -> int:
-        calls.append(("set_component_rotation", (editor, reference, rotation_degrees)))
-        return rotation_degrees
-
-    def fake_edit_schematic(
+    def fake_set_component_position(
         schematic_path: str | Path,
         *,
         workspace_root: Path,
+        reference: str,
+        position_x: int | None = None,
+        position_y: int | None = None,
+        rotation_degrees: int | None = None,
+        preserve_connections: bool = True,
+        normalize_text: bool = True,
         output_path: str | Path | None = None,
-        apply_edit: object | None = None,
-    ) -> tuple[Path, Path]:
-        del workspace_root
-        fake_editor = object()
-        assert callable(apply_edit)
-        apply_edit(fake_editor)
-        saved_path = Path(output_path or schematic_path).resolve(strict=False)
-        saved_path.write_text("edited schematic\n", encoding="utf-8")
-        return Path(schematic_path).resolve(strict=False), saved_path
+    ) -> ComponentPositionUpdate:
+        calls.append(
+            {
+                "reference": reference,
+                "rotation_degrees": rotation_degrees,
+                "position_x": position_x,
+                "position_y": position_y,
+                "preserve_connections": preserve_connections,
+                "normalize_text": normalize_text,
+            }
+        )
+        return ComponentPositionUpdate(
+            schematic_path=Path(schematic_path).resolve(strict=False),
+            output_path=Path(output_path or schematic_path).resolve(strict=False),
+            reference=reference,
+            position_x=400,
+            position_y=400,
+            rotation_degrees=rotation_degrees or 0,
+            preserve_connections=preserve_connections,
+            rewired_endpoints=2,
+            normalize_text=normalize_text,
+            normalized_text_count=1,
+        )
 
     rotation_module = importlib.import_module(
         "qspice_mcp.services.schematic.set_component_rotation"
     )
-    monkeypatch.setattr(rotation_module, "apply_component_rotation", fake_set_component_rotation)
-    monkeypatch.setattr(rotation_module, "edit_schematic", fake_edit_schematic)
+    monkeypatch.setattr(rotation_module, "set_component_position", fake_set_component_position)
 
     result = set_component_rotation(
         schematic,
@@ -1256,5 +1307,10 @@ def test_set_component_rotation_delegates_to_backend(
     assert result.reference == "R2"
     assert result.rotation_degrees == 90
     assert result.output_path == output.resolve(strict=False)
-    assert calls[0][1][1] == "R2"
-    assert calls[0][1][2] == 90
+    assert result.preserve_connections is True
+    assert result.rewired_endpoints == 2
+    assert result.normalized_text_count == 1
+    assert calls[0]["reference"] == "R2"
+    assert calls[0]["rotation_degrees"] == 90
+    assert calls[0]["position_x"] is None
+    assert calls[0]["preserve_connections"] is True

@@ -1766,6 +1766,131 @@ def remove_junction(
     raise QSpiceError("No matching junction was found for the requested position.")
 
 
+@dataclass(frozen=True, slots=True)
+class OrphanConnectionCleanup:
+    """Counts of dangling connection items pruned after a component removal."""
+
+    wires_removed: int
+    junctions_removed: int
+    net_labels_removed: int
+
+
+def collect_component_pin_coordinates(
+    editor: _QschEditorProtocol,
+    *,
+    reference: str,
+) -> set[tuple[int, int]]:
+    """Resolve the world coordinates of every pin on one component (best-effort)."""
+
+    normalized_reference = reference.strip()
+    coordinates: set[tuple[int, int]] = set()
+    try:
+        component = editor.get_component(normalized_reference)
+    except (ValueError, QSpiceError):
+        return coordinates
+    for port in component.ports:
+        try:
+            coordinates.add(
+                resolve_component_pin_position(
+                    editor, reference=normalized_reference, pin_name=str(port)
+                )
+            )
+        except (ValueError, QSpiceError):
+            continue
+    return coordinates
+
+
+def _orphaned_connection_kind(tag: Any, coordinates: set[tuple[int, int]]) -> str | None:
+    """Return 'wire'/'junction'/'net' when ``tag`` is orphaned at a coordinate, else None."""
+
+    tag_name = getattr(tag, "tag", None)
+    tokens = getattr(tag, "tokens", None)
+    if tokens is None:
+        return None
+
+    def _point_at(index: int) -> tuple[int, int] | None:
+        if len(tokens) <= index:
+            return None
+        try:
+            return _parse_qsch_point(str(tokens[index]))
+        except ValueError:
+            return None
+
+    if tag_name == "wire":
+        if _point_at(1) in coordinates or _point_at(2) in coordinates:
+            return "wire"
+        return None
+    if tag_name in {"junction", "net"} and _point_at(1) in coordinates:
+        return cast("str", tag_name)
+    return None
+
+
+def _remove_orphaned_connections(
+    editor: _QschEditorProtocol,
+    coordinates: set[tuple[int, int]],
+) -> OrphanConnectionCleanup:
+    """Drop wires, junctions, and net labels that sit on now-orphaned coordinates."""
+
+    if not coordinates or editor.schematic is None:
+        return OrphanConnectionCleanup(0, 0, 0)
+    schematic_obj: Any = editor.schematic
+    items = cast("list[Any]", schematic_obj.items)
+    kept: list[Any] = []
+    counts = {"wire": 0, "junction": 0, "net": 0}
+    for tag in items:
+        kind = _orphaned_connection_kind(tag, coordinates)
+        if kind is None:
+            kept.append(tag)
+        else:
+            counts[kind] += 1
+    if any(counts.values()):
+        items[:] = kept
+        editor.updated = True
+    return OrphanConnectionCleanup(
+        wires_removed=counts["wire"],
+        junctions_removed=counts["junction"],
+        net_labels_removed=counts["net"],
+    )
+
+
+def remove_component_with_orphan_cleanup(
+    editor: _QschEditorProtocol,
+    *,
+    reference: str,
+    remove_orphan_wires: bool = False,
+) -> OrphanConnectionCleanup:
+    """Remove one component and optionally prune connection items it leaves dangling.
+
+    A coordinate is "orphaned" when it was one of the removed component's pin
+    positions and no remaining component pin still occupies it. Wires touching an
+    orphaned coordinate and junctions/net labels sitting on one are removed.
+    """
+
+    normalized_reference = reference.strip()
+    if not normalized_reference:
+        raise ValueError("reference must not be empty.")
+
+    removed_pin_coordinates = (
+        collect_component_pin_coordinates(editor, reference=normalized_reference)
+        if remove_orphan_wires
+        else set()
+    )
+
+    editor.remove_component(normalized_reference)
+    editor.updated = True
+
+    if not remove_orphan_wires:
+        return OrphanConnectionCleanup(0, 0, 0)
+
+    remaining_pin_coordinates: set[tuple[int, int]] = set()
+    for other_reference in editor.get_components(prefixes="*"):
+        remaining_pin_coordinates |= collect_component_pin_coordinates(
+            editor, reference=str(other_reference)
+        )
+    orphaned = removed_pin_coordinates - remaining_pin_coordinates
+    return _remove_orphaned_connections(editor, orphaned)
+
+
 def create_blank_schematic_file(
     output_path: str | Path,
     *,

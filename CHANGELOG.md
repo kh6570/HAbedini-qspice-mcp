@@ -107,6 +107,24 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Changed
 
+- **Unified, safe-by-default placement edits** — `set_component_position` is now the
+  single move/rotate tool: pass `position_x`/`position_y` and/or `rotation_degrees`
+  (at least one). By default it preserves attached connections (wires, junctions, net
+  labels follow the pins, `preserve_connections=true`) and resets refdes/value text to
+  upright readability (`normalize_text=true`), reporting `rewired_endpoints` and
+  `normalized_text_count`. Opt out with `preserve_connections=false` /
+  `normalize_text=false`. `set_component_rotation` and
+  `move_component_preserving_connections` are retained as **deprecated aliases** that
+  delegate to this path (removal in a future breaking release). `describe_edit_capability`
+  gains a `move_component` intent and both `move_component`/`rotate_component` now point
+  at `set_component_position`. *(Default-on connection-preservation and text
+  normalization change the output of existing `set_component_position`/
+  `set_component_rotation` callers — acceptable pre-1.0, called out here.)*
+- **Opt-in orphan cleanup on `remove_component`** — new `remove_orphan_wires` flag
+  (default `false`) prunes wires touching a now-orphaned pin coordinate plus junctions
+  and net labels sitting on one, reporting `wires_removed` / `junctions_removed` /
+  `net_labels_removed`. Off by default because auto-deleting wires is hard to undo in
+  an agent loop.
 - **MCP runtime handler registration** — `QSpiceToolRuntime` builds handlers from the service catalog + `expose_tool_schema()` instead of a 13-class mixin MRO; legacy mixin modules remain as service-import shims for tests.
 - **Long-running MCP tools** — handlers flagged `ServiceSpec.long_running` now run on a
   worker thread (`anyio.to_thread`) so the async event loop stays responsive during sims/sweeps.

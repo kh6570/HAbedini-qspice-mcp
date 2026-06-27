@@ -4,7 +4,7 @@ description: Place schematic components readably without overlap — use suggest
 license: MIT
 metadata:
   author: qspice-mcp
-  version: "1.4"
+  version: "1.5"
 ---
 
 # QSpice: Schematic Layout
@@ -29,46 +29,59 @@ topology.
      file under the workspace, and batch-apply with **`apply_schematic_layout_spec`**.
 3. Use the returned `position_x`, `position_y`, and `rotation_degrees` (default **0**).
 4. After a batch of placements, spot-check with **`read_component`** on key refs.
-5. Nudge mistakes with **`set_component_position`**; use **`set_component_rotation`**
-   only when the workflow table or topology requires it (multiples of 45°).
-6. **After any move or rotate on a wired part**, refresh connections (see below) before simulating.
+5. Nudge mistakes with **`set_component_position`** — the unified placement tool that
+   moves **and/or** rotates (pass `rotation_degrees`, multiples of 45°). It preserves
+   attached connections and normalizes refdes/value text by default (see below).
+6. Spot-check connectivity with **`inspect_schematic`** before simulating.
 
-## Wired components: move / rotate without breaking the circuit
+## Wired components: move / rotate keep the circuit intact by default
 
-**Today:** `set_component_position` and `set_component_rotation` move the symbol only.
-Existing wire segments keep their old `(x, y)` endpoints — they do **not** follow pins
-automatically. Netlist connectivity can silently break if endpoints no longer meet pins.
+**`set_component_position` is the one tool you need.** It moves and/or rotates a part,
+and **by default**:
 
-**Before editing placement**
+- **`preserve_connections=true`** — attached wire endpoints, junctions, and net labels
+  follow the moved/rotated pins automatically (QSpice GUI drag parity). No manual
+  `remove_wire`/`add_wire` refresh needed.
+- **`normalize_text=true`** — refdes/value symbol text is reset to upright,
+  left-to-right readability, compensating for the body rotation.
 
-- Prefer **place → wire** order: finalize `(position_x, position_y, rotation_degrees)`
-  with `add_component` / `auto_place`, then `add_wire` using **pin selectors**
-  (`start_reference` + `start_pin`, not raw coordinates alone).
+```text
+set_component_position(schematic_path="filter.qsch", reference="R1",
+                       position_x=1600, position_y=1200)
+→ R1 moves; attached VIN/VOUT wires follow; labels stay readable
+→ result.rewired_endpoints and result.normalized_text_count report what changed
+```
 
-**After `set_component_position` or `set_component_rotation` on a connected ref**
+**Opt-outs (rare):**
 
-1. **`read_component`** — note new pin geometry and `rotation_degrees`.
-2. For each affected net: **`remove_wire`** on the stale segment (pin selectors or
-   coordinates), then **`add_wire`** again with the same `net_name` and updated
-   pin selectors so endpoints land on the moved pins.
-3. Re-run **`inspect_schematic`** or spot-check key refs; only then **`run_simulation`**.
+- `preserve_connections=false` — move the symbol only (legacy behavior); you then own
+  the `remove_wire`/`add_wire` refresh.
+- `normalize_text=false` — leave text rotation untouched.
 
-**Do not** assume wires stayed attached because the schematic still looks connected in
-a quick glance — floating or mis-joined segments are a common failure mode after layout nudges.
+**Deprecated aliases** (still work, slated for removal): `set_component_rotation`
+(rotation only) and `move_component_preserving_connections` both delegate to
+`set_component_position`. Prefer the unified tool.
+
+**Still prefer place → wire order** when building from scratch: finalize
+`(position_x, position_y, rotation_degrees)`, then `add_wire` using **pin selectors**
+(`start_reference` + `start_pin`). Default-on preservation is for *edits to an already
+wired part*, not a substitute for clean initial wiring.
 
 ## Symbol rotation vs readable text (refdes / value)
 
-Rotating the **symbol body** with `set_component_rotation` (or `rotation_degrees` on
-`add_component` / `set_component_position`) is OK when topology or pin direction needs
-it. Embedded **refdes and value text rotate with the symbol** unless you fix them.
+Rotating the **symbol body** via `set_component_position(rotation_degrees=…)` (or
+`rotation_degrees` on `add_component`) is OK when topology or pin direction needs it.
+Embedded **refdes and value text rotate with the symbol**, but `set_component_position`
+normalizes them back to upright by default (`normalize_text=true`).
 
 **Target for human-readable labels:** horizontal, left-to-right, upright — same as
 default `0°` placement.
 
-**After a layout pass that rotated any refs**
+**When you need a standalone text fix-up** (e.g. `normalize_text=false` was used, or
+text was authored crooked):
 
-1. Call **`normalize_component_text_rotation`** per rotated ref (default compensates
-   body rotation so labels read horizontal in world space).
+1. Call **`normalize_component_text_rotation`** per ref (default compensates body
+   rotation so labels read horizontal in world space).
 2. Optionally pass `text_roles=["reference", "value"]` (or `refdes` alias) to limit
    which embedded text rows are updated.
 3. Use **`read_component_symbol`** to verify `text_attributes` if the sheet is dense.
@@ -77,15 +90,15 @@ default `0°` placement.
 5. Do **not** change refdes string content through symbol-text tools — use
    **`rename_component_reference`** for renames.
 
-**Order of operations:** finalize symbol position/rotation → refresh wires →
-**normalize text rotation** → verify in GUI if the sheet is dense.
+**Order of operations:** `set_component_position` handles move → wire-follow → text
+normalization in one call; verify in GUI if the sheet is dense.
 
 ## Layout rules
 
 | Rule | Detail |
 | --- | --- |
 | Grid | Server scans **900×500** schematic units, **left-to-right**, then next row down |
-| Rotation | Default **0°** on the symbol for new parts. Rotate the body only when topology requires it; call **`normalize_component_text_rotation`** afterward |
+| Rotation | Default **0°** on the symbol for new parts. Rotate the body only when topology requires it; `set_component_position` normalizes text upright by default (no separate call needed unless you opt out) |
 | Overlap | Never place multiple parts at `(0,0)` or reuse the same coordinates; collision boxes include refdes/value text margin |
 | GND wiring | Place each `ground` symbol **on the negative pin** (same point as `V−` / `C−`). Use `net_name="0"` or default GND. Do **not** hang GND below the part on a dangling wire — QSpice reports *no ground* when the GND triangle is not on node `0` |
 | Complex circuits | For buck/boost scratch builds, **follow `read_workflow_instruction` tables** — they override the auto grid |
@@ -124,12 +137,14 @@ add_component(
 )
 ```
 
-## Example (text after rotate)
+## Example (rotate a wired part)
 
 ```text
-set_component_rotation(schematic_path="filter.qsch", reference="R1", rotation_degrees=90)
-→ refresh wires on R1 if already connected
+set_component_position(schematic_path="filter.qsch", reference="R1", rotation_degrees=90)
+→ R1 rotates; attached wires/junctions/net labels follow the pins (preserve_connections)
+→ refdes/value text reset upright (normalize_text); no manual wire refresh needed
 
+# Standalone text fix-up only if you opted out of normalize_text:
 normalize_component_text_rotation(schematic_path="filter.qsch", reference="R1")
 → refdes/value text readable horizontal; skips factory defaults at 0° body
 ```
@@ -154,8 +169,10 @@ re-layout inside `-tran`.
 
 - Placing every part at default `(0, 0)` — they stack invisibly
 - Treating `*-tran.qsch` as the editable master schematic
-- Rotating symbol bodies for “neatness” without calling **`normalize_component_text_rotation`**
-- Moving or rotating a wired part without **`remove_wire` / `add_wire`** refresh — breaks connectivity while the drawing still looks fine
+- Passing `preserve_connections=false` on a wired edit and then forgetting the manual
+  **`remove_wire` / `add_wire`** refresh — breaks connectivity while the drawing still looks fine
+- Reaching for deprecated `set_component_rotation` / `move_component_preserving_connections`
+  instead of the unified **`set_component_position`**
 - Ignoring `read_workflow_instruction` coordinate tables for the full buck converter
 - Skipping `read_component` verification after large automated edits
 

@@ -31,7 +31,10 @@ class ComponentConnectionMove:
 SERVICE_SPEC = ServiceSpec(
     name="move_component_preserving_connections",
     title="Move Component Preserving Connections",
-    summary="Move or rotate one component and follow attached wires, junctions, and net labels.",
+    summary=(
+        "Deprecated alias: set_component_position now preserves connections by default. "
+        "Move or rotate one component and follow attached wires, junctions, and net labels."
+    ),
     phase="implemented",
     read_only=False,
 )

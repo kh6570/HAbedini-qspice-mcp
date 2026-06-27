@@ -22,6 +22,7 @@ EditIntent = Literal[
     "change_value",
     "change_model",
     "edit_parameters",
+    "move_component",
     "rotate_component",
     "edit_symbol_text",
     "edit_symbol_pin",
@@ -34,6 +35,7 @@ _SUPPORTED_INTENTS: tuple[EditIntent, ...] = (
     "change_value",
     "change_model",
     "edit_parameters",
+    "move_component",
     "rotate_component",
     "edit_symbol_text",
     "edit_symbol_pin",
@@ -41,12 +43,15 @@ _SUPPORTED_INTENTS: tuple[EditIntent, ...] = (
     "delete_component",
 )
 
+# move/rotate now route through the unified set_component_position placement tool,
+# which preserves connections and normalizes refdes/value text by default.
 _INTENT_TOOL_MAP: dict[EditIntent, str] = {
     "rename_reference": "rename_component_reference",
     "change_value": "set_component_value",
     "change_model": "set_element_model",
     "edit_parameters": "set_component_parameters",
-    "rotate_component": "set_component_rotation",
+    "move_component": "set_component_position",
+    "rotate_component": "set_component_position",
     "edit_symbol_text": "set_component_symbol_text",
     "edit_symbol_pin": "set_component_symbol_pin",
     "edit_symbol_drawing": "set_component_symbol_drawing",
@@ -164,6 +169,13 @@ def _dispatch_intent(
         "rename_reference": ("rename_reference", {"new_reference": ""}),
         "change_model": ("change_model", {"model": ""}),
         "edit_parameters": ("edit_parameters", {"parameters": component.parameters}),
+        "move_component": (
+            "move_component",
+            {
+                "position_x": component.position_x,
+                "position_y": component.position_y,
+            },
+        ),
         "rotate_component": (
             "rotate_component",
             {"rotation_degrees": component.rotation_degrees},

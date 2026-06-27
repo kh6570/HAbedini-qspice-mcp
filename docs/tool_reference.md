@@ -106,9 +106,9 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `read_subcircuit` | implemented | Return a resolved view of one subcircuit instance or definition. |
 | `save_schematic_as` | implemented | Write a `.qsch` file to a requested destination path. |
 | `set_component_value` | implemented | Update the value field of one schematic component. |
-| `set_component_rotation` | implemented | Rotate one placed component in 45-degree steps without moving it. |
-| `set_component_position` | implemented | Move one placed component to new coordinates, optionally updating rotation. |
-| `move_component_preserving_connections` | implemented | Move/rotate one component and follow attached wires, junctions, and net labels. |
+| `set_component_rotation` | implemented | Deprecated alias for `set_component_position` (rotation only); preserves connections and normalizes text by default. |
+| `set_component_position` | implemented | Unified placement: move and/or rotate one component; follows attached wires and normalizes refdes/value text by default. |
+| `move_component_preserving_connections` | implemented | Deprecated alias: `set_component_position` now preserves connections by default. |
 | `add_library_component` | implemented | Clone one component symbol from a template `.qsch` into a target schematic. |
 | `render_schematic_image` | implemented | Render a supported `.qsch` (wires, junctions, components, labels) to a PNG. |
 | `set_component_parameters` | implemented | Update one or more component-local parameters. |
@@ -118,7 +118,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `set_component_symbol_pin` | implemented | Update one embedded symbol pin name, label geometry, or typed-pin metadata. |
 | `set_dll_block_pin_role` | implemented | Move one `.DLL` block pin into the input or output role preset. |
 | `remove_dll_block_pin` | implemented | Remove one pin from an existing `.DLL` block symbol. |
-| `remove_component` | implemented | Remove one schematic component by reference and persist the edited schematic. |
+| `remove_component` | implemented | Remove one component by reference; optional `remove_orphan_wires` prunes dangling wires/junctions/labels. |
 | `remove_component_symbol_drawing` | implemented | Remove one embedded symbol drawing item by index. |
 | `rename_component_reference` | implemented | Rename one schematic component reference, updating both the component object and its embedded symbol text. |
 | `describe_edit_capability` | implemented | Preflight check: read a component, map an edit intent to the correct tool, return go/no-go with alternatives. |
@@ -1395,7 +1395,9 @@ Component changes cover `kind`, `value`, `position`, `rotation_degrees`, and
 ## move_component_preserving_connections
 
 Purpose:
-Move and/or rotate one placed component while keeping its attached wiring intact.
+**Deprecated alias.** `set_component_position` now preserves connections by
+default, so prefer it. Move and/or rotate one placed component while keeping its
+attached wiring intact.
 
 Typical inputs:
 - `schematic_path`
@@ -1412,7 +1414,9 @@ Notes:
 Pin coordinates are snapshotted before the transform; any wire endpoint,
 junction, or net-label point that matched an old pin coordinate is rewritten to
 the new coordinate. Provide at least one of `position_x`, `position_y`, or
-`rotation_degrees`.
+`rotation_degrees`. Retained for backward compatibility; new callers should use
+`set_component_position` (which exposes the same behavior plus optional text
+normalization).
 
 ## add_library_component
 
@@ -1686,8 +1690,8 @@ Typical inputs:
 - `schematic_path`
 - `reference`
 - `intent` (one of `rename_reference`, `change_value`, `change_model`,
-  `edit_parameters`, `rotate_component`, `edit_symbol_text`, `edit_symbol_pin`,
-  `edit_symbol_drawing`, `delete_component`)
+  `edit_parameters`, `move_component`, `rotate_component`, `edit_symbol_text`,
+  `edit_symbol_pin`, `edit_symbol_drawing`, `delete_component`)
 
 Expected outputs:
 - the resolved target tool for the intent
@@ -1828,19 +1832,26 @@ Remove one schematic component by reference and persist the edited schematic.
 Typical inputs:
 - `schematic_path`
 - `reference`
+- `remove_orphan_wires` (optional; default `false`)
 - `output_path` (optional)
 
 Expected outputs:
 - `schematic_path`
 - `output_path`
 - `reference`
-- `removed`
+- `remove_orphan_wires`
+- `wires_removed`
+- `junctions_removed`
+- `net_labels_removed`
 
 Notes:
-This deletes the component object and its embedded symbol. Wires, junctions, and
-net labels are not rerouted automatically, so review connectivity afterward with
-`inspect_schematic` or `list_components`. Use `describe_edit_capability` with
-intent `delete_component` for a preflight go/no-go check.
+This deletes the component object and its embedded symbol. By default wires,
+junctions, and net labels are left in place, so review connectivity afterward with
+`inspect_schematic` or `list_components`. Set `remove_orphan_wires=true` (opt-in) to
+also prune wires touching a now-orphaned pin coordinate plus junctions/net labels
+sitting on one; the response reports how many of each were removed. It stays off by
+default because auto-deleting wires is hard to undo in an agent loop. Use
+`describe_edit_capability` with intent `delete_component` for a preflight check.
 
 ## remove_component_symbol_drawing
 
@@ -1901,12 +1912,15 @@ Expected outputs:
 ## set_component_rotation
 
 Purpose:
-Rotate one placed schematic component without changing its `(x, y)` position.
+Deprecated alias for `set_component_position` (rotation only). Rotate one placed
+component in 45-degree steps; prefer `set_component_position` going forward.
 
 Typical inputs:
 - `schematic_path`
 - `reference`
 - `rotation_degrees` (multiple of 45, e.g. `0`, `90`, `180`, `270`)
+- `preserve_connections` (optional; default `true`)
+- `normalize_text` (optional; default `true`)
 - `output_path` (optional)
 
 Expected outputs:
@@ -1914,29 +1928,37 @@ Expected outputs:
 - `output_path`
 - `reference`
 - `rotation_degrees`
+- `preserve_connections`
+- `rewired_endpoints`
+- `normalize_text`
+- `normalized_text_count`
 
 Notes:
-Pin world coordinates depend on rotation; **wire segments are not moved with the
-symbol**. After rotating, remove stale segments with `remove_wire` and re-add with
-`add_wire` using pin selectors on the same `net_name`. **Refdes/value text rotates
-with the symbol** — run a readability pass with `read_component_symbol` and
-`set_component_symbol_text(..., rotation_code=13)` on `refdes` and `value` roles.
-`read_component` reports component `rotation_degrees`; symbol text uses separate
-`rotation_code` on each embedded text item.
+This now delegates to the unified `set_component_position` path: attached wires,
+junctions, and net labels follow the rotated pins and refdes/value text is reset
+upright by default. Pass `preserve_connections=false` or `normalize_text=false` to
+opt out. Retained as a backward-compatible alias and slated for removal in a future
+breaking release.
 
 ## set_component_position
 
 Purpose:
-Move one placed schematic component to new grid coordinates, optionally updating
-its rotation in the same edit.
+Unified placement tool. Move and/or rotate one placed component in a single edit.
+By default attached wires, junctions, and net labels follow the moved/rotated pins
+(`preserve_connections`) and refdes/value symbol text is reset to upright
+readability (`normalize_text`).
 
 Typical inputs:
 - `schematic_path`
 - `reference`
-- `position_x`
-- `position_y`
+- `position_x` (optional; keeps current X when omitted)
+- `position_y` (optional; keeps current Y when omitted)
 - `rotation_degrees` (optional; multiple of 45)
+- `preserve_connections` (optional; default `true`)
+- `normalize_text` (optional; default `true`)
 - `output_path` (optional)
+
+Provide at least one of `position_x`, `position_y`, or `rotation_degrees`.
 
 Expected outputs:
 - `schematic_path`
@@ -1945,12 +1967,19 @@ Expected outputs:
 - `position_x`
 - `position_y`
 - `rotation_degrees`
+- `preserve_connections`
+- `rewired_endpoints`
+- `normalize_text`
+- `normalized_text_count`
 
 Notes:
-**Wire segments are not moved with the symbol.** After moving, remove affected
-segments with `remove_wire` and reconnect with `add_wire` (pin selectors +
-`net_name`). When `rotation_degrees` is omitted the existing rotation is preserved.
-Prefer final placement before wiring when building from scratch.
+With `preserve_connections=true` (default) you no longer need a manual
+`remove_wire`/`add_wire` refresh — the wire-follow path rewrites endpoints,
+junctions, and net labels that sat on the moved pins. Set `preserve_connections=false`
+to move the symbol only (legacy behavior) or `normalize_text=false` to leave text
+rotation untouched. When `rotation_degrees` is omitted the existing rotation is
+preserved. This tool supersedes `set_component_rotation` and
+`move_component_preserving_connections`, which remain as deprecated aliases.
 
 ## suggest_component_placement
 

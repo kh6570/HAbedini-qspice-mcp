@@ -90,22 +90,22 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         requires_backend=False,
         preconditions=("component reference must exist in the schematic",),
         limitations=(
-            "set_component_position leaves wire endpoints in place; use "
-            "move_component_preserving_connections to move a component and follow attached "
-            "wires, junctions, and net labels automatically.",
+            "set_component_position preserves attached wires, junctions, and net labels and "
+            "normalizes refdes/value text by default; pass preserve_connections=false or "
+            "normalize_text=false to opt out. move_component_preserving_connections is a "
+            "deprecated alias.",
         ),
     ),
     IntentEntry(
         intent="rotate_component",
         label="Rotate placed component",
-        tool="set_component_rotation",
+        tool="set_component_position",
         supported=True,
         requires_backend=False,
         preconditions=("rotation_degrees must be a multiple of 45",),
         limitations=(
-            "set_component_rotation leaves wire endpoints in place; use "
-            "move_component_preserving_connections to rotate and follow connected segments. "
-            "Use normalize_component_text_rotation after rotating for readable labels.",
+            "set_component_position (rotation only) preserves connections and normalizes "
+            "refdes/value text by default. set_component_rotation is a deprecated alias.",
         ),
     ),
     IntentEntry(
@@ -115,7 +115,11 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         supported=True,
         requires_backend=True,
         preconditions=("a compatible editor backend must be installed",),
-        limitations=("Adjusts embedded symbol text rotation only; does not move wire endpoints.",),
+        limitations=(
+            "Standalone fix-up; set_component_position/set_component_rotation already "
+            "normalize text by default. Adjusts embedded symbol text rotation only; does "
+            "not move wire endpoints.",
+        ),
     ),
     IntentEntry(
         intent="edit_symbol_text",
@@ -163,7 +167,10 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         supported=True,
         requires_backend=False,
         preconditions=("component reference must exist in the schematic",),
-        limitations=(),
+        limitations=(
+            "Wires, junctions, and net labels left dangling by the deletion are kept unless "
+            "remove_orphan_wires=true is passed (opt-in).",
+        ),
     ),
 )
 
