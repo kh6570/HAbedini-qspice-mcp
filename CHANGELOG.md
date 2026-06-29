@@ -34,6 +34,16 @@ drive the QSpice circuit simulator through stable JSON tools.
   *Modelling, Control and Simulation of DC-DC Converters* (ISBN 979-8278321743)
   as a theoretical reference; no third-party schematic/netlist/source files are
   copied or redistributed.
+- **`flyback_converter` topology block (isolated)** — first `isolated_dc_dc` block in
+  the knowledge pack, covering the coupled-inductor flyback: CCM ratio `n*D/(1-D)`,
+  primary/secondary ripples, device-stress (switch `Vin + Vout/n`, diode `n*Vin + Vout`),
+  the CCM-DCM boundary, the turns-ratio-independent DCM ratio `D/sqrt(2*L1*fsw/R)`, and
+  the full CCM small-signal set (`Gd`/`Gb`/`Zo`/`Zi` plus the control-to-output
+  right-half-plane zero) expressed as the buck-boost results with inductance `L2 = n**2*L1`.
+  Includes leakage-spike/snubber and isolated-feedback notes plus an averaged-model
+  fast-simulation tip. Verified against and cited to J. Marcos Alonso, *Modelling,
+  Control and Simulation of DC-DC Converters* Ch.4 (clean-room restatement; no source
+  files copied).
 - **Scratch-authored buck e2e** — `tests/integration/test_scratch_buck_authoring.py`
   authors the full buck from an empty workspace via MCP tools only (shared
   `scratch_buck.blueprint.json`), builds the DLL, generates the netlist, runs the

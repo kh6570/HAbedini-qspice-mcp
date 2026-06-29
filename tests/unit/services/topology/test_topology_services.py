@@ -13,7 +13,12 @@ from qspice_mcp.services.topology.validate_topology_contribution import (
     validate_topology_contribution,
 )
 
-_EXPECTED_BLOCK_IDS = {"buck_converter", "boost_converter", "buck_boost_converter"}
+_EXPECTED_BLOCK_IDS = {
+    "buck_converter",
+    "boost_converter",
+    "buck_boost_converter",
+    "flyback_converter",
+}
 
 
 def test_list_topology_blocks_returns_all_blocks_with_attribution() -> None:
@@ -50,11 +55,12 @@ def test_search_matches_blueprint_only_term() -> None:
     """A term that appears only in the blueprint document still retrieves the block."""
 
     result = search_topology_blocks("inrush")
-    assert {match.block_id for match in result.matches} == {"boost_converter"}
-    top = result.matches[0]
-    assert top.score > 0.0
-    assert "inrush" in top.matched_terms
-    assert "blueprint" in top.matched_fields
+    block_ids = {match.block_id for match in result.matches}
+    assert "boost_converter" in block_ids
+    boost_match = next(match for match in result.matches if match.block_id == "boost_converter")
+    assert boost_match.score > 0.0
+    assert "inrush" in boost_match.matched_terms
+    assert "blueprint" in boost_match.matched_fields
 
 
 def test_search_respects_limit() -> None:
@@ -63,8 +69,10 @@ def test_search_respects_limit() -> None:
 
 
 def test_search_matches_buck_boost_on_inverting() -> None:
+    # The flyback is also described as an inverting buck-boost derivative, so "inverting"
+    # legitimately retrieves both; assert the buck-boost block is still found.
     result = search_topology_blocks("inverting")
-    assert {match.block_id for match in result.matches} == {"buck_boost_converter"}
+    assert "buck_boost_converter" in {match.block_id for match in result.matches}
 
 
 def test_buck_manifest_includes_ccm_dcm_and_small_signal_equations() -> None:
@@ -122,6 +130,33 @@ def test_buck_boost_manifest_includes_ccm_dcm_and_small_signal_equations() -> No
     assert outcome.is_valid, outcome.errors
 
 
+def test_flyback_manifest_includes_isolation_ccm_dcm_and_small_signal_equations() -> None:
+    detail = describe_topology_block("flyback_converter")
+    assert detail.category == "isolated_dc_dc"
+    equation_names = {equation["name"] for equation in detail.design_equations}
+    assert {
+        "turns_ratio",
+        "conversion_ratio",
+        "rhp_zero",
+        "boundary_load_resistance",
+        "dcm_conversion_ratio",
+        "ccm_characteristic_polynomial",
+        "control_to_output_tf_ccm",
+        "audio_susceptibility_tf_ccm",
+        "output_impedance_tf_ccm",
+        "input_impedance_tf_ccm",
+    } <= equation_names
+    outcome = validate_topology_contribution(load_topology_manifest("flyback_converter"))
+    assert outcome.is_valid, outcome.errors
+
+
+def test_search_matches_flyback_on_isolation_terms() -> None:
+    result = search_topology_blocks("isolated transformer turns ratio flyback")
+    assert result.matches
+    assert result.matches[0].block_id == "flyback_converter"
+    assert result.matches[0].score > 0.0
+
+
 def test_search_retrieves_enriched_blocks_for_small_signal_terms() -> None:
     """Small-signal terms added to buck and boost retrieve both enriched blocks."""
 
@@ -137,7 +172,7 @@ def test_search_rejects_empty_query() -> None:
 
 
 def test_search_with_no_match_returns_empty() -> None:
-    result = search_topology_blocks("transformer galvanic isolation")
+    result = search_topology_blocks("piezoelectric photovoltaic magnetron")
     assert result.matches == ()
 
 

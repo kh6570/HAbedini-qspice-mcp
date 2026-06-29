@@ -12,7 +12,18 @@ from qspice_mcp.services.topology._catalog import (
     topology_attribution,
 )
 
-_EXPECTED_BLOCK_IDS = {"buck_converter", "boost_converter", "buck_boost_converter"}
+_EXPECTED_BLOCK_IDS = {
+    "buck_converter",
+    "boost_converter",
+    "buck_boost_converter",
+    "flyback_converter",
+}
+_EXPECTED_CATEGORIES = {
+    "buck_converter": "non_isolated_dc_dc",
+    "boost_converter": "non_isolated_dc_dc",
+    "buck_boost_converter": "non_isolated_dc_dc",
+    "flyback_converter": "isolated_dc_dc",
+}
 
 
 def test_index_entries_cover_expected_blocks() -> None:
@@ -20,7 +31,7 @@ def test_index_entries_cover_expected_blocks() -> None:
     assert {entry.block_id for entry in entries} == _EXPECTED_BLOCK_IDS
     for entry in entries:
         assert entry.title
-        assert entry.category == "non_isolated_dc_dc"
+        assert entry.category == _EXPECTED_CATEGORIES[entry.block_id]
         assert entry.tags
         assert entry.summary
 

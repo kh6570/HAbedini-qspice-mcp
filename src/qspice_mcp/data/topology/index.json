@@ -35,6 +35,14 @@
       "tags": ["buck-boost", "inverting", "smps", "ccm", "dcm", "pwm", "rhp-zero", "small-signal"],
       "summary": "Non-isolated inverting converter; output magnitude equals the input scaled by D / (1 - D).",
       "directory": "buck_boost_converter"
+    },
+    {
+      "block_id": "flyback_converter",
+      "title": "Flyback Converter (isolated)",
+      "category": "isolated_dc_dc",
+      "tags": ["flyback", "isolated", "transformer", "coupled-inductor", "smps", "ccm", "dcm", "pwm", "rhp-zero", "small-signal"],
+      "summary": "Galvanically isolated single-switch converter; a buck-boost with a coupled inductor whose output equals the input scaled by n * D / (1 - D).",
+      "directory": "flyback_converter"
     }
   ]
 }
