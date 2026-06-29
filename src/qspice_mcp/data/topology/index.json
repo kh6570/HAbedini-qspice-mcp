@@ -32,7 +32,7 @@
       "block_id": "buck_boost_converter",
       "title": "Buck-Boost Converter (inverting)",
       "category": "non_isolated_dc_dc",
-      "tags": ["buck-boost", "inverting", "smps", "ccm", "pwm", "rhp-zero"],
+      "tags": ["buck-boost", "inverting", "smps", "ccm", "dcm", "pwm", "rhp-zero", "small-signal"],
       "summary": "Non-isolated inverting converter; output magnitude equals the input scaled by D / (1 - D).",
       "directory": "buck_boost_converter"
     }

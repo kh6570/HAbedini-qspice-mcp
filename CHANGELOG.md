@@ -121,16 +121,18 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Changed
 
-- **Buck and boost topology blocks enriched with CCM/DCM and small-signal theory** — the
-  bundled `buck_converter` and `boost_converter` manifests and blueprints now cover the
-  lossy CCM conversion ratio (buck `D/(1+r_L/R_load)`; boost `1/((1-D)+r_L/((1-D)R_load))`
-  with its high-duty gain roll-off), the CCM-DCM boundary (`R_lim`, `Io_lim`), the DCM
-  conversion ratio and ripple, and the CCM small-signal transfer functions (`Gd`, `Gb`,
-  `Zo`, `Zi` sharing one characteristic polynomial — including the boost control-to-output
-  right-half-plane zero), plus `r_L`/`r_C`/`R_load` parameters and an averaged-model
-  fast-simulation tip. Equations verified against and cited to J. Marcos Alonso,
-  *Modelling, Control and Simulation of DC-DC Converters* (clean-room restatement; no
-  source files copied).
+- **Buck, boost, and buck-boost topology blocks enriched with CCM/DCM and small-signal
+  theory** — the bundled `buck_converter`, `boost_converter`, and `buck_boost_converter`
+  manifests and blueprints now cover the lossy CCM conversion ratio (buck
+  `D/(1+r_L/R_load)`; boost `1/((1-D)+r_L/((1-D)R_load))`; buck-boost
+  `D/((1-D)+r_L/((1-D)R_load))` with their high-duty gain roll-off), the CCM-DCM boundary
+  (`R_lim`, `Io_lim`), the DCM conversion ratio and ripple, and the CCM small-signal
+  transfer functions (`Gd`, `Gb`, `Zo`, `Zi` sharing one characteristic polynomial —
+  including the boost and buck-boost control-to-output right-half-plane zeros), plus
+  `r_L`/`r_C`/`R_load` parameters and an averaged-model fast-simulation tip. The
+  buck-boost adds its `Vin + |Vout|` device-stress note and `D**2`-scaled input impedance.
+  Equations verified against and cited to J. Marcos Alonso, *Modelling, Control and
+  Simulation of DC-DC Converters* (clean-room restatement; no source files copied).
 - **Topology search is now lexical TF-IDF retrieval** — `search_topology_blocks` ranks
   blocks by cosine relevance over the full corpus (index fields + manifest detail +
   blueprint text) instead of index-only substring scoring, so blueprint-only terms now

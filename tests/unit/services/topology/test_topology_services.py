@@ -103,6 +103,25 @@ def test_boost_manifest_includes_ccm_dcm_and_small_signal_equations() -> None:
     assert outcome.is_valid, outcome.errors
 
 
+def test_buck_boost_manifest_includes_ccm_dcm_and_small_signal_equations() -> None:
+    detail = describe_topology_block("buck_boost_converter")
+    equation_names = {equation["name"] for equation in detail.design_equations}
+    assert {
+        "conversion_ratio",
+        "conversion_ratio_with_losses",
+        "rhp_zero",
+        "boundary_load_resistance",
+        "dcm_conversion_ratio",
+        "ccm_characteristic_polynomial",
+        "control_to_output_tf_ccm",
+        "audio_susceptibility_tf_ccm",
+        "output_impedance_tf_ccm",
+        "input_impedance_tf_ccm",
+    } <= equation_names
+    outcome = validate_topology_contribution(load_topology_manifest("buck_boost_converter"))
+    assert outcome.is_valid, outcome.errors
+
+
 def test_search_retrieves_enriched_blocks_for_small_signal_terms() -> None:
     """Small-signal terms added to buck and boost retrieve both enriched blocks."""
 
