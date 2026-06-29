@@ -85,12 +85,31 @@ def test_buck_manifest_includes_ccm_dcm_and_small_signal_equations() -> None:
     assert outcome.is_valid, outcome.errors
 
 
-def test_search_retrieves_buck_for_enriched_small_signal_terms() -> None:
-    """Terms introduced by the enriched buck content retrieve only the buck block."""
+def test_boost_manifest_includes_ccm_dcm_and_small_signal_equations() -> None:
+    detail = describe_topology_block("boost_converter")
+    equation_names = {equation["name"] for equation in detail.design_equations}
+    assert {
+        "conversion_ratio",
+        "conversion_ratio_with_losses",
+        "rhp_zero",
+        "boundary_load_resistance",
+        "dcm_conversion_ratio",
+        "ccm_characteristic_polynomial",
+        "control_to_output_tf_ccm",
+        "output_impedance_tf_ccm",
+        "input_impedance_tf_ccm",
+    } <= equation_names
+    outcome = validate_topology_contribution(load_topology_manifest("boost_converter"))
+    assert outcome.is_valid, outcome.errors
+
+
+def test_search_retrieves_enriched_blocks_for_small_signal_terms() -> None:
+    """Small-signal terms added to buck and boost retrieve both enriched blocks."""
 
     result = search_topology_blocks("discontinuous conduction audio susceptibility")
-    assert {match.block_id for match in result.matches} == {"buck_converter"}
-    assert result.matches[0].score > 0.0
+    block_ids = {match.block_id for match in result.matches}
+    assert {"buck_converter", "boost_converter"} <= block_ids
+    assert all(match.score > 0.0 for match in result.matches)
 
 
 def test_search_rejects_empty_query() -> None:

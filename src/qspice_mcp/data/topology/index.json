@@ -24,7 +24,7 @@
       "block_id": "boost_converter",
       "title": "Boost Converter (step-up)",
       "category": "non_isolated_dc_dc",
-      "tags": ["boost", "step-up", "smps", "ccm", "pwm", "rhp-zero"],
+      "tags": ["boost", "step-up", "smps", "ccm", "dcm", "pwm", "rhp-zero", "small-signal"],
       "summary": "Non-isolated step-up converter; output voltage equals the input divided by (1 - D).",
       "directory": "boost_converter"
     },

@@ -2,7 +2,7 @@
   "block_id": "boost_converter",
   "title": "Boost Converter (step-up)",
   "category": "non_isolated_dc_dc",
-  "tags": ["boost", "step-up", "smps", "ccm", "pwm", "rhp-zero"],
+  "tags": ["boost", "step-up", "smps", "ccm", "dcm", "pwm", "rhp-zero", "small-signal"],
   "summary": "Non-isolated step-up converter; in continuous conduction the output voltage equals the input divided by (1 - D).",
   "ports": [
     { "name": "in", "role": "input", "description": "Positive input supply rail feeding the inductor." },
@@ -18,16 +18,31 @@
     { "name": "fsw", "description": "Switching frequency.", "unit": "Hz" },
     { "name": "L", "description": "Boost inductor value.", "unit": "H" },
     { "name": "C", "description": "Output filter capacitor value.", "unit": "F" },
-    { "name": "D", "description": "Steady-state duty cycle of the low-side switch.", "unit": "1" }
+    { "name": "D", "description": "Steady-state duty cycle of the low-side switch.", "unit": "1" },
+    { "name": "R_load", "description": "Load resistance seen at the output (R_load = Vout / Iout).", "unit": "ohm" },
+    { "name": "r_L", "description": "Inductor series resistance (DCR); dominant loss term and the cause of the gain roll-off at high duty cycle.", "unit": "ohm" },
+    { "name": "r_C", "description": "Output capacitor equivalent series resistance (ESR); sets the high-frequency zero.", "unit": "ohm" }
   ],
   "design_equations": [
-    { "name": "conversion_ratio", "expression": "Vout / Vin = 1 / (1 - D)", "description": "Ideal CCM DC conversion ratio." },
-    { "name": "inductor_current", "expression": "I_L = Iout / (1 - D)", "description": "Average inductor current equals the input current." },
-    { "name": "inductor_ripple", "expression": "dI_L = Vin * D / (L * fsw)", "description": "Peak-to-peak inductor current ripple." },
-    { "name": "output_ripple", "expression": "dVout = Iout * D / (C * fsw)", "description": "Peak-to-peak output voltage ripple for an ideal capacitor (capacitor supplies the load during the on-time)." },
-    { "name": "rhp_zero", "expression": "f_rhpz = (1 - D)^2 * R_load / (2 * pi * L)", "description": "Right-half-plane zero frequency that limits the achievable loop bandwidth." }
+    { "name": "conversion_ratio", "expression": "Vout / Vin = 1 / (1 - D)", "description": "Ideal CCM DC conversion ratio (lossless)." },
+    { "name": "conversion_ratio_with_losses", "expression": "Vout / Vin = 1 / ((1 - D) + r_L / ((1 - D) * R_load))", "description": "CCM DC conversion ratio including the inductor series resistance r_L (Alonso eq. 2.7); r_L makes the gain peak and then roll off as D -> 1 instead of rising without bound." },
+    { "name": "inductor_current", "expression": "I_L = Iout / (1 - D)", "description": "Average inductor current equals the input current in CCM." },
+    { "name": "inductor_ripple", "expression": "dI_L = Vin * D / (L * fsw)", "description": "Peak-to-peak inductor current ripple in CCM (Alonso eq. 2.35)." },
+    { "name": "peak_device_current", "expression": "I_pk = Iout / (1 - D) + dI_L / 2", "description": "Peak current through the switch, diode, and inductor in CCM." },
+    { "name": "switch_peak_voltage", "expression": "V_sw_pk = Vout", "description": "Peak blocking voltage across the switch (and the diode) is the output voltage." },
+    { "name": "output_ripple", "expression": "dVout = Iout * D / (C * fsw)", "description": "Peak-to-peak output voltage ripple in CCM (Alonso eq. 2.36); the capacitor alone supplies the load during the on-time. ESR adds r_C times the diode current step." },
+    { "name": "boundary_load_resistance", "expression": "R_lim = 2 * L * fsw / (D * (1 - D)**2)", "description": "CCM-DCM boundary load resistance (Alonso eq. 2.38): CCM when R_load < R_lim, DCM when R_load > R_lim." },
+    { "name": "boundary_output_current", "expression": "Io_lim = Vout * D * (1 - D)**2 / (2 * L * fsw)", "description": "Output current at the CCM-DCM boundary (Alonso eq. 2.37)." },
+    { "name": "dcm_conversion_ratio", "expression": "Vout / Vin = (1 + sqrt(1 + 4 * D**2 / k)) / 2,  k = 2 * L * fsw / R_load", "description": "DCM DC conversion ratio (Alonso eq. 2.48-2.49); load-dependent, and unlike CCM it keeps rising with D." },
+    { "name": "dcm_output_ripple", "expression": "dVout = L * (D * Vin / (L * fsw) - Vout / R_load)**2 / (2 * (Vout - Vin) * C)", "description": "Peak-to-peak output voltage ripple in DCM (Alonso eq. 2.53)." },
+    { "name": "rhp_zero", "expression": "f_rhpz = (1 - D)**2 * R_load / (2 * pi * L)", "description": "Right-half-plane zero frequency of Gd(s) (zero at s = (1-D)**2 * R_load / L); it adds gain while subtracting phase, so it caps the achievable loop bandwidth." },
+    { "name": "ccm_characteristic_polynomial", "expression": "Den(s) = (R_load + r_C)*L*C*s**2 + ((1 - D)**2*R_load*r_C*C + L)*s + (1 - D)**2*R_load", "description": "Shared CCM denominator of every small-signal transfer function below; a complex pole pair whose resonance moves with the duty cycle." },
+    { "name": "control_to_output_tf_ccm", "expression": "Gd(s) = Vout(s)/d(s) = Vout*R_load*(1 - D)*(1 - (L/((1 - D)**2*R_load))*s)*(1 + r_C*C*s) / Den(s)", "description": "Control-to-output transfer function in CCM (Alonso eq. 2.19); note the right-half-plane zero factor (1 - (L/((1-D)**2*R_load))*s) and the ESR zero at 1/(r_C*C)." },
+    { "name": "audio_susceptibility_tf_ccm", "expression": "Gb(s) = Vout(s)/Vin(s) = R_load*(1 - D)*(1 + r_C*C*s) / Den(s)", "description": "Input-to-output (audio susceptibility) transfer function in CCM (Alonso eq. 2.22); same poles as Gd(s) but no right-half-plane zero." },
+    { "name": "output_impedance_tf_ccm", "expression": "Zo(s) = R_load*L*s*(1 + r_C*C*s) / Den(s)", "description": "Open-loop output impedance in CCM (Alonso eq. 2.32); Zo(0) = 0 and Zo(inf) approx r_C." },
+    { "name": "input_impedance_tf_ccm", "expression": "Zi(s) = Den(s) / (1 + (R_load + r_C)*C*s)", "description": "Open-loop input impedance in CCM (Alonso eq. 2.25); the characteristic polynomial appears in the numerator, with Zi(0) = (1 - D)**2*R_load and Zi(inf) -> infinity." }
   ],
-  "control_notes": "The boost control-to-output transfer function contains a right-half-plane (RHP) zero whose frequency drops with load and duty cycle. Voltage-mode loop bandwidth must stay well below f_rhpz (typically below a third of it), which forces a slow loop. Current-mode control is preferred because it removes the inductor pole from the voltage loop, though the RHP zero remains.",
+  "control_notes": "The boost control-to-output transfer function Gd(s) contains a right-half-plane (RHP) zero at f_rhpz = (1-D)**2*R_load/(2*pi*L) whose frequency drops with load and duty cycle. Voltage-mode loop bandwidth must stay well below f_rhpz (typically below a third of it), which forces a slow loop. Current-mode control is preferred because it removes the inductor pole from the voltage loop, though the RHP zero remains. In discontinuous conduction (DCM, when R_load > R_lim = 2*L*fsw/(D*(1-D)**2)) the plant collapses to a first-order response and the RHP zero moves to very high frequency, so a light-load DCM design can run a faster loop. All small-signal results follow from the averaged dependent-source model: the switch is replaced by its average current source and the diode by its average voltage source, then linearized about the DC operating point.",
   "reference": {
     "source": "J. Marcos Alonso, Modelling, Control and Simulation of DC-DC Converters",
     "isbn": "979-8278321743",
