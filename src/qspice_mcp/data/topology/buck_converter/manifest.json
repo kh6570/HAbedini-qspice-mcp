@@ -2,7 +2,7 @@
   "block_id": "buck_converter",
   "title": "Buck Converter (step-down)",
   "category": "non_isolated_dc_dc",
-  "tags": ["buck", "step-down", "smps", "ccm", "pwm", "voltage-mode"],
+  "tags": ["buck", "step-down", "smps", "ccm", "dcm", "pwm", "voltage-mode", "small-signal"],
   "summary": "Non-isolated step-down converter; in continuous conduction the output voltage equals the input scaled by the duty cycle D.",
   "ports": [
     { "name": "in", "role": "input", "description": "Positive input supply rail." },
@@ -18,16 +18,31 @@
     { "name": "fsw", "description": "Switching frequency.", "unit": "Hz" },
     { "name": "L", "description": "Filter inductor value.", "unit": "H" },
     { "name": "C", "description": "Output filter capacitor value.", "unit": "F" },
-    { "name": "D", "description": "Steady-state duty cycle of the high-side switch.", "unit": "1" }
+    { "name": "D", "description": "Steady-state duty cycle of the high-side switch.", "unit": "1" },
+    { "name": "R_load", "description": "Load resistance seen at the output (R_load = Vout / Iout).", "unit": "ohm" },
+    { "name": "r_L", "description": "Inductor series resistance (DCR); dominant loss term affecting the DC conversion ratio.", "unit": "ohm" },
+    { "name": "r_C", "description": "Output capacitor equivalent series resistance (ESR); sets the high-frequency zero.", "unit": "ohm" }
   ],
   "design_equations": [
-    { "name": "conversion_ratio", "expression": "Vout / Vin = D", "description": "Ideal CCM DC conversion ratio." },
-    { "name": "inductor_current", "expression": "I_L = Iout", "description": "Average inductor current equals the load current." },
-    { "name": "inductor_ripple", "expression": "dI_L = (Vin - Vout) * D / (L * fsw)", "description": "Peak-to-peak inductor current ripple." },
-    { "name": "output_ripple", "expression": "dVout = dI_L / (8 * C * fsw)", "description": "Peak-to-peak output voltage ripple for an ideal capacitor." },
-    { "name": "critical_inductance", "expression": "L_crit = (1 - D) * R_load / (2 * fsw)", "description": "Minimum inductance to stay in continuous conduction at the given load." }
+    { "name": "conversion_ratio", "expression": "Vout / Vin = D", "description": "Ideal CCM DC conversion ratio (lossless)." },
+    { "name": "conversion_ratio_with_losses", "expression": "Vout / Vin = D / (1 + r_L / R_load)", "description": "CCM DC conversion ratio including the inductor series resistance r_L (Alonso eq. 1.6); the capacitor ESR does not affect the DC ratio because no DC current flows in C." },
+    { "name": "inductor_current", "expression": "I_L = Iout", "description": "Average inductor current equals the load current in CCM." },
+    { "name": "inductor_ripple", "expression": "dI_L = (Vin - Vout) * D / (L * fsw)", "description": "Peak-to-peak inductor current ripple in CCM." },
+    { "name": "peak_device_current", "expression": "I_pk = Iout + dI_L / 2", "description": "Peak current through the switch, diode, and inductor in CCM." },
+    { "name": "switch_peak_voltage", "expression": "V_sw_pk = Vin", "description": "Peak blocking voltage across the switch (and the diode) is the input voltage." },
+    { "name": "output_ripple", "expression": "dVout = dI_L / (8 * C * fsw)", "description": "Peak-to-peak output voltage ripple in CCM for an ideal capacitor (ESR adds r_C * dI_L on top)." },
+    { "name": "critical_inductance", "expression": "L_crit = (1 - D) * R_load / (2 * fsw)", "description": "Minimum inductance to stay in continuous conduction at the given load." },
+    { "name": "boundary_load_resistance", "expression": "R_lim = 2 * L * fsw / (1 - D)", "description": "CCM-DCM boundary load resistance (Alonso eq. 1.29): CCM when R_load < R_lim, DCM when R_load > R_lim." },
+    { "name": "boundary_output_current", "expression": "Io_lim = Vout * (1 - D) / (2 * L * fsw)", "description": "Output current at the CCM-DCM boundary (Alonso eq. 1.28)." },
+    { "name": "dcm_conversion_ratio", "expression": "Vout / Vin = 2 / (1 + sqrt(1 + 4 * k / D**2)),  k = 2 * L * fsw / R_load", "description": "DCM DC conversion ratio (Alonso eq. 1.40-1.41); it is load-dependent and r_L drops out because the converter acts as a current source into the load." },
+    { "name": "dcm_output_ripple", "expression": "dVout = L / (2 * C * (1 - Vout / Vin) * Vout) * ((Vin - Vout) * D / (L * fsw) - Vout / R_load)**2", "description": "Peak-to-peak output voltage ripple in DCM (Alonso eq. 1.46)." },
+    { "name": "ccm_characteristic_polynomial", "expression": "Den(s) = L*C*(1 + r_C/R_load)*s**2 + (L/R_load + r_C*C + r_L*C + r_L*r_C*C/R_load)*s + (1 + r_L/R_load)", "description": "Shared CCM denominator (characteristic polynomial) of every small-signal transfer function below; a complex pole pair near 1/(2*pi*sqrt(L*C))." },
+    { "name": "control_to_output_tf_ccm", "expression": "Gd(s) = Vout(s)/d(s) = Vin * (1 + r_C*C*s) / Den(s)", "description": "Control-to-output (duty-cycle to output) transfer function in CCM (Alonso eq. 1.14); single ESR zero at 1/(r_C*C), no right-half-plane zero." },
+    { "name": "audio_susceptibility_tf_ccm", "expression": "Gb(s) = Vout(s)/Vin(s) = D * (1 + r_C*C*s) / Den(s)", "description": "Input-to-output (audio susceptibility) transfer function in CCM (Alonso eq. 1.17); same dynamics as Gd(s), only the DC gain differs." },
+    { "name": "output_impedance_tf_ccm", "expression": "Zo(s) = (r_L + L*s) * (1 + r_C*C*s) / Den(s)", "description": "Open-loop output impedance in CCM (Alonso eq. 1.23); Zo(0) approx r_L, Zo(inf) approx r_C." },
+    { "name": "input_impedance_tf_ccm", "expression": "Zi(s) = (R_load / D**2) * Den(s) / (1 + (R_load + r_C)*C*s)", "description": "Open-loop input impedance in CCM (Alonso eq. 1.19); the characteristic polynomial appears in the numerator, with Zi(0) = (R_load + r_L)/D**2 and Zi(inf) -> infinity." }
   ],
-  "control_notes": "The buck control-to-output transfer function is a second-order low-pass with a complex pole pair at the LC resonance and an ESR zero; it has no right-half-plane zero, so voltage-mode control with a Type-II/Type-III compensator is straightforward. Peak/average current-mode control reduces the plant to first order and eases loop design.",
+  "control_notes": "The buck control-to-output plant Gd(s) is a second-order low-pass with a complex pole pair at the LC resonance and a single ESR zero at 1/(r_C*C); it has no right-half-plane zero, so voltage-mode control with a Type-II/Type-III compensator is straightforward. Cross over well below fsw/5. Peak/average current-mode control reduces the plant to first order and eases loop design. In discontinuous conduction (DCM, when R_load > R_lim = 2*L*fsw/(1-D)) the plant also collapses to a first-order response and the DC gain becomes load-dependent. All small-signal results follow from the averaged dependent-source model: the switch is replaced by its average current source and the diode by its average voltage source, then linearized about the DC operating point.",
   "reference": {
     "source": "J. Marcos Alonso, Modelling, Control and Simulation of DC-DC Converters",
     "isbn": "979-8278321743",

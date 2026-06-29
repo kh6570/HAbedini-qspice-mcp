@@ -16,7 +16,7 @@
       "block_id": "buck_converter",
       "title": "Buck Converter (step-down)",
       "category": "non_isolated_dc_dc",
-      "tags": ["buck", "step-down", "smps", "ccm", "pwm", "voltage-mode"],
+      "tags": ["buck", "step-down", "smps", "ccm", "dcm", "pwm", "voltage-mode", "small-signal"],
       "summary": "Non-isolated step-down converter; output voltage equals the input scaled by duty cycle D.",
       "directory": "buck_converter"
     },

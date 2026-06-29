@@ -67,6 +67,32 @@ def test_search_matches_buck_boost_on_inverting() -> None:
     assert {match.block_id for match in result.matches} == {"buck_boost_converter"}
 
 
+def test_buck_manifest_includes_ccm_dcm_and_small_signal_equations() -> None:
+    detail = describe_topology_block("buck_converter")
+    equation_names = {equation["name"] for equation in detail.design_equations}
+    assert {
+        "conversion_ratio",
+        "conversion_ratio_with_losses",
+        "boundary_load_resistance",
+        "dcm_conversion_ratio",
+        "ccm_characteristic_polynomial",
+        "control_to_output_tf_ccm",
+        "output_impedance_tf_ccm",
+        "input_impedance_tf_ccm",
+    } <= equation_names
+    # The enriched manifest must still satisfy the pack schema validator.
+    outcome = validate_topology_contribution(load_topology_manifest("buck_converter"))
+    assert outcome.is_valid, outcome.errors
+
+
+def test_search_retrieves_buck_for_enriched_small_signal_terms() -> None:
+    """Terms introduced by the enriched buck content retrieve only the buck block."""
+
+    result = search_topology_blocks("discontinuous conduction audio susceptibility")
+    assert {match.block_id for match in result.matches} == {"buck_converter"}
+    assert result.matches[0].score > 0.0
+
+
 def test_search_rejects_empty_query() -> None:
     with pytest.raises(ValidationError, match="must not be empty"):
         search_topology_blocks("   ")

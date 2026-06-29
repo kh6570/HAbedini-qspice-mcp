@@ -121,6 +121,14 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Changed
 
+- **Buck topology block enriched with CCM/DCM and small-signal theory** — the bundled
+  `buck_converter` manifest and blueprint now cover the lossy CCM conversion ratio
+  (`D / (1 + r_L/R_load)`), the CCM-DCM boundary (`R_lim`, `Io_lim`), the DCM conversion
+  ratio and ripple, and the CCM small-signal transfer functions (`Gd`, `Gb`, `Zo`, `Zi`
+  sharing one characteristic polynomial), plus `r_L`/`r_C`/`R_load` parameters and an
+  averaged-model fast-simulation tip. Equations verified against and cited to J. Marcos
+  Alonso, *Modelling, Control and Simulation of DC-DC Converters* (clean-room restatement;
+  no source files copied).
 - **Topology search is now lexical TF-IDF retrieval** — `search_topology_blocks` ranks
   blocks by cosine relevance over the full corpus (index fields + manifest detail +
   blueprint text) instead of index-only substring scoring, so blueprint-only terms now
