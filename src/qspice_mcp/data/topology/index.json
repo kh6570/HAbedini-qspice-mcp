@@ -43,6 +43,14 @@
       "tags": ["flyback", "isolated", "transformer", "coupled-inductor", "smps", "ccm", "dcm", "pwm", "rhp-zero", "small-signal"],
       "summary": "Galvanically isolated single-switch converter; a buck-boost with a coupled inductor whose output equals the input scaled by n * D / (1 - D).",
       "directory": "flyback_converter"
+    },
+    {
+      "block_id": "forward_converter",
+      "title": "Forward Converter (isolated)",
+      "category": "isolated_dc_dc",
+      "tags": ["forward", "isolated", "transformer", "buck-derived", "reset-winding", "smps", "ccm", "dcm", "pwm", "small-signal"],
+      "summary": "Galvanically isolated buck-derived converter with an LC output filter; output equals the input scaled by n * D, with no right-half-plane zero.",
+      "directory": "forward_converter"
     }
   ]
 }

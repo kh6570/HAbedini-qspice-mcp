@@ -18,6 +18,7 @@ _EXPECTED_BLOCK_IDS = {
     "boost_converter",
     "buck_boost_converter",
     "flyback_converter",
+    "forward_converter",
 }
 
 
@@ -151,9 +152,39 @@ def test_flyback_manifest_includes_isolation_ccm_dcm_and_small_signal_equations(
 
 
 def test_search_matches_flyback_on_isolation_terms() -> None:
-    result = search_topology_blocks("isolated transformer turns ratio flyback")
+    # "flyback" and "coupled-inductor" are most concentrated in the flyback block (the
+    # forward block only mentions flyback in passing), so it should rank first.
+    result = search_topology_blocks("flyback coupled-inductor isolated")
     assert result.matches
     assert result.matches[0].block_id == "flyback_converter"
+    assert result.matches[0].score > 0.0
+
+
+def test_forward_manifest_includes_isolation_ccm_dcm_and_small_signal_equations() -> None:
+    detail = describe_topology_block("forward_converter")
+    assert detail.category == "isolated_dc_dc"
+    equation_names = {equation["name"] for equation in detail.design_equations}
+    assert {
+        "conversion_ratio",
+        "demagnetization_constraint",
+        "boundary_load_resistance",
+        "dcm_conversion_ratio",
+        "ccm_characteristic_polynomial",
+        "control_to_output_tf_ccm",
+        "audio_susceptibility_tf_ccm",
+        "output_impedance_tf_ccm",
+        "input_impedance_tf_ccm",
+    } <= equation_names
+    # The forward is buck-derived: its control-to-output plant has no right-half-plane zero.
+    assert "rhp_zero" not in equation_names
+    outcome = validate_topology_contribution(load_topology_manifest("forward_converter"))
+    assert outcome.is_valid, outcome.errors
+
+
+def test_search_matches_forward_on_reset_winding_terms() -> None:
+    result = search_topology_blocks("forward reset winding demagnetization")
+    assert result.matches
+    assert result.matches[0].block_id == "forward_converter"
     assert result.matches[0].score > 0.0
 
 

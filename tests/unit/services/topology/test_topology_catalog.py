@@ -17,12 +17,14 @@ _EXPECTED_BLOCK_IDS = {
     "boost_converter",
     "buck_boost_converter",
     "flyback_converter",
+    "forward_converter",
 }
 _EXPECTED_CATEGORIES = {
     "buck_converter": "non_isolated_dc_dc",
     "boost_converter": "non_isolated_dc_dc",
     "buck_boost_converter": "non_isolated_dc_dc",
     "flyback_converter": "isolated_dc_dc",
+    "forward_converter": "isolated_dc_dc",
 }
 
 

@@ -1,0 +1,57 @@
+{
+  "block_id": "forward_converter",
+  "title": "Forward Converter (isolated)",
+  "category": "isolated_dc_dc",
+  "tags": ["forward", "isolated", "transformer", "buck-derived", "reset-winding", "smps", "ccm", "dcm", "pwm", "small-signal"],
+  "summary": "Galvanically isolated buck-derived converter; a transformer delivers energy during the on-time into an LC output filter, giving the CCM ratio n * D, where n = N2/N1 is the turns ratio. Unlike the flyback it has no right-half-plane zero.",
+  "ports": [
+    { "name": "in", "role": "input", "description": "Positive primary-side input supply rail feeding the primary winding and switch." },
+    { "name": "sw", "role": "internal", "description": "Primary switching node between the primary winding and the low-side switch." },
+    { "name": "out", "role": "output", "description": "Isolated regulated output rail across the LC filter and load (secondary side)." },
+    { "name": "pri_gnd", "role": "reference", "description": "Primary-side ground reference (input return); also returns the reset/tertiary winding." },
+    { "name": "sec_gnd", "role": "reference", "description": "Secondary-side ground reference (output return), galvanically isolated from pri_gnd." },
+    { "name": "pwm", "role": "control", "description": "Gate-drive command for the primary switch from the controller." }
+  ],
+  "parameters": [
+    { "name": "Vin", "description": "Primary-side input supply voltage.", "unit": "V" },
+    { "name": "Vout", "description": "Target regulated (isolated) output voltage.", "unit": "V" },
+    { "name": "Iout", "description": "Nominal load current.", "unit": "A" },
+    { "name": "fsw", "description": "Switching frequency.", "unit": "Hz" },
+    { "name": "L", "description": "Secondary-side output filter inductor value.", "unit": "H" },
+    { "name": "C", "description": "Output filter capacitor value.", "unit": "F" },
+    { "name": "D", "description": "Steady-state duty cycle of the primary switch.", "unit": "1" },
+    { "name": "n", "description": "Power transformer turns ratio n = N2/N1 (secondary over primary).", "unit": "1" },
+    { "name": "n31", "description": "Reset (tertiary) winding turns ratio n31 = N3/N1; sets the demagnetization interval and the switch voltage stress.", "unit": "1" },
+    { "name": "LM", "description": "Primary magnetizing inductance (governs the magnetizing/reset current; ideally large enough to be negligible in the power path).", "unit": "H" },
+    { "name": "R_load", "description": "Load resistance seen at the output (R_load = Vout / Iout).", "unit": "ohm" },
+    { "name": "r_L", "description": "Output inductor series resistance (DCR); dominant loss term affecting the DC conversion ratio.", "unit": "ohm" },
+    { "name": "r_C", "description": "Output capacitor equivalent series resistance (ESR); sets the high-frequency zero.", "unit": "ohm" }
+  ],
+  "design_equations": [
+    { "name": "conversion_ratio", "expression": "Vout / Vin = n * D", "description": "Ideal CCM DC conversion ratio (Alonso eq. 5.18 lossless); the buck ratio D scaled by the turns ratio n." },
+    { "name": "conversion_ratio_with_losses", "expression": "Vout / Vin = n * D / (1 + r_L / R_load)", "description": "CCM DC conversion ratio including the output inductor series resistance r_L (Alonso eq. 5.19); the capacitor ESR does not affect the DC ratio because no DC current flows in C." },
+    { "name": "demagnetization_constraint", "expression": "dt_reset = n31 * D / fsw < (1 - D) / fsw  =>  D_max < 1 / (1 + n31),  n31 = N3/N1", "description": "The transformer must fully reset each cycle (Alonso eq. 5.3-5.6): the demagnetization interval n31*D*T must finish before the period ends. With an equal-turns reset winding (n31 = 1) the duty cycle is limited to D < 0.5." },
+    { "name": "inductor_current", "expression": "I_L = Iout", "description": "Average output inductor current equals the load current in CCM (the LC filter keeps the output current continuous, as in a buck)." },
+    { "name": "inductor_ripple", "expression": "dI_L = (n * Vin - Vout) * D / (L * fsw)", "description": "Peak-to-peak output inductor current ripple in CCM (Alonso eq. 5.42); the buck ripple with the reflected input n*Vin." },
+    { "name": "rectifier_peak_current", "expression": "I_d_pk = Iout + dI_L / 2", "description": "Peak current through the secondary rectifiers D1/D2 and the output inductor in CCM (Alonso summary)." },
+    { "name": "switch_peak_voltage", "expression": "V_sw_pk = (1 + 1 / n31) * Vin", "description": "Peak blocking voltage across the primary switch (Alonso summary); set by the reset winding ratio. With n31 = 1 the switch must block 2*Vin, plus any leakage spike." },
+    { "name": "reset_diode_peak_voltage", "expression": "V_d3_pk = (1 + n31) * Vin", "description": "Peak reverse voltage across the reset (tertiary) diode D3 (Alonso summary)." },
+    { "name": "output_ripple", "expression": "dVout = dI_L / (8 * C * fsw)", "description": "Peak-to-peak output voltage ripple in CCM for an ideal capacitor (Alonso eq. 5.43); ESR adds r_C * dI_L on top. Triangular inductor current into C gives the 1/8 factor, exactly as in the buck." },
+    { "name": "boundary_load_resistance", "expression": "R_lim = 2 * L * fsw / (1 - D)", "description": "CCM-DCM boundary load resistance (Alonso eq. 5.45): CCM when R_load < R_lim, DCM when R_load > R_lim (same as the buck)." },
+    { "name": "boundary_output_current", "expression": "Io_lim = Vout * (1 - D) / (2 * L * fsw)", "description": "Output current at the CCM-DCM boundary (Alonso eq. 5.44)." },
+    { "name": "dcm_conversion_ratio", "expression": "Vout / Vin = 2 * n / (1 + sqrt(1 + 4 * k / D**2)),  k = 2 * L * fsw / R_load", "description": "DCM DC conversion ratio (Alonso eq. 5.55-5.56); the buck DCM ratio multiplied by the turns ratio n, load-dependent." },
+    { "name": "dcm_output_ripple", "expression": "dVout = L * ((n * Vin - Vout) * D / (L * fsw) - Vout / R_load)**2 / (2 * C * (1 - Vout / (n * Vin)) * Vout)", "description": "Peak-to-peak output voltage ripple in DCM (Alonso eq. 5.57); the buck DCM ripple with the reflected input n*Vin." },
+    { "name": "ccm_characteristic_polynomial", "expression": "Den(s) = L*C*(1 + r_C/R_load)*s**2 + (L/R_load + r_C*C + r_L*C + r_L*r_C*C/R_load)*s + (1 + r_L/R_load)", "description": "Shared CCM denominator of every small-signal transfer function below; identical to the buck (a complex pole pair near 1/(2*pi*sqrt(L*C))), because the forward is dynamically a buck seen through the transformer." },
+    { "name": "control_to_output_tf_ccm", "expression": "Gd(s) = Vout(s)/d(s) = n*Vin*(1 + r_C*C*s) / Den(s)", "description": "Control-to-output transfer function in CCM (Alonso eq. 5.31-5.32); the buck Gd(s) multiplied by the turns ratio n (n*Vin = Vout/D). Single ESR zero at 1/(r_C*C), no right-half-plane zero." },
+    { "name": "audio_susceptibility_tf_ccm", "expression": "Gb(s) = Vout(s)/Vin(s) = n*D*(1 + r_C*C*s) / Den(s)", "description": "Input-to-output (audio susceptibility) transfer function in CCM (Alonso eq. 5.33); the buck Gb(s) multiplied by n, same dynamics as Gd(s)." },
+    { "name": "output_impedance_tf_ccm", "expression": "Zo(s) = (r_L + L*s) * (1 + r_C*C*s) / Den(s)", "description": "Open-loop output impedance in CCM (Alonso eq. 5.39); identical to the buck and independent of the turns ratio (the secondary side is a plain LC filter). Zo(0) approx r_L, Zo(inf) approx r_C." },
+    { "name": "input_impedance_tf_ccm", "expression": "Zi(s) = (R_load / (n**2 * D**2)) * Den(s) / (1 + (R_load + r_C)*C*s)", "description": "Open-loop input impedance in CCM (Alonso eq. 5.35); the buck input impedance divided by the turns ratio squared, with Zi(0) = (R_load + r_L)/(n**2*D**2) and Zi(inf) -> infinity." }
+  ],
+  "control_notes": "The forward converter is dynamically a buck converter seen through the power transformer: the secondary feeds a continuous-current LC output filter, so the control-to-output plant Gd(s) is a second-order low-pass with a complex LC pole pair and a single ESR zero at 1/(r_C*C) - and crucially NO right-half-plane zero (the key advantage over the flyback). Voltage-mode control with a Type-II/Type-III compensator is straightforward; cross over well below fsw/5, or use current-mode to drop the plant to first order. Every CCM transfer function is the buck result scaled by the turns ratio: Gd and Gb are n times the buck, the output impedance Zo is identical (independent of n), and the input impedance Zi is the buck value divided by n**2. In DCM (R_load > R_lim = 2*L*fsw/(1-D)) the plant collapses to first order and the DC gain becomes load-dependent (still n times the buck). The distinctive design constraint is transformer reset: the magnetizing flux must return to zero each cycle through a reset/tertiary winding (ratio n31 = N3/N1), an RCD clamp, or an active clamp. The reset interval n31*D*T must finish before the period ends, which limits the duty cycle to D_max < 1/(1 + n31) (D < 0.5 for an equal-turns reset winding) and sets the switch blocking voltage to (1 + 1/n31)*Vin plus any leakage-inductance spike. Feedback must cross the isolation barrier (optocoupler + shunt reference, or primary-side regulation). All small-signal results follow from the averaged dependent-source model: the switch is replaced by its average current source and the diodes by their average voltage sources, then linearized about the DC operating point.",
+  "reference": {
+    "source": "J. Marcos Alonso, Modelling, Control and Simulation of DC-DC Converters",
+    "isbn": "979-8278321743",
+    "url": "https://github.com/marcosalonsoelectronics/Modelling-Control-and-Simulation-of-DC-DC-Converters"
+  },
+  "document": "blueprint.md"
+}

@@ -44,6 +44,17 @@ drive the QSpice circuit simulator through stable JSON tools.
   fast-simulation tip. Verified against and cited to J. Marcos Alonso, *Modelling,
   Control and Simulation of DC-DC Converters* Ch.4 (clean-room restatement; no source
   files copied).
+- **`forward_converter` topology block (isolated, buck-derived)** — second `isolated_dc_dc`
+  block, covering the transformer-isolated forward converter with an LC output filter:
+  CCM ratio `n*D` (lossy `n*D/(1 + r_L/R)`), the transformer-reset constraint
+  `D_max < 1/(1 + n31)` with switch stress `(1 + 1/n31)*Vin`, inductor/output ripples, the
+  CCM-DCM boundary, the DCM ratio `2*n/(1 + sqrt(1 + 4k/D**2))`, and the full CCM
+  small-signal set (`Gd`/`Gb` are `n` times the buck, `Zo` is identical, `Zi` is the buck
+  value over `n**2`) — with **no right-half-plane zero**, the key advantage over the
+  flyback. Includes reset-method, leakage, and isolated-feedback notes plus an
+  averaged-model fast-simulation tip. Verified against and cited to J. Marcos Alonso,
+  *Modelling, Control and Simulation of DC-DC Converters* Ch.5 (clean-room restatement;
+  no source files copied).
 - **Scratch-authored buck e2e** — `tests/integration/test_scratch_buck_authoring.py`
   authors the full buck from an empty workspace via MCP tools only (shared
   `scratch_buck.blueprint.json`), builds the DLL, generates the netlist, runs the
