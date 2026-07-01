@@ -20,6 +20,8 @@ _EXPECTED_BLOCK_IDS = {
     "flyback_converter",
     "forward_converter",
     "half_bridge_converter",
+    "full_bridge_converter",
+    "push_pull_converter",
 }
 
 
@@ -211,9 +213,70 @@ def test_half_bridge_manifest_includes_isolation_ccm_dcm_and_small_signal_equati
 
 
 def test_search_matches_half_bridge_on_topology_terms() -> None:
-    result = search_topology_blocks("half-bridge totem-pole input-capacitor divider")
+    # "totem-pole" and the input-capacitor divider are unique to the half-bridge; avoid the
+    # bare "half-bridge"/"bridge" tokens, which the full-bridge block also carries.
+    result = search_topology_blocks("totem-pole input-capacitor divider")
     assert result.matches
     assert result.matches[0].block_id == "half_bridge_converter"
+    assert result.matches[0].score > 0.0
+
+
+def _isolated_buck_derived_equation_names(block_id: str) -> set[str]:
+    detail = describe_topology_block(block_id)
+    assert detail.category == "isolated_dc_dc"
+    equation_names = {equation["name"] for equation in detail.design_equations}
+    assert {
+        "turns_ratio",
+        "conversion_ratio",
+        "boundary_load_resistance",
+        "dcm_conversion_ratio",
+        "ccm_characteristic_polynomial",
+        "control_to_output_tf_ccm",
+        "audio_susceptibility_tf_ccm",
+        "output_impedance_tf_ccm",
+        "input_impedance_tf_ccm",
+    } <= equation_names
+    # These transformer-isolated buck-derived stages have no right-half-plane zero.
+    assert "rhp_zero" not in equation_names
+    outcome = validate_topology_contribution(load_topology_manifest(block_id))
+    assert outcome.is_valid, outcome.errors
+    return equation_names
+
+
+def test_full_bridge_manifest_includes_isolation_ccm_dcm_and_small_signal_equations() -> None:
+    _isolated_buck_derived_equation_names("full_bridge_converter")
+
+
+def test_push_pull_manifest_includes_isolation_ccm_dcm_and_small_signal_equations() -> None:
+    _isolated_buck_derived_equation_names("push_pull_converter")
+
+
+def _equation_map(block_id: str) -> dict[str, str]:
+    detail = describe_topology_block(block_id)
+    return {equation["name"]: equation["expression"] for equation in detail.design_equations}
+
+
+def test_full_bridge_and_push_pull_differ_only_in_switch_voltage_stress() -> None:
+    # The chapter derives both from the same equations; the defining difference is the
+    # switch blocking voltage (full-bridge: Vin; push-pull: 2*Vin).
+    full = _equation_map("full_bridge_converter")
+    push = _equation_map("push_pull_converter")
+    assert full["conversion_ratio"] == push["conversion_ratio"] == "Vout / Vin = n * D"
+    assert "V_sw_pk = Vin" in full["switch_peak_voltage"]
+    assert "V_sw_pk = 2 * Vin" in push["switch_peak_voltage"]
+
+
+def test_search_matches_full_bridge_on_h_bridge_terms() -> None:
+    result = search_topology_blocks("full-bridge h-bridge four switches")
+    assert result.matches
+    assert result.matches[0].block_id == "full_bridge_converter"
+    assert result.matches[0].score > 0.0
+
+
+def test_search_matches_push_pull_on_center_tapped_terms() -> None:
+    result = search_topology_blocks("push-pull center-tapped primary staircase saturation")
+    assert result.matches
+    assert result.matches[0].block_id == "push_pull_converter"
     assert result.matches[0].score > 0.0
 
 

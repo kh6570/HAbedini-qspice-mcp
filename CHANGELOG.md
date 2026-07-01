@@ -68,6 +68,21 @@ drive the QSpice circuit simulator through stable JSON tools.
   notes plus an averaged-model fast-simulation tip. Verified against and cited to
   J. Marcos Alonso, *Modelling, Control and Simulation of DC-DC Converters* Ch.6
   (clean-room restatement; no source files copied).
+- **`full_bridge_converter` and `push_pull_converter` topology blocks (isolated,
+  buck-derived)** — fourth and fifth `isolated_dc_dc` blocks, from Alonso Ch.7. Both
+  give the CCM ratio `n*D` (lossy `n*D/(1 + r_L/R)`), the doubled-frequency ripple
+  `dVout = dI_L/(16*C*fsw)` and boundary `R_lim = 4*L*fsw/(1-D)`, the DCM ratio
+  `2*n/(1 + sqrt(1 + 4k/D**2))` with `k = 4*L*fsw/R`, and a CCM small-signal set
+  identical to the forward (`Gd = n*Vin*(...)/Den`, `Gb = n*D*(...)/Den`, `Zo` identical,
+  `Zi` the buck value over `n**2*D**2`) — with **no right-half-plane zero** and a
+  **self-resetting core**. The two share every equation and differ only in switch
+  voltage stress and structure: the full-bridge uses four H-bridge switches each blocking
+  `Vin`, while the push-pull uses two ground-referenced switches on a center-tapped
+  primary, each blocking `2*Vin` (and is flux-imbalance-prone, so current-mode control is
+  preferred). Includes flux-balance, leakage, and isolated-feedback notes plus
+  averaged-model fast-simulation tips. Verified against and cited to J. Marcos Alonso,
+  *Modelling, Control and Simulation of DC-DC Converters* Ch.7 (clean-room restatement;
+  no source files copied).
 - **Scratch-authored buck e2e** — `tests/integration/test_scratch_buck_authoring.py`
   authors the full buck from an empty workspace via MCP tools only (shared
   `scratch_buck.blueprint.json`), builds the DLL, generates the netlist, runs the

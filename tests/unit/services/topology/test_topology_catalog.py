@@ -19,6 +19,8 @@ _EXPECTED_BLOCK_IDS = {
     "flyback_converter",
     "forward_converter",
     "half_bridge_converter",
+    "full_bridge_converter",
+    "push_pull_converter",
 }
 _EXPECTED_CATEGORIES = {
     "buck_converter": "non_isolated_dc_dc",
@@ -27,6 +29,8 @@ _EXPECTED_CATEGORIES = {
     "flyback_converter": "isolated_dc_dc",
     "forward_converter": "isolated_dc_dc",
     "half_bridge_converter": "isolated_dc_dc",
+    "full_bridge_converter": "isolated_dc_dc",
+    "push_pull_converter": "isolated_dc_dc",
 }
 
 

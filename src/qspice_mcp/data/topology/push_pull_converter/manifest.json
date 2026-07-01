@@ -1,0 +1,57 @@
+{
+  "block_id": "push_pull_converter",
+  "title": "Push-Pull Converter (isolated)",
+  "category": "isolated_dc_dc",
+  "tags": ["push-pull", "center-tapped", "isolated", "transformer", "buck-derived", "smps", "ccm", "dcm", "pwm", "small-signal"],
+  "summary": "Galvanically isolated buck-derived converter; two switches alternately drive the two halves of a center-tapped transformer primary, and a full-wave secondary rectifier feeds an LC output filter. The CCM ratio is n * D, where n = N2/N1 is the turns ratio. Dynamically identical to the full-bridge, but each switch must block twice the input voltage (2*Vin) because of the two primary windings.",
+  "ports": [
+    { "name": "in", "role": "input", "description": "Positive primary-side input bus rail feeding the center tap of the primary winding." },
+    { "name": "sw1", "role": "internal", "description": "Low-side switch S1 terminal driving the first primary half-winding (N1a)." },
+    { "name": "sw2", "role": "internal", "description": "Low-side switch S2 terminal driving the second primary half-winding (N1b)." },
+    { "name": "out", "role": "output", "description": "Isolated regulated output rail across the LC filter and load (secondary side)." },
+    { "name": "pri_gnd", "role": "reference", "description": "Primary-side ground reference (input return); the two low-side switches return here." },
+    { "name": "sec_gnd", "role": "reference", "description": "Secondary-side ground reference (output return), galvanically isolated from pri_gnd." },
+    { "name": "pwm", "role": "control", "description": "Complementary gate-drive commands for S1 and S2, each on for duty D within its half-period, with dead-time." }
+  ],
+  "parameters": [
+    { "name": "Vin", "description": "Primary-side input bus voltage (VB); applied from the center tap across one half-winding each half-cycle.", "unit": "V" },
+    { "name": "Vout", "description": "Target regulated (isolated) output voltage.", "unit": "V" },
+    { "name": "Iout", "description": "Nominal load current.", "unit": "A" },
+    { "name": "fsw", "description": "Per-switch switching frequency; the output filter sees ripple at 2*fsw because both half-cycles deliver energy.", "unit": "Hz" },
+    { "name": "L", "description": "Secondary-side output filter inductor value.", "unit": "H" },
+    { "name": "C", "description": "Output filter capacitor value.", "unit": "F" },
+    { "name": "D", "description": "Steady-state duty cycle of each switch, defined as the on-time within its half switching period.", "unit": "1" },
+    { "name": "n", "description": "Power transformer turns ratio n = N2/N1 (secondary over one primary half-winding).", "unit": "1" },
+    { "name": "R_load", "description": "Load resistance seen at the output (R_load = Vout / Iout).", "unit": "ohm" },
+    { "name": "r_L", "description": "Output inductor series resistance (DCR); dominant loss term affecting the DC conversion ratio.", "unit": "ohm" },
+    { "name": "r_C", "description": "Output capacitor equivalent series resistance (ESR); sets the high-frequency zero.", "unit": "ohm" }
+  ],
+  "design_equations": [
+    { "name": "turns_ratio", "expression": "n = N2 / N1", "description": "Power transformer turns ratio definition (Alonso eq. 7.3); N1 is one half of the center-tapped primary." },
+    { "name": "conversion_ratio", "expression": "Vout / Vin = n * D", "description": "Ideal CCM DC conversion ratio (Alonso eq. 7.5.1 summary lossless); the buck ratio D scaled by the turns ratio n. Each half-cycle the full bus Vin is applied across one primary half-winding, so the ratio equals the full-bridge (no 1/2 divider factor)." },
+    { "name": "conversion_ratio_with_losses", "expression": "Vout / Vin = n * D / (1 + r_L / R_load)", "description": "CCM DC conversion ratio including the output inductor series resistance r_L (Alonso eq. 7.5.1 summary); the capacitor ESR does not affect the DC ratio because no DC current flows in C." },
+    { "name": "inductor_current", "expression": "I_L = Iout", "description": "Average output inductor current equals the load current in CCM (the LC filter keeps the output current continuous, as in a buck)." },
+    { "name": "inductor_ripple", "expression": "dI_L = (n * Vin - Vout) * D / (L * fsw)", "description": "Peak-to-peak output inductor current ripple in CCM (Alonso eq. 7.5.1 summary); the buck ripple with the reflected primary voltage n*Vin." },
+    { "name": "output_ripple", "expression": "dVout = dI_L / (16 * C * fsw)", "description": "Peak-to-peak output voltage ripple in CCM for an ideal capacitor (Alonso eq. 7.5.1 summary); ESR adds r_C * dI_L on top. The 1/16 factor (vs. 1/8 for the buck) is because the output filter is refreshed twice per switching period (effective ripple frequency 2*fsw)." },
+    { "name": "rectifier_peak_current", "expression": "I_d_pk = Iout + dI_L / 2", "description": "Peak current through each secondary rectifier D1-D4 and the output inductor in CCM (Alonso eq. 7.5.1 summary)." },
+    { "name": "switch_peak_current", "expression": "I_sw_pk = n * (Iout + dI_L / 2)", "description": "Peak current through each primary switch S1/S2 in CCM (Alonso eq. 7.5.1 summary); the reflected inductor peak current." },
+    { "name": "switch_peak_voltage", "expression": "V_sw_pk = 2 * Vin", "description": "Peak blocking voltage across each primary switch (Alonso eq. 7.5.2 summary): when one switch conducts, the coupled second half-winding reflects Vin so the off switch sees 2*Vin (plus any leakage spike). This doubled stress - versus the full-bridge's Vin - is the defining drawback of the push-pull. No reset winding is needed; the symmetric two-winding drive self-resets the core." },
+    { "name": "rectifier_peak_voltage", "expression": "V_d_pk = n * Vin", "description": "Peak reverse voltage across each secondary rectifier D1-D4 (Alonso eq. 7.5.1 summary)." },
+    { "name": "boundary_load_resistance", "expression": "R_lim = 4 * L * fsw / (1 - D)", "description": "CCM-DCM boundary load resistance (Alonso eq. 7.5.1 summary): CCM when R_load < R_lim, DCM when R_load > R_lim. The factor 4 (vs. 2 for the buck/forward) follows from the doubled effective output ripple frequency 2*fsw." },
+    { "name": "boundary_output_current", "expression": "Io_lim = Vout * (1 - D) / (4 * L * fsw)", "description": "Output current at the CCM-DCM boundary (Alonso eq. 7.5.1 summary; Io_lim = Vout / R_lim)." },
+    { "name": "dcm_conversion_ratio", "expression": "Vout / Vin = 2 * n / (1 + sqrt(1 + 4 * k / D**2)),  k = 4 * L * fsw / R_load", "description": "DCM DC conversion ratio (Alonso eq. 7.5.2 summary); load-dependent, with the doubled-frequency factor k = 4*L*fsw/R_load. Identical to the full-bridge." },
+    { "name": "dcm_peak_inductor_current", "expression": "i_pk = D * (n * Vin - Vout) / (2 * L * fsw)", "description": "Peak inductor (and reflected switch) current in DCM (Alonso eq. 7.5.2 summary)." },
+    { "name": "ccm_characteristic_polynomial", "expression": "Den(s) = L*C*(1 + r_C/R_load)*s**2 + (L/R_load + r_C*C + r_L*C + r_L*r_C*C/R_load)*s + (1 + r_L/R_load)", "description": "Shared CCM denominator of every small-signal transfer function below; identical to the buck, forward, and full-bridge (a complex pole pair near 1/(2*pi*sqrt(L*C))), because the push-pull is dynamically a buck seen through the transformer." },
+    { "name": "control_to_output_tf_ccm", "expression": "Gd(s) = Vout(s)/d(s) = n*Vin*(1 + r_C*C*s) / Den(s)", "description": "Control-to-output transfer function in CCM (Alonso eq. 7.5.1 summary); the buck Gd(s) scaled to n*Vin (= (Vout/D)*(1 + r_L/R_load)). Single ESR zero at 1/(r_C*C), no right-half-plane zero. Identical to the full-bridge." },
+    { "name": "audio_susceptibility_tf_ccm", "expression": "Gb(s) = Vout(s)/Vin(s) = n*D*(1 + r_C*C*s) / Den(s)", "description": "Input-to-output (audio susceptibility) transfer function in CCM (Alonso eq. 7.5.1 summary); the buck Gb(s) scaled by n, same dynamics as Gd(s)." },
+    { "name": "output_impedance_tf_ccm", "expression": "Zo(s) = (r_L + L*s) * (1 + r_C*C*s) / Den(s)", "description": "Open-loop output impedance in CCM (Alonso eq. 7.5.1 summary); identical to the buck/forward/full-bridge and independent of the turns ratio (the secondary side is a plain LC filter). Zo(0) approx r_L, Zo(inf) approx r_C." },
+    { "name": "input_impedance_tf_ccm", "expression": "Zi(s) = (R_load/(n**2*D**2)) * Den(s) / (1 + (R_load + r_C)*C*s)", "description": "Open-loop input impedance in CCM (Alonso eq. 7.5.1 summary); the buck input impedance divided by n**2*D**2, with Zi(0) = (R_load + r_L)/(n**2*D**2). Identical to the full-bridge." }
+  ],
+  "control_notes": "The push-pull converter is dynamically identical to the full-bridge (and therefore a buck seen through the transformer): two switches alternately energize the two halves of a center-tapped primary, applying the full bus Vin to one half-winding each half-cycle, and a full-wave secondary rectifier (D1-D4) feeds a continuous-current LC output filter. So its CCM small-signal model matches the full-bridge/forward exactly: Gd(s) = n*Vin*(1 + r_C*C*s)/Den(s) is a second-order low-pass with a complex LC pole pair and a single ESR zero at 1/(r_C*C), with NO right-half-plane zero. Every CCM transfer function is the buck result scaled through the transformer: Gd = n*Vin*(...)/Den, Gb = n*D*(...)/Den, Zo identical to the buck (independent of n), and Zi = buck value over n**2*D**2. Voltage-mode control with a Type-II/Type-III compensator is straightforward; cross over well below fsw/5 (output ripple frequency 2*fsw), or use current-mode to drop the plant to first order. In DCM (R_load > R_lim = 4*L*fsw/(1-D)) the plant collapses to first order and the DC gain becomes load-dependent. The defining difference from the full-bridge is device stress and drive simplicity: the push-pull uses only two ground-referenced switches (simpler gate drive, no high-side drivers), but each switch must block 2*Vin because the conducting half-winding reflects Vin onto the off switch - so it suits lower input voltages. It shares the full-bridge's doubled-frequency boundary and ripple (R_lim = 4*L*fsw/(1-D), dVout = dI_L/(16*C*fsw)) and its self-resetting core (no reset winding, no D < 0.5 limit). Push-pull is especially prone to flux imbalance / staircase saturation: any asymmetry between the two switch on-times or winding resistances walks the DC flux, so peak-current-mode control (which balances volt-seconds cycle-by-cycle) is strongly preferred, and a leakage snubber plus tight winding coupling are important. Feedback must cross the isolation barrier (optocoupler + shunt reference, or primary-side regulation). All small-signal results follow from the averaged dependent-source model: the switches are replaced by their average current sources and the rectifier diodes by their average voltage sources, then linearized about the DC operating point.",
+  "reference": {
+    "source": "J. Marcos Alonso, Modelling, Control and Simulation of DC-DC Converters",
+    "isbn": "979-8278321743",
+    "url": "https://github.com/marcosalonsoelectronics/Modelling-Control-and-Simulation-of-DC-DC-Converters"
+  },
+  "document": "blueprint.md"
+}

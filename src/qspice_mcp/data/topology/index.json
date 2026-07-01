@@ -59,6 +59,22 @@
       "tags": ["half-bridge", "bridge", "isolated", "transformer", "buck-derived", "smps", "ccm", "dcm", "pwm", "small-signal"],
       "summary": "Galvanically isolated buck-derived converter; two switches drive the transformer across an input-capacitor divider, giving the output n * D / 2 with no right-half-plane zero and a self-resetting core.",
       "directory": "half_bridge_converter"
+    },
+    {
+      "block_id": "full_bridge_converter",
+      "title": "Full-Bridge Converter (isolated)",
+      "category": "isolated_dc_dc",
+      "tags": ["full-bridge", "bridge", "h-bridge", "isolated", "transformer", "buck-derived", "smps", "ccm", "dcm", "pwm", "small-signal"],
+      "summary": "Galvanically isolated buck-derived converter; four switches in an H-bridge drive the full input across the transformer, giving the output n * D with no right-half-plane zero. Each switch blocks only Vin.",
+      "directory": "full_bridge_converter"
+    },
+    {
+      "block_id": "push_pull_converter",
+      "title": "Push-Pull Converter (isolated)",
+      "category": "isolated_dc_dc",
+      "tags": ["push-pull", "center-tapped", "isolated", "transformer", "buck-derived", "smps", "ccm", "dcm", "pwm", "small-signal"],
+      "summary": "Galvanically isolated buck-derived converter; two switches drive a center-tapped primary, giving the output n * D with no right-half-plane zero. Dynamically identical to the full-bridge but each switch blocks 2 * Vin.",
+      "directory": "push_pull_converter"
     }
   ]
 }
