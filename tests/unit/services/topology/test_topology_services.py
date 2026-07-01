@@ -19,6 +19,7 @@ _EXPECTED_BLOCK_IDS = {
     "buck_boost_converter",
     "flyback_converter",
     "forward_converter",
+    "half_bridge_converter",
 }
 
 
@@ -185,6 +186,34 @@ def test_search_matches_forward_on_reset_winding_terms() -> None:
     result = search_topology_blocks("forward reset winding demagnetization")
     assert result.matches
     assert result.matches[0].block_id == "forward_converter"
+    assert result.matches[0].score > 0.0
+
+
+def test_half_bridge_manifest_includes_isolation_ccm_dcm_and_small_signal_equations() -> None:
+    detail = describe_topology_block("half_bridge_converter")
+    assert detail.category == "isolated_dc_dc"
+    equation_names = {equation["name"] for equation in detail.design_equations}
+    assert {
+        "turns_ratio",
+        "conversion_ratio",
+        "boundary_load_resistance",
+        "dcm_conversion_ratio",
+        "ccm_characteristic_polynomial",
+        "control_to_output_tf_ccm",
+        "audio_susceptibility_tf_ccm",
+        "output_impedance_tf_ccm",
+        "input_impedance_tf_ccm",
+    } <= equation_names
+    # The half-bridge is buck-derived: its control-to-output plant has no right-half-plane zero.
+    assert "rhp_zero" not in equation_names
+    outcome = validate_topology_contribution(load_topology_manifest("half_bridge_converter"))
+    assert outcome.is_valid, outcome.errors
+
+
+def test_search_matches_half_bridge_on_topology_terms() -> None:
+    result = search_topology_blocks("half-bridge totem-pole input-capacitor divider")
+    assert result.matches
+    assert result.matches[0].block_id == "half_bridge_converter"
     assert result.matches[0].score > 0.0
 
 

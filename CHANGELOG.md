@@ -55,6 +55,19 @@ drive the QSpice circuit simulator through stable JSON tools.
   averaged-model fast-simulation tip. Verified against and cited to J. Marcos Alonso,
   *Modelling, Control and Simulation of DC-DC Converters* Ch.5 (clean-room restatement;
   no source files copied).
+- **`half_bridge_converter` topology block (isolated, buck-derived)** — third
+  `isolated_dc_dc` block, covering the two-switch half-bridge with an input-capacitor
+  divider and full-wave secondary rectifier: CCM ratio `n*D/2` (lossy
+  `(n*D/2)/(1 + r_L/R)`), the doubled-frequency ripple `dVout = dI_L/(16*C*fsw)` and
+  boundary `R_lim = 4*L*fsw/(1-D)`, device stress (switch blocks the full bus `Vin`,
+  rectifier `n*Vin/2`), the DCM ratio `n/(1 + sqrt(1 + 4k/D**2))` with `k = 4*L*fsw/R`,
+  and the full CCM small-signal set (`Gd`/`Gb` are `n/2` times the buck, `Zo` is
+  identical, `Zi` is the active input over `n**2*D**2` in parallel with the input-cap
+  divider) — with **no right-half-plane zero** and a **self-resetting core** (no reset
+  winding, no `D < 0.5` limit). Includes flux-balance, leakage, and isolated-feedback
+  notes plus an averaged-model fast-simulation tip. Verified against and cited to
+  J. Marcos Alonso, *Modelling, Control and Simulation of DC-DC Converters* Ch.6
+  (clean-room restatement; no source files copied).
 - **Scratch-authored buck e2e** — `tests/integration/test_scratch_buck_authoring.py`
   authors the full buck from an empty workspace via MCP tools only (shared
   `scratch_buck.blueprint.json`), builds the DLL, generates the netlist, runs the

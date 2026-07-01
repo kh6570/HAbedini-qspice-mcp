@@ -51,6 +51,14 @@
       "tags": ["forward", "isolated", "transformer", "buck-derived", "reset-winding", "smps", "ccm", "dcm", "pwm", "small-signal"],
       "summary": "Galvanically isolated buck-derived converter with an LC output filter; output equals the input scaled by n * D, with no right-half-plane zero.",
       "directory": "forward_converter"
+    },
+    {
+      "block_id": "half_bridge_converter",
+      "title": "Half-Bridge Converter (isolated)",
+      "category": "isolated_dc_dc",
+      "tags": ["half-bridge", "bridge", "isolated", "transformer", "buck-derived", "smps", "ccm", "dcm", "pwm", "small-signal"],
+      "summary": "Galvanically isolated buck-derived converter; two switches drive the transformer across an input-capacitor divider, giving the output n * D / 2 with no right-half-plane zero and a self-resetting core.",
+      "directory": "half_bridge_converter"
     }
   ]
 }

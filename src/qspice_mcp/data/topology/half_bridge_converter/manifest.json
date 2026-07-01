@@ -1,0 +1,59 @@
+{
+  "block_id": "half_bridge_converter",
+  "title": "Half-Bridge Converter (isolated)",
+  "category": "isolated_dc_dc",
+  "tags": ["half-bridge", "bridge", "isolated", "transformer", "buck-derived", "smps", "ccm", "dcm", "pwm", "small-signal"],
+  "summary": "Galvanically isolated buck-derived converter; two switches drive the transformer primary across an input-capacitor divider, and a full-wave secondary rectifier feeds an LC output filter. The CCM ratio is n * D / 2, where n = N2/N1 is the turns ratio. The transformer is driven symmetrically (self-resetting) and there is no right-half-plane zero.",
+  "ports": [
+    { "name": "in", "role": "input", "description": "Positive primary-side input bus rail feeding the switch totem-pole and the input-capacitor divider." },
+    { "name": "sw_mid", "role": "internal", "description": "Switching-node midpoint between the two primary switches S1 (high side) and S2 (low side); one terminal of the transformer primary." },
+    { "name": "cap_mid", "role": "internal", "description": "Midpoint of the two series input capacitors CB1/CB2 (sits at Vin/2); the other terminal of the transformer primary." },
+    { "name": "out", "role": "output", "description": "Isolated regulated output rail across the LC filter and load (secondary side)." },
+    { "name": "pri_gnd", "role": "reference", "description": "Primary-side ground reference (input return)." },
+    { "name": "sec_gnd", "role": "reference", "description": "Secondary-side ground reference (output return), galvanically isolated from pri_gnd." },
+    { "name": "pwm", "role": "control", "description": "Complementary gate-drive commands for S1 and S2 (each on for duty D within its half-period, with dead-time) from the controller." }
+  ],
+  "parameters": [
+    { "name": "Vin", "description": "Primary-side input bus voltage (VB); the transformer primary swings +/- Vin/2 about the capacitor-divider midpoint.", "unit": "V" },
+    { "name": "Vout", "description": "Target regulated (isolated) output voltage.", "unit": "V" },
+    { "name": "Iout", "description": "Nominal load current.", "unit": "A" },
+    { "name": "fsw", "description": "Per-switch switching frequency; the output filter sees ripple at 2*fsw because both half-cycles deliver energy.", "unit": "Hz" },
+    { "name": "L", "description": "Secondary-side output filter inductor value.", "unit": "H" },
+    { "name": "C", "description": "Output filter capacitor value.", "unit": "F" },
+    { "name": "D", "description": "Steady-state duty cycle of each switch, defined as the on-time within its half switching period.", "unit": "1" },
+    { "name": "n", "description": "Power transformer turns ratio n = N2/N1 (secondary over primary).", "unit": "1" },
+    { "name": "C_B", "description": "Each of the two series input divider capacitors (CB1 = CB2 = C_B); their midpoint holds Vin/2.", "unit": "F" },
+    { "name": "r_B", "description": "Equivalent series resistance of each input divider capacitor; appears only in the input-impedance transfer function.", "unit": "ohm" },
+    { "name": "R_load", "description": "Load resistance seen at the output (R_load = Vout / Iout).", "unit": "ohm" },
+    { "name": "r_L", "description": "Output inductor series resistance (DCR); dominant loss term affecting the DC conversion ratio.", "unit": "ohm" },
+    { "name": "r_C", "description": "Output capacitor equivalent series resistance (ESR); sets the high-frequency zero.", "unit": "ohm" }
+  ],
+  "design_equations": [
+    { "name": "turns_ratio", "expression": "n = N2 / N1", "description": "Power transformer turns ratio definition (Alonso eq. 6.3)." },
+    { "name": "conversion_ratio", "expression": "Vout / Vin = n * D / 2", "description": "Ideal CCM DC conversion ratio (Alonso eq. 6.9 lossless); the buck ratio D scaled by the turns ratio n, with the factor 1/2 because the primary sees only Vin/2 across the capacitor divider." },
+    { "name": "conversion_ratio_with_losses", "expression": "Vout / Vin = (n * D / 2) / (1 + r_L / R_load)", "description": "CCM DC conversion ratio including the output inductor series resistance r_L (Alonso eq. 6.9); the capacitor ESR does not affect the DC ratio because no DC current flows in C." },
+    { "name": "inductor_current", "expression": "I_L = Iout", "description": "Average output inductor current equals the load current in CCM (the LC filter keeps the output current continuous, as in a buck)." },
+    { "name": "inductor_ripple", "expression": "dI_L = (n * Vin / 2 - Vout) * D / (L * fsw)", "description": "Peak-to-peak output inductor current ripple in CCM (Alonso eq. 6.37); the buck ripple with the reflected primary voltage n*Vin/2." },
+    { "name": "output_ripple", "expression": "dVout = dI_L / (16 * C * fsw)", "description": "Peak-to-peak output voltage ripple in CCM for an ideal capacitor (Alonso eq. 6.38); ESR adds r_C * dI_L on top. The 1/16 factor (vs. 1/8 for the buck) is because the output filter is refreshed twice per switching period (effective ripple frequency 2*fsw)." },
+    { "name": "rectifier_peak_current", "expression": "I_d_pk = Iout + dI_L / 2", "description": "Peak current through each secondary rectifier D1-D4 and the output inductor in CCM (Alonso summary)." },
+    { "name": "switch_peak_current", "expression": "I_sw_pk = n * (Iout + dI_L / 2)", "description": "Peak current through each primary switch S1/S2 in CCM (Alonso summary); the reflected inductor peak current." },
+    { "name": "switch_peak_voltage", "expression": "V_sw_pk = Vin", "description": "Peak blocking voltage across each primary switch (Alonso summary); with the two switches in a totem-pole across the bus, the off switch blocks the full input voltage Vin (plus any leakage spike). No reset winding is needed - the symmetric bidirectional drive self-resets the core." },
+    { "name": "rectifier_peak_voltage", "expression": "V_d_pk = n * Vin / 2", "description": "Peak reverse voltage across each secondary rectifier D1-D4 (Alonso summary)." },
+    { "name": "boundary_load_resistance", "expression": "R_lim = 4 * L * fsw / (1 - D)", "description": "CCM-DCM boundary load resistance (Alonso eq. 6.40): CCM when R_load < R_lim, DCM when R_load > R_lim. The factor 4 (vs. 2 for the buck/forward) follows from the doubled effective output ripple frequency 2*fsw." },
+    { "name": "boundary_output_current", "expression": "Io_lim = Vout * (1 - D) / (4 * L * fsw)", "description": "Output current at the CCM-DCM boundary (Alonso eq. 6.39)." },
+    { "name": "dcm_conversion_ratio", "expression": "Vout / Vin = n / (1 + sqrt(1 + 4 * k / D**2)),  k = 4 * L * fsw / R_load", "description": "DCM DC conversion ratio (Alonso eq. 6.54-6.55); load-dependent, with the doubled-frequency factor k = 4*L*fsw/R_load." },
+    { "name": "dcm_peak_inductor_current", "expression": "i_pk = D * (n * Vin - 2 * Vout) / (4 * L * fsw)", "description": "Peak inductor (and reflected switch) current in DCM (Alonso eq. 6.43 / DCM summary)." },
+    { "name": "ccm_characteristic_polynomial", "expression": "Den(s) = L*C*(1 + r_C/R_load)*s**2 + (L/R_load + r_C*C + r_L*C + r_L*r_C*C/R_load)*s + (1 + r_L/R_load)", "description": "Shared CCM denominator of every small-signal transfer function below; identical to the buck and forward (a complex pole pair near 1/(2*pi*sqrt(L*C))), because the half-bridge is dynamically a buck seen through the transformer." },
+    { "name": "control_to_output_tf_ccm", "expression": "Gd(s) = Vout(s)/d(s) = (n*Vin/2)*(1 + r_C*C*s) / Den(s)", "description": "Control-to-output transfer function in CCM (Alonso eq. 6.21-6.22); the buck Gd(s) scaled to n*Vin/2 (= (Vout/D)*(1 + r_L/R_load)). Single ESR zero at 1/(r_C*C), no right-half-plane zero." },
+    { "name": "audio_susceptibility_tf_ccm", "expression": "Gb(s) = Vout(s)/Vin(s) = (n*D/2)*(1 + r_C*C*s) / Den(s)", "description": "Input-to-output (audio susceptibility) transfer function in CCM (Alonso eq. 6.23); the buck Gb(s) scaled by n/2, same dynamics as Gd(s)." },
+    { "name": "output_impedance_tf_ccm", "expression": "Zo(s) = (r_L + L*s) * (1 + r_C*C*s) / Den(s)", "description": "Open-loop output impedance in CCM (Alonso eq. 6.33); identical to the buck and forward and independent of the turns ratio (the secondary side is a plain LC filter). Zo(0) approx r_L, Zo(inf) approx r_C." },
+    { "name": "input_impedance_tf_ccm", "expression": "Zi(s) = Z_B(s)*Z_C(s)/(Z_B(s) + Z_C(s)),  Z_B(s) = 2*r_B + 2/(C_B*s),  Z_C(s) = (R_load/(n**2*D**2)) * Den(s) / (1 + (R_load + r_C)*C*s)", "description": "Open-loop input impedance in CCM (Alonso eq. 6.24, 6.26-6.30): the passive input-capacitor divider Z_B in parallel with the active converter input Z_C. Z_C is the buck input impedance divided by n**2*D**2 (Z_C(0) = (R_load + r_L)/(n**2*D**2)), reflecting the n*D/2 stage gain." }
+  ],
+  "control_notes": "The half-bridge converter is dynamically a buck converter seen through the power transformer: two switches (S1/S2) drive the primary across an input-capacitor divider, and a full-wave secondary rectifier (D1-D4) feeds a continuous-current LC output filter. So the control-to-output plant Gd(s) is a second-order low-pass with a complex LC pole pair and a single ESR zero at 1/(r_C*C) - and NO right-half-plane zero, exactly like the forward and buck. Every CCM transfer function is the buck result scaled through the transformer: Gd and Gb are n/2 times the buck (the 1/2 is the input-divider factor), the output impedance Zo is identical (independent of n), and the active input impedance Z_C is the buck value divided by n**2*D**2 - the full input impedance Zi is Z_C in parallel with the passive input-capacitor divider Z_B(s) = 2*r_B + 2/(C_B*s). Voltage-mode control with a Type-II/Type-III compensator is straightforward; cross over well below fsw/5 (note the output filter ripple frequency is 2*fsw), or use current-mode to drop the plant to first order. In DCM (R_load > R_lim = 4*L*fsw/(1-D)) the plant collapses to first order and the DC gain becomes load-dependent. Distinctive half-bridge features vs. the forward: the transformer is driven symmetrically in both directions, so it self-resets (no reset/tertiary winding and no D < 0.5 duty limit); each switch blocks the full bus voltage Vin (not (1 + 1/n31)*Vin); and the boundary and ripple carry a doubled effective frequency (R_lim = 4*L*fsw/(1-D), dVout = dI_L/(16*C*fsw)) because both half-cycles deliver energy to the output. Watch for flux-imbalance/DC magnetizing current from asymmetric switch timing (blocking capacitor or current-mode control mitigates it), and add a leakage snubber on the primary. Feedback must cross the isolation barrier (optocoupler + shunt reference, or primary-side regulation). All small-signal results follow from the averaged dependent-source model: the switches are replaced by their average current sources and the rectifier diodes by their average voltage sources, then linearized about the DC operating point.",
+  "reference": {
+    "source": "J. Marcos Alonso, Modelling, Control and Simulation of DC-DC Converters",
+    "isbn": "979-8278321743",
+    "url": "https://github.com/marcosalonsoelectronics/Modelling-Control-and-Simulation-of-DC-DC-Converters"
+  },
+  "document": "blueprint.md"
+}
