@@ -106,8 +106,7 @@ def _wrap_msvc_with_vcvars(
     command: tuple[str, ...],
     vcvars: Path,
 ) -> tuple[str, ...]:
-    joined = " ".join(command)
-    return ("cmd", "/c", f'call "{vcvars}" && {joined}')
+    return ("cmd", "/c", "call", str(vcvars), "&&", *command)
 
 
 def _cmake_build_dir(source_parent: Path) -> Path:

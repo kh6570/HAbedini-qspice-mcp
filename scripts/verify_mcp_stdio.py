@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import subprocess
@@ -41,6 +42,25 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def _tools_list_response_seen(line: bytes) -> bool:
     return b'"id": 2' in line or b'"id":2' in line
+
+
+def _shutdown(proc: subprocess.Popen[bytes], *, grace_s: float = 5.0) -> None:
+    """Stop the MCP server, escalating to SIGKILL if it ignores a graceful stop.
+
+    A stdio MCP server is normally blocked reading stdin, so closing stdin lets its
+    transport reach EOF and exit cleanly. We then ``terminate()`` and only fall back to
+    ``kill()`` if the process still has not exited within ``grace_s`` (e.g. when the
+    runner does not honor SIGTERM promptly).
+    """
+    if proc.stdin is not None and not proc.stdin.closed:
+        with contextlib.suppress(OSError):
+            proc.stdin.close()
+    proc.terminate()
+    try:
+        proc.wait(timeout=grace_s)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
 
 
 def probe_cold_start(
@@ -98,17 +118,12 @@ def probe_cold_start(
             break
         if _tools_list_response_seen(line):
             elapsed = time.perf_counter() - t0
-            proc.terminate()
-            proc.wait(timeout=5)
+            _shutdown(proc)
             return elapsed
         if proc.stderr is not None and proc.poll() is not None:
             stderr_chunks.append(proc.stderr.read())
 
-    proc.terminate()
-    try:
-        proc.wait(timeout=5)
-    except subprocess.TimeoutExpired:
-        proc.kill()
+    _shutdown(proc)
     if proc.stderr is not None:
         stderr_chunks.append(proc.stderr.read())
     detail = b"".join(stderr_chunks).decode("utf-8", errors="replace").strip()

@@ -81,7 +81,10 @@ markers = [
 filterwarnings = ["error"]
 
 [tool.mypy]
-python_version = "3.11"
+# Target 3.12 so mypy accepts numpy's PEP 695 (`type X = ...`) stub syntax, which
+# only parses under a 3.12+ host/target. Type-checking runs on the 3.12 CI matrix
+# entry only; ruff (target py311) and the 3.11 pytest matrix guard 3.11 support.
+python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_configs = true

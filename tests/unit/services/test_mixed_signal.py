@@ -765,11 +765,11 @@ def test_build_dll_device_reports_missing_toolchain(
 
     monkeypatch.setattr("qspice_mcp.services.mixed_signal.build_dll_device.which", lambda _: None)
     monkeypatch.setattr(
-        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.discover_executable",
-        lambda _exe: (None, "unavailable"),
+        "qspice_mcp.services.mixed_signal.build_dll_device.find_bundled_dmc",
+        lambda _exe: None,
     )
     monkeypatch.setattr(
-        "qspice_mcp.services.mixed_signal._dll_toolchain_probe.find_vcvars64_bat",
+        "qspice_mcp.services.mixed_signal.build_dll_device.find_vcvars64_bat",
         lambda: None,
     )
 

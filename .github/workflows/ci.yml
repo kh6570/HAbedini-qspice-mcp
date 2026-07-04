@@ -79,6 +79,10 @@ jobs:
         run: ruff format --check .
 
       - name: Type-check (mypy)
+        # mypy targets py312 (numpy ships PEP 695 stubs that only parse on a 3.12+
+        # host). Run on both 3.12 runners (ubuntu + windows) for cross-OS coverage;
+        # ruff (py311) and the 3.11 pytest matrix guard 3.11 support.
+        if: matrix.python == '3.12'
         run: mypy --strict src/
 
       - name: Unit tests

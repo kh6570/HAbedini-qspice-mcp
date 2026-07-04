@@ -168,6 +168,14 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`create_starter_schematic` net naming** — series V–R–GND starter labels `VIN` on the source side and uses separate GND symbols (no spanning GND bus).
 - **`qspice-schematic-layout` skill** — bundled agent guidance for readable scratch placement.
 
+### Fixed
+
+- **`build_dll_device` MSVC vcvars quoting on Windows** — the `cl` bootstrap via
+  `vcvars64.bat` now passes the script path as a discrete `cmd /c` argument instead of
+  pre-quoting it inside a single command string. Pre-quoting caused Python's
+  `list2cmdline` to backslash-escape the quotes (`\"...\"`), so `cmd.exe` could not find
+  `vcvars64.bat` and every MSVC-only DLL build failed on machines without `cl` on PATH.
+
 ### Changed
 
 - **Buck, boost, and buck-boost topology blocks enriched with CCM/DCM and small-signal
