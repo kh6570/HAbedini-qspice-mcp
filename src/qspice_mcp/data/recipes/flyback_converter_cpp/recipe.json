@@ -1,0 +1,28 @@
+{
+  "recipe_id": "flyback_converter_cpp",
+  "title": "Flyback Converter (C++ DLL)",
+  "description": "Isolated flyback converter with PWM control via a 10-pin C-block DLL (Flyback_controller).",
+  "files": [
+    {
+      "relative_path": "Flyback_sim.qsch",
+      "bundle_name": "Flyback_sim.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "flyback_controller.cpp",
+      "bundle_name": "flyback_controller.cpp",
+      "encoding": "text"
+    }
+  ],
+  "build_required": true,
+  "build_hint": "build_dll_device(source_path=\"flyback_controller.cpp\")",
+  "workflows": [
+    {
+      "instruction_id": "flyback-converter-cpp-catalog",
+      "title": "Flyback converter (C++ DLL) — materialize recipe",
+      "summary": "Copy the bundled flyback files into the workspace and simulate (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ]
+}

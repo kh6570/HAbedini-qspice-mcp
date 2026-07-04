@@ -8,6 +8,10 @@
     {
       "recipe_id": "boost_converter_cpp",
       "title": "Boost Converter (C++ DLL)"
+    },
+    {
+      "recipe_id": "flyback_converter_cpp",
+      "title": "Flyback Converter (C++ DLL)"
     }
   ]
 }
