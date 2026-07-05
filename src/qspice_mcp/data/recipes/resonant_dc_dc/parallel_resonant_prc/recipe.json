@@ -1,0 +1,37 @@
+{
+  "recipe_id": "parallel_resonant_prc",
+  "title": "Parallel Resonant Converter (PRC)",
+  "description": "Full parallel-resonant DC-DC converter with the load reflected across the resonant capacitor.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "Static and Dynamic Modelling of the Parallel Resonant DC-DC Converter (PRC) (I)",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-113",
+    "path": "1.- PRC-converter-full.qsch",
+    "commit": "43cb6dc20e13448fb55891dd28cfbe7e0cd9a4ba",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "circuit.qsch is Alonso's schematic; the .cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
+  },
+  "files": [
+    {
+      "relative_path": "parallel_resonant_prc.qsch",
+      "bundle_name": "parallel_resonant_prc.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "parallel_resonant_prc.cir",
+      "bundle_name": "parallel_resonant_prc.cir",
+      "encoding": "binary"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "parallel-resonant-prc-catalog",
+      "title": "Parallel Resonant Converter (PRC) -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ]
+}

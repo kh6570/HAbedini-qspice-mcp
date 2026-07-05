@@ -1,0 +1,38 @@
+{
+  "recipe_id": "push_pull_resonant",
+  "title": "Current-Fed Push-Pull Resonant Converter",
+  "description": "Current-fed push-pull resonant DC-DC converter (100 kHz) with a resonant transformer tank and behavioral ideal-diode output rectifier. Boosts 12 V to roughly 24 V into a 5.76 ohm load.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "Current-fed push-pull resonant DC-DC converter",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-93",
+    "path": "1.- Current-fed-push-pull-resonant-dc-dc-converter.qsch",
+    "commit": "5bf38f28d64cf227d40c2b8fb57134fc1a684f8f",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "push_pull_resonant.qsch is Alonso's schematic; push_pull_resonant.cir is the self-contained QUX netlist (his behavioral library inlined) plus a single '.options cshunt=1e-12' line added for convergence (the ideal-switch resonant tank otherwise aborts with 'Timestep too small'). The 1 pF node shunt is negligible at 100 kHz."
+  },
+  "files": [
+    {
+      "relative_path": "push_pull_resonant.qsch",
+      "bundle_name": "push_pull_resonant.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "push_pull_resonant.cir",
+      "bundle_name": "push_pull_resonant.cir",
+      "encoding": "binary"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "push-pull-resonant-catalog",
+      "title": "Current-Fed Push-Pull Resonant Converter -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "push_pull_converter"
+}

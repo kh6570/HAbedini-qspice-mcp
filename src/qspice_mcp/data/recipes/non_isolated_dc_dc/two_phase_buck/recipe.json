@@ -1,0 +1,38 @@
+{
+  "recipe_id": "two_phase_buck",
+  "title": "Two-Phase (Multiphase) Buck Converter",
+  "description": "Interleaved two-phase synchronous buck converter demonstrating multiphase current sharing and output ripple cancellation.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "Introduction to Multiphase Buck DC-DC Converters",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-103",
+    "path": "3.- Two-phase-buck-converter.qsch",
+    "commit": "a5b6c917dfaeb519319aa735c8a158bfc8ed664c",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "circuit.qsch is Alonso's schematic; the .cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
+  },
+  "files": [
+    {
+      "relative_path": "two_phase_buck.qsch",
+      "bundle_name": "two_phase_buck.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "two_phase_buck.cir",
+      "bundle_name": "two_phase_buck.cir",
+      "encoding": "binary"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "two-phase-buck-catalog",
+      "title": "Two-Phase (Multiphase) Buck Converter -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "buck_converter"
+}

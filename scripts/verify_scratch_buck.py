@@ -7,20 +7,20 @@ import argparse
 import json
 import os
 import sys
-from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
 from qspice_mcp.adapters.probe import discover_executable
 from qspice_mcp.infra.config import QSpiceSettings
 from qspice_mcp.mcp.server import create_server
+from qspice_mcp.services.recipes._catalog import recipe_bundle_path
 
 DEFAULT_WORKSPACE = Path.home() / "Desktop" / "qspice-mcp-test"
-_RECIPE_PACKAGE = "qspice_mcp.data.recipes.buck_converter_cpp"
+_RECIPE_ID = "buck_converter_cpp"
 
 
 def _load_blueprint() -> dict[str, Any]:
-    raw = (files(_RECIPE_PACKAGE) / "scratch_buck.blueprint.json").read_text(encoding="utf-8")
+    raw = recipe_bundle_path(_RECIPE_ID, "scratch_buck.blueprint.json").read_text(encoding="utf-8")
     blueprint: dict[str, Any] = json.loads(raw)
     return blueprint
 
@@ -237,9 +237,7 @@ def _check_dll_build(
     results: list[tuple[str, str, str]],
 ) -> None:
     try:
-        bundled = files("qspice_mcp.data.recipes.buck_converter_cpp").joinpath(
-            "buck_controller.cpp"
-        )
+        bundled = recipe_bundle_path(_RECIPE_ID, "buck_controller.cpp")
         content = bundled.read_text(encoding="utf-8")
         payload = server.invoke_tool(
             "write_workspace_text_file",

@@ -1,0 +1,43 @@
+{
+  "recipe_id": "push_pull_uc1846",
+  "title": "UC1846 Current-Mode Push-Pull Converter (Open Loop)",
+  "description": "Push-pull isolated converter driven by a behavioral UC1846 current-mode PWM controller model (open loop). Regulates the output near 5 V. Uses Alonso's corrected schematic revision.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "UC1846 current-mode push-pull converter",
+    "repo": "https://github.com/marcosalonsoelectronics/Qspice-6",
+    "path": "1.- UC1846 - push-pull-current-mode-open-loop - new.qsch",
+    "commit": "26c947c64c5d846eb09f374a782f94844cdb5f05",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "push_pull_uc1846.qsch is Alonso's corrected ('- new') schematic; push_pull_uc1846.cir is the self-contained QUX netlist. UC1846.sub is Alonso's behavioral UC1846 controller model (from his UC1846.zip) and is referenced by the netlist via '.lib UC1846.sub'; it is bundled alongside. The netlist also references QSpice's bundled NMOS.txt/Diode.txt device models by their default install path."
+  },
+  "files": [
+    {
+      "relative_path": "push_pull_uc1846.qsch",
+      "bundle_name": "push_pull_uc1846.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "push_pull_uc1846.cir",
+      "bundle_name": "push_pull_uc1846.cir",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "UC1846.sub",
+      "bundle_name": "UC1846.sub",
+      "encoding": "binary"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "push-pull-uc1846-catalog",
+      "title": "UC1846 Current-Mode Push-Pull Converter -- materialize recipe",
+      "summary": "Copy the bundled files (including UC1846.sub) into the workspace and simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "push_pull_converter"
+}

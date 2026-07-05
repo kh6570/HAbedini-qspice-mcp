@@ -10,7 +10,7 @@ from pathlib import Path
 def iter_schematics(repo_root: Path) -> list[Path]:
     """Return bundled recipe schematic files in a stable order."""
     recipes_dir = repo_root / "src" / "qspice_mcp" / "data" / "recipes"
-    return sorted(recipes_dir.glob("*/Buck-converter.qsch"))
+    return sorted(recipes_dir.glob("**/Buck-converter.qsch"))
 
 
 def main() -> int:

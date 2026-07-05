@@ -62,6 +62,22 @@ def test_describe_reference_circuit_recipe_returns_manifest_and_topology() -> No
     assert digest.size_bytes > 0
 
 
+def test_describe_alonso_recipe_surfaces_source_attribution() -> None:
+    result = describe_reference_circuit_recipe("flyback_qr")
+
+    assert result.source is not None
+    assert "alonso" in result.source.author.lower()
+    assert result.source.repo
+    assert result.source.commit
+    assert result.source.permission
+
+
+def test_describe_cleanroom_recipe_has_no_source() -> None:
+    result = describe_reference_circuit_recipe("buck_converter_cpp")
+
+    assert result.source is None
+
+
 def test_describe_reference_circuit_recipe_rejects_unknown_id() -> None:
     with pytest.raises(ValidationError, match="Unknown recipe_id"):
         describe_reference_circuit_recipe("not-a-recipe")

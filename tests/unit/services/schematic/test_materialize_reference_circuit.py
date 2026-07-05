@@ -15,7 +15,7 @@ from qspice_mcp.services.schematic.materialize_reference_circuit import (
 if TYPE_CHECKING:
     from pathlib import Path
 
-_BUNDLE_ROOT = files("qspice_mcp.data.recipes") / "buck_converter_cpp"
+_BUNDLE_ROOT = files("qspice_mcp.data.recipes") / "non_isolated_dc_dc" / "buck_converter_cpp"
 
 
 def test_materialize_buck_converter_cpp_writes_expected_files(tmp_path: Path) -> None:

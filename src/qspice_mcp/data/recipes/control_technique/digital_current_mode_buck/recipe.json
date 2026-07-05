@@ -1,0 +1,43 @@
+{
+  "recipe_id": "digital_current_mode_buck",
+  "title": "Digital Current-Mode Buck (Closed Loop, C++ C-block)",
+  "description": "Synchronous buck under digital peak-current-mode control implemented as a QSpice C++ C-block (Controller2): per-cycle current sampling, slope/PI compensation, and digital PWM. Regulates the output to about 5 V.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "Digital current-mode control of a buck converter",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-66",
+    "path": "3.- Current-mode-digital-closed-loop.qsch",
+    "commit": "76c66eea2fa647da90340bf6424c560b5150e42c",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "digital_current_mode_buck.qsch is Alonso's schematic and controller2.cpp his C-block source. digital_current_mode_buck.cir is the self-contained QUX netlist referencing the Controller2 device; build controller2.cpp into controller2.dll before simulating. The netlist references QSpice's bundled NMOS.txt/Diode.txt device models by their default install path."
+  },
+  "files": [
+    {
+      "relative_path": "digital_current_mode_buck.qsch",
+      "bundle_name": "digital_current_mode_buck.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "digital_current_mode_buck.cir",
+      "bundle_name": "digital_current_mode_buck.cir",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "controller2.cpp",
+      "bundle_name": "controller2.cpp",
+      "encoding": "text"
+    }
+  ],
+  "build_required": true,
+  "build_hint": "build_dll_device(source_path=\"controller2.cpp\")",
+  "workflows": [
+    {
+      "instruction_id": "digital-current-mode-buck-catalog",
+      "title": "Digital Current-Mode Buck (Closed Loop) -- materialize recipe",
+      "summary": "Copy the bundled files, build the C-block DLL, then simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "buck_converter"
+}

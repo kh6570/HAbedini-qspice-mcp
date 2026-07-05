@@ -1,0 +1,43 @@
+{
+  "recipe_id": "digital_buck_closed_loop",
+  "title": "Digital Voltage-Mode Buck (Closed Loop, C++ C-block)",
+  "description": "Synchronous buck regulated by a digital voltage-mode controller implemented as a QSpice C++ C-block (DPWMCL): sample-and-hold, discrete PI compensator, and digital PWM. Regulates the output to about 5 V.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "QSpice for power electronics -- digital closed-loop buck",
+    "repo": "https://github.com/marcosalonsoelectronics/Qspice-3",
+    "path": "1.- buck-digital-control-closed-loop.qsch",
+    "commit": "78766314c06c5ffff90f6f4fca98322da56b3a76",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "digital_buck_closed_loop.qsch is Alonso's schematic and dpwmcl.cpp his C-block source. digital_buck_closed_loop.cir is the self-contained QUX netlist referencing the DPWMCL device; build dpwmcl.cpp into dpwmcl.dll before simulating. The netlist references QSpice's bundled NMOS.txt/Diode.txt device models by their default install path."
+  },
+  "files": [
+    {
+      "relative_path": "digital_buck_closed_loop.qsch",
+      "bundle_name": "digital_buck_closed_loop.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "digital_buck_closed_loop.cir",
+      "bundle_name": "digital_buck_closed_loop.cir",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "dpwmcl.cpp",
+      "bundle_name": "dpwmcl.cpp",
+      "encoding": "text"
+    }
+  ],
+  "build_required": true,
+  "build_hint": "build_dll_device(source_path=\"dpwmcl.cpp\")",
+  "workflows": [
+    {
+      "instruction_id": "digital-buck-closed-loop-catalog",
+      "title": "Digital Voltage-Mode Buck (Closed Loop) -- materialize recipe",
+      "summary": "Copy the bundled files, build the C-block DLL, then simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "buck_converter"
+}

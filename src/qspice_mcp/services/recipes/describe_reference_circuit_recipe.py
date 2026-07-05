@@ -45,6 +45,19 @@ class RecipeWorkflowSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class RecipeSource:
+    """Provenance/attribution for a recipe adapted from an external author."""
+
+    author: str
+    repo: str | None
+    path: str | None
+    commit: str | None
+    permission: str | None
+    video: str | None
+    note: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class TopologyComponentDigest:
     """One component row in a bundled schematic topology digest."""
 
@@ -72,6 +85,7 @@ class ReferenceCircuitRecipeDescription:
     title: str
     description: str
     discovery_guidance: str
+    source: RecipeSource | None
     files: tuple[RecipeFileEntry, ...]
     build_required: bool
     build_hint: str | None
@@ -137,6 +151,31 @@ def _parse_workflow_entries(
     return tuple(entries)
 
 
+def _parse_source(raw_source: object, *, recipe_id: str) -> RecipeSource | None:
+    if raw_source is None:
+        return None
+    if not isinstance(raw_source, dict):
+        raise ValidationError(f"Recipe {recipe_id!r} source must be a JSON object when present.")
+    author = str(raw_source.get("author", "")).strip()
+    if not author:
+        raise ValidationError(f"Recipe {recipe_id!r} source requires an author.")
+
+    def _opt(key: str) -> str | None:
+        value = raw_source.get(key)
+        text = str(value).strip() if value is not None else ""
+        return text or None
+
+    return RecipeSource(
+        author=author,
+        repo=_opt("repo"),
+        path=_opt("path"),
+        commit=_opt("commit"),
+        permission=_opt("permission"),
+        video=_opt("video"),
+        note=_opt("note"),
+    )
+
+
 def _find_schematic_file_entry(
     files: tuple[RecipeFileEntry, ...],
 ) -> RecipeFileEntry | None:
@@ -192,11 +231,13 @@ def describe_reference_circuit_recipe(recipe_id: str) -> ReferenceCircuitRecipeD
     build_required = bool(manifest.get("build_required", False))
     build_hint_raw = manifest.get("build_hint")
     build_hint = str(build_hint_raw).strip() if build_hint_raw else None
+    source = _parse_source(manifest.get("source"), recipe_id=normalized_recipe_id)
     return ReferenceCircuitRecipeDescription(
         recipe_id=normalized_recipe_id,
         title=str(manifest.get("title", normalized_recipe_id)).strip(),
         description=str(manifest.get("description", "")).strip(),
         discovery_guidance=RECIPE_CATALOG_DISCOVERY_GUIDANCE,
+        source=source,
         files=files,
         build_required=build_required,
         build_hint=build_hint,
@@ -208,6 +249,7 @@ def describe_reference_circuit_recipe(recipe_id: str) -> ReferenceCircuitRecipeD
 __all__ = [
     "SERVICE_SPEC",
     "RecipeFileEntry",
+    "RecipeSource",
     "RecipeWorkflowSummary",
     "ReferenceCircuitRecipeDescription",
     "TopologyComponentDigest",

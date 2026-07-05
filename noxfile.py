@@ -10,6 +10,13 @@ TEST_PYTHONS = ("3.11", "3.12")
 NON_INTEGRATION_TEST_ARGS = (
     "-m",
     "not integration",
+    # Per-package coverage floors (scripts/check_package_coverage.py) require a
+    # deterministic measurement. pytest-randomly reshuffles every run with a fresh
+    # seed, which makes order-sensitive coverage (subprocess/watchdog/infra) drift a
+    # few points and flip the floors. Pin a fixed collection order for the
+    # coverage-bearing runs; developers can still fuzz order via a direct pytest run.
+    "-p",
+    "no:randomly",
     "--cov",
     "--cov-report=term",
     "--cov-report=xml",

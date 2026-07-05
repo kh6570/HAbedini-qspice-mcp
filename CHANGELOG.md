@@ -13,6 +13,50 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Added
 
+- **Topology-foldered reference recipes (9 new)** — the bundled recipe catalog now
+  groups recipes by topology under `data/recipes/<topology>/<recipe_id>/` (a new
+  optional `directory` field in the recipe index; existing flat recipes are
+  unchanged). Nine converters adapted from Prof. J. Marcos Alonso's public
+  repositories (used with permission) ship validated (each simulates cleanly under
+  QSpice): `flyback_qr`, `buck_boost_dcm`, `two_phase_buck`, `llc_resonant`,
+  `series_resonant_src`, `parallel_resonant_prc`, `class_e`, `half_bridge_zvs`,
+  and `npc_inverter`. Each bundles the original `.qsch` plus a self-contained `.cir`
+  (Alonso's behavioral component library inlined) and records provenance in its
+  `recipe.json` `source` block; see `data/recipes/NOTICE.md`. Discover them via
+  `list_reference_circuit_recipes`; the recipe tool surface stays fixed (recipes are
+  data, not tools).
+- **Five more Alonso-adapted recipes (backlog batch)** — `push_pull_resonant`
+  (`resonant_dc_dc/`, current-fed push-pull resonant; ships the QUX `.cir` with one added
+  `.options cshunt=1e-12` for convergence) plus four C-block control recipes under a new
+  `control_technique/` folder: `digital_pwm_cblock`, `digital_buck_closed_loop`,
+  `digital_current_mode_buck`, and `pv_mppt_po`. The C-block recipes bundle the original
+  `.qsch`, Alonso's C-block `.cpp` (build with `build_dll_device`; the source filename is
+  preserved so the DLL matches the device name), and a self-contained QUX `.cir`. All five
+  validated end to end (build → simulate → clean `.qraw`); each records provenance in its
+  `recipe.json` `source` block.
+- **Two more Alonso-adapted recipes (backlog closeout; 16 total)** — `voltage_fed_push_pull`
+  (`inverter/`, voltage-fed push-pull resonant inverter, ~68 V-RMS sinusoidal output;
+  ships the QUX `.cir`, converges with no extra options) and `push_pull_uc1846`
+  (`isolated_dc_dc/`, UC1846 current-mode push-pull open loop, V(out)≈5 V). The UC1846
+  recipe ships Alonso's corrected "- new" schematic revision (converges cleanly where the
+  earlier revision failed the bias point) and bundles his behavioral `UC1846.sub` model
+  (referenced by the netlist). Both validated end to end. This closes the Alonso recipe
+  backlog; the PE-65 / PE-69 candidates were declined (converters duplicate the shipped
+  digital buck recipes; their unique material is frequency-domain loop-gain/FRA analysis,
+  outside the time-domain converter catalog).
+- **Recipe source attribution surfaced by `describe_reference_circuit_recipe`** — the
+  tool now returns a `source` block (author, repo, path, commit, permission, video,
+  note) for recipes adapted from an external author, so J. Marcos Alonso is credited
+  in the tool output itself; clean-room recipes return `source: null`.
+
+### Changed
+
+- **Legacy C++ DLL recipes relocated into topology folders** — `buck_converter_cpp`
+  and `boost_converter_cpp` now live under `data/recipes/non_isolated_dc_dc/`, and
+  `flyback_converter_cpp` under `data/recipes/isolated_dc_dc/`, for consistency with
+  the topology-foldered catalog. Their `recipe_id`s (the stable public API identifiers)
+  are unchanged, so `materialize_reference_circuit`/`describe_reference_circuit_recipe`
+  calls are unaffected.
 - **`ingest_topology_contribution`** — validates a candidate topology-block manifest
   plus its clean-room blueprint and stages them (`manifest.json`, blueprint,
   `index_entry.json`) into a sandboxed `topology_contributions/<block_id>/` folder

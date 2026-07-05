@@ -1,0 +1,38 @@
+{
+  "recipe_id": "buck_boost_dcm",
+  "title": "Buck-Boost Converter (DCM)",
+  "description": "Inverting buck-boost converter running in discontinuous conduction mode using a linear MOSFET model.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "Buck-Boost Converter in DCM",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-90",
+    "path": "1.- Buck-boost-DCM-Mosfet-linear-model.qsch",
+    "commit": "8c90fb5e5dcc3e28c1cc82b01f1a6ee21ac7502e",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "circuit.qsch is Alonso's schematic; the .cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
+  },
+  "files": [
+    {
+      "relative_path": "buck_boost_dcm.qsch",
+      "bundle_name": "buck_boost_dcm.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "buck_boost_dcm.cir",
+      "bundle_name": "buck_boost_dcm.cir",
+      "encoding": "binary"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "buck-boost-dcm-catalog",
+      "title": "Buck-Boost Converter (DCM) -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "buck_boost_converter"
+}

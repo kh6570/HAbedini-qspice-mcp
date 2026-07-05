@@ -1,0 +1,38 @@
+{
+  "recipe_id": "flyback_qr",
+  "title": "Quasi-Resonant Flyback Converter",
+  "description": "Quasi-resonant (valley-switching) flyback converter with a behavioral ideal-diode rectifier and constant-on-time control. Steps 350 V down to roughly 5.7 V (turns ratio n=0.05).",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "Quasi-Resonant Flyback Converter",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-82",
+    "path": "2.- QR-Flyback - ideal-switch.qsch",
+    "commit": "02be5df8421af606a7a346ace3498aeacd975209",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "circuit.qsch is Alonso's schematic; the .cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
+  },
+  "files": [
+    {
+      "relative_path": "flyback_qr.qsch",
+      "bundle_name": "flyback_qr.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "flyback_qr.cir",
+      "bundle_name": "flyback_qr.cir",
+      "encoding": "binary"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "flyback-qr-catalog",
+      "title": "Quasi-Resonant Flyback Converter -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "flyback_converter"
+}

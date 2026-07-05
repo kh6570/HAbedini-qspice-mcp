@@ -1,0 +1,37 @@
+{
+  "recipe_id": "class_e",
+  "title": "Class-E ZVS DC-DC Converter",
+  "description": "Zero-voltage-switching Class-E resonant DC-DC converter (single-switch resonant inverter plus rectifier).",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "Design and Simulation of ZVS Class-E DC-DC Converters",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-98",
+    "path": "2.- Class-E-dc-dc-converter.qsch",
+    "commit": "b4ac83ab74cd9d4b531bd09316d25040460b16c7",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "circuit.qsch is Alonso's schematic; the .cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
+  },
+  "files": [
+    {
+      "relative_path": "class_e.qsch",
+      "bundle_name": "class_e.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "class_e.cir",
+      "bundle_name": "class_e.cir",
+      "encoding": "binary"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "class-e-catalog",
+      "title": "Class-E ZVS DC-DC Converter -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ]
+}

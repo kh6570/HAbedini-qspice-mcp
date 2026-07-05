@@ -1,0 +1,38 @@
+{
+  "recipe_id": "voltage_fed_push_pull",
+  "title": "Voltage-Fed Push-Pull Resonant Inverter",
+  "description": "Voltage-fed push-pull resonant inverter (100 kHz) driving a series-resonant tank and transformer. Produces a roughly 68 V-RMS sinusoidal output (about +/-84 V peak) across a 100 ohm load.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "Voltage-fed push-pull resonant inverter",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-94",
+    "path": "1.- Voltage-fed-push-pull-resonant-inverter.qsch",
+    "commit": "2d8714cb84b0f3ff4743d71f0d353215de550223",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "voltage_fed_push_pull.qsch is Alonso's schematic; voltage_fed_push_pull.cir is the self-contained QUX netlist (his behavioral library inlined), ready to run without external symbol files."
+  },
+  "files": [
+    {
+      "relative_path": "voltage_fed_push_pull.qsch",
+      "bundle_name": "voltage_fed_push_pull.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "voltage_fed_push_pull.cir",
+      "bundle_name": "voltage_fed_push_pull.cir",
+      "encoding": "binary"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "voltage-fed-push-pull-catalog",
+      "title": "Voltage-Fed Push-Pull Resonant Inverter -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "push_pull_converter"
+}

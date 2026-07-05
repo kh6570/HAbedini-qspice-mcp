@@ -36,7 +36,7 @@ def test_buck_converter_example_can_generate_and_run(tmp_path: Path) -> None:
     """The portable example schematic should convert to a netlist and simulate."""
 
     executable = _require_local_qspice_runtime(tmp_path)
-    recipe = files("qspice_mcp.data.recipes") / "buck_converter_cpp"
+    recipe = files("qspice_mcp.data.recipes") / "non_isolated_dc_dc" / "buck_converter_cpp"
     schematic = tmp_path / "Buck-converter.qsch"
     schematic.write_bytes((recipe / "Buck-converter.qsch").read_bytes())
 

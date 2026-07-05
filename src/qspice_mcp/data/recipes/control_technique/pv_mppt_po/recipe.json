@@ -1,0 +1,43 @@
+{
+  "recipe_id": "pv_mppt_po",
+  "title": "PV Buck with Perturb-and-Observe MPPT (C++ C-block)",
+  "description": "Photovoltaic buck stage with a Perturb-and-Observe maximum-power-point tracker implemented as a QSpice C++ C-block (Controller20), driving a behavioral PV-module source model. Demonstrates MPPT convergence over a long (120 ms) transient.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "PV MPPT Perturb-and-Observe buck converter",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-95",
+    "path": "2.- PV-Buck-converter-PO.qsch",
+    "commit": "1d519402526bd8d50e9c9cced8fb6df908a2061f",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "pv_mppt_po.qsch is Alonso's schematic and controller20.cpp his C-block MPPT source. pv_mppt_po.cir is the self-contained QUX netlist (behavioral PV-module and current-sense models inlined) referencing the Controller20 device; build controller20.cpp into controller20.dll before simulating. The transient runs 120 ms, so simulation and the resulting .qraw are large."
+  },
+  "files": [
+    {
+      "relative_path": "pv_mppt_po.qsch",
+      "bundle_name": "pv_mppt_po.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "pv_mppt_po.cir",
+      "bundle_name": "pv_mppt_po.cir",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "controller20.cpp",
+      "bundle_name": "controller20.cpp",
+      "encoding": "text"
+    }
+  ],
+  "build_required": true,
+  "build_hint": "build_dll_device(source_path=\"controller20.cpp\")",
+  "workflows": [
+    {
+      "instruction_id": "pv-mppt-po-catalog",
+      "title": "PV Buck with Perturb-and-Observe MPPT -- materialize recipe",
+      "summary": "Copy the bundled files, build the C-block DLL, then simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "buck_converter"
+}

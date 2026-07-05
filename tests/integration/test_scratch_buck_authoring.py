@@ -2,15 +2,14 @@
 
 Unlike ``test_buck_converter.py`` (which copies the shipped recipe schematic),
 this test builds ``Buck-converter.qsch`` from an empty workspace using only the
-MCP authoring tools, driven by the shared blueprint
-``data/recipes/buck_converter_cpp/scratch_buck.blueprint.json``. It then builds
+MCP authoring tools, driven by the shared blueprint bundled with the
+``buck_converter_cpp`` recipe (``scratch_buck.blueprint.json``). It then builds
 the controller DLL, generates the netlist, simulates, and asserts ``V(out) > 4V``.
 """
 
 from __future__ import annotations
 
 import json
-from importlib.resources import files
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -20,6 +19,7 @@ from qspice_mcp.core.exceptions import BackendUnavailableError, ValidationError
 from qspice_mcp.infra.config import QSpiceSettings
 from qspice_mcp.mcp.server import create_server
 from qspice_mcp.services.mixed_signal.build_dll_device import build_dll_device
+from qspice_mcp.services.recipes._catalog import recipe_bundle_path
 from qspice_mcp.services.simulation.generate_netlist import generate_netlist
 from qspice_mcp.services.simulation.run_simulation import run_simulation
 from qspice_mcp.services.waveform.list_signals import list_signals
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 pytestmark = pytest.mark.integration
 
-_RECIPE_PACKAGE = "qspice_mcp.data.recipes.buck_converter_cpp"
+_RECIPE_ID = "buck_converter_cpp"
 _SCHEMATIC_NAME = "Buck-converter.qsch"
 
 
@@ -42,7 +42,7 @@ def _require_local_qspice_runtime(workspace_root: Path) -> Path:
 
 
 def _load_blueprint() -> dict[str, Any]:
-    raw = (files(_RECIPE_PACKAGE) / "scratch_buck.blueprint.json").read_text(encoding="utf-8")
+    raw = recipe_bundle_path(_RECIPE_ID, "scratch_buck.blueprint.json").read_text(encoding="utf-8")
     blueprint: dict[str, Any] = json.loads(raw)
     return blueprint
 
@@ -143,7 +143,7 @@ def test_scratch_authored_buck_simulates_to_regulated_output(tmp_path: Path) -> 
     # Build the controller DLL from the shipped C++ source beside the schematic.
     controller_source = tmp_path / blueprint["dll_source"]
     controller_source.write_bytes(
-        (files(_RECIPE_PACKAGE) / str(blueprint["dll_source"])).read_bytes()
+        recipe_bundle_path(_RECIPE_ID, str(blueprint["dll_source"])).read_bytes()
     )
     try:
         built = build_dll_device(

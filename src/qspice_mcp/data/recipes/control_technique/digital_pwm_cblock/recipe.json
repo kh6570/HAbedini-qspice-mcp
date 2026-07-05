@@ -1,0 +1,43 @@
+{
+  "recipe_id": "digital_pwm_cblock",
+  "title": "Digital PWM Generator (C++ C-block)",
+  "description": "Minimal digital PWM generator implemented as a QSpice C++ C-block (DPWM): a sampled duty-cycle input produces a switching gate waveform. The building block behind Alonso's digital-control converter demos.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "QSpice for power electronics -- digital PWM in C++",
+    "repo": "https://github.com/marcosalonsoelectronics/Qspice-2",
+    "path": "1.- Digital-PWM/1.- Digital-PWM-C++.qsch",
+    "commit": "71a576224f8d4b8e3d05855967b74819582808ab",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "digital_pwm_cblock.qsch is Alonso's schematic and dpwm.cpp his C-block source. digital_pwm_cblock.cir is the self-contained QUX netlist; it references the DPWM device, so build dpwm.cpp into dpwm.dll (matching name) before simulating."
+  },
+  "files": [
+    {
+      "relative_path": "digital_pwm_cblock.qsch",
+      "bundle_name": "digital_pwm_cblock.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "digital_pwm_cblock.cir",
+      "bundle_name": "digital_pwm_cblock.cir",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "dpwm.cpp",
+      "bundle_name": "dpwm.cpp",
+      "encoding": "text"
+    }
+  ],
+  "build_required": true,
+  "build_hint": "build_dll_device(source_path=\"dpwm.cpp\")",
+  "workflows": [
+    {
+      "instruction_id": "digital-pwm-cblock-catalog",
+      "title": "Digital PWM Generator (C++ C-block) -- materialize recipe",
+      "summary": "Copy the bundled files, build the C-block DLL, then simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": null
+}

@@ -1,17 +1,110 @@
 {
   "version": 1,
+  "attribution": {
+    "alonso_recipes": {
+      "author": "J. Marcos Alonso",
+      "affiliation": "Professor of Electronics Engineering, University of Oviedo",
+      "source": "https://github.com/marcosalonsoelectronics",
+      "permission": "QSpice circuits adapted from Prof. Alonso's public repositories are redistributed here with the author's permission.",
+      "note": "For each adapted recipe, <recipe_id>.qsch is Alonso's original schematic (source of truth) and <recipe_id>.cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library inlined. Per-recipe provenance (repo, path, commit) is recorded in each recipe.json 'source' block and in local-dev-docs/docs/recipe_crossref.md.",
+      "notice": "NOTICE.md"
+    }
+  },
   "recipes": [
     {
       "recipe_id": "buck_converter_cpp",
-      "title": "Buck Converter (C++ DLL)"
+      "title": "Buck Converter (C++ DLL)",
+      "directory": "non_isolated_dc_dc/buck_converter_cpp"
     },
     {
       "recipe_id": "boost_converter_cpp",
-      "title": "Boost Converter (C++ DLL)"
+      "title": "Boost Converter (C++ DLL)",
+      "directory": "non_isolated_dc_dc/boost_converter_cpp"
     },
     {
       "recipe_id": "flyback_converter_cpp",
-      "title": "Flyback Converter (C++ DLL)"
+      "title": "Flyback Converter (C++ DLL)",
+      "directory": "isolated_dc_dc/flyback_converter_cpp"
+    },
+    {
+      "recipe_id": "flyback_qr",
+      "title": "Quasi-Resonant Flyback Converter",
+      "directory": "isolated_dc_dc/flyback_qr"
+    },
+    {
+      "recipe_id": "buck_boost_dcm",
+      "title": "Buck-Boost Converter (DCM)",
+      "directory": "non_isolated_dc_dc/buck_boost_dcm"
+    },
+    {
+      "recipe_id": "two_phase_buck",
+      "title": "Two-Phase (Multiphase) Buck Converter",
+      "directory": "non_isolated_dc_dc/two_phase_buck"
+    },
+    {
+      "recipe_id": "llc_resonant",
+      "title": "LLC Resonant Converter",
+      "directory": "resonant_dc_dc/llc_resonant"
+    },
+    {
+      "recipe_id": "series_resonant_src",
+      "title": "Series Resonant Converter (SRC)",
+      "directory": "resonant_dc_dc/series_resonant_src"
+    },
+    {
+      "recipe_id": "parallel_resonant_prc",
+      "title": "Parallel Resonant Converter (PRC)",
+      "directory": "resonant_dc_dc/parallel_resonant_prc"
+    },
+    {
+      "recipe_id": "class_e",
+      "title": "Class-E ZVS DC-DC Converter",
+      "directory": "resonant_dc_dc/class_e"
+    },
+    {
+      "recipe_id": "half_bridge_zvs",
+      "title": "Half-Bridge ZVS Leg",
+      "directory": "soft_switching/half_bridge_zvs"
+    },
+    {
+      "recipe_id": "npc_inverter",
+      "title": "Three-Level NPC Inverter",
+      "directory": "inverter/npc_inverter"
+    },
+    {
+      "recipe_id": "push_pull_resonant",
+      "title": "Current-Fed Push-Pull Resonant Converter",
+      "directory": "resonant_dc_dc/push_pull_resonant"
+    },
+    {
+      "recipe_id": "digital_pwm_cblock",
+      "title": "Digital PWM Generator (C++ C-block)",
+      "directory": "control_technique/digital_pwm_cblock"
+    },
+    {
+      "recipe_id": "digital_buck_closed_loop",
+      "title": "Digital Voltage-Mode Buck (Closed Loop, C++ C-block)",
+      "directory": "control_technique/digital_buck_closed_loop"
+    },
+    {
+      "recipe_id": "digital_current_mode_buck",
+      "title": "Digital Current-Mode Buck (Closed Loop, C++ C-block)",
+      "directory": "control_technique/digital_current_mode_buck"
+    },
+    {
+      "recipe_id": "pv_mppt_po",
+      "title": "PV Buck with Perturb-and-Observe MPPT (C++ C-block)",
+      "directory": "control_technique/pv_mppt_po"
+    },
+    {
+      "recipe_id": "voltage_fed_push_pull",
+      "title": "Voltage-Fed Push-Pull Resonant Inverter",
+      "directory": "inverter/voltage_fed_push_pull"
+    },
+    {
+      "recipe_id": "push_pull_uc1846",
+      "title": "UC1846 Current-Mode Push-Pull Converter (Open Loop)",
+      "directory": "isolated_dc_dc/push_pull_uc1846"
     }
   ]
 }

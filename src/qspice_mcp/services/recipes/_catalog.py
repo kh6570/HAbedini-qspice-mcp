@@ -25,6 +25,7 @@ class RecipeIndexEntry:
 
     recipe_id: str
     title: str
+    directory: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,32 +61,70 @@ def clear_recipes_root_cache() -> None:
     load_recipe_manifest.cache_clear()
 
 
-def list_recipe_index_entries() -> tuple[RecipeIndexEntry, ...]:
-    """Return every recipe listed in the top-level catalog."""
+def load_recipe_index() -> dict[str, Any]:
+    """Load and lightly validate the top-level recipe index document."""
 
     index_path = _recipes_root() / "index.json"
     try:
-        payload = json.loads(index_path.read_text(encoding="utf-8"))
+        payload: dict[str, Any] = json.loads(index_path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
         raise ValidationError("Recipe index is missing from package data.") from exc
-    raw_recipes = payload.get("recipes")
-    if not isinstance(raw_recipes, list):
+    if not isinstance(payload.get("recipes"), list):
         raise ValidationError("Recipe index must include a recipes array.")
+    return payload
 
+
+def recipe_attribution() -> dict[str, Any]:
+    """Return the attribution block recorded in the recipe index, if any."""
+
+    attribution = load_recipe_index().get("attribution")
+    return dict(attribution) if isinstance(attribution, dict) else {}
+
+
+def list_recipe_index_entries() -> tuple[RecipeIndexEntry, ...]:
+    """Return every recipe listed in the top-level catalog."""
+
+    payload = load_recipe_index()
     entries: list[RecipeIndexEntry] = []
-    for raw_entry in raw_recipes:
+    for raw_entry in payload["recipes"]:
         if not isinstance(raw_entry, dict):
             raise ValidationError("Each recipe index entry must be a JSON object.")
         recipe_id = str(raw_entry.get("recipe_id", "")).strip()
         if not recipe_id:
             raise ValidationError("Recipe index entries require recipe_id.")
+        directory = str(raw_entry.get("directory", recipe_id)).strip() or recipe_id
         entries.append(
             RecipeIndexEntry(
                 recipe_id=recipe_id,
                 title=str(raw_entry.get("title", recipe_id)).strip(),
+                directory=directory,
             )
         )
     return tuple(entries)
+
+
+def _resolve_recipe_directory(recipe_id: str) -> str:
+    normalized = recipe_id.strip()
+    for entry in list_recipe_index_entries():
+        if entry.recipe_id == normalized:
+            return entry.directory
+    # Fall back to a flat layout so recipes can still resolve before/without an
+    # index row (matches the historical recipe_id == directory behavior).
+    return normalized
+
+
+def _recipe_dir(recipe_id: str) -> Traversable:
+    """Return the bundle directory for a recipe, honoring topology foldering.
+
+    The index ``directory`` may be nested (for example ``resonant_dc_dc/llc_resonant``);
+    join one path segment at a time so both filesystem and zip-based Traversables work.
+    """
+
+    node = _recipes_root()
+    for segment in _resolve_recipe_directory(recipe_id).split("/"):
+        if segment:
+            node = node / segment
+    return node
 
 
 @cache
@@ -96,7 +135,7 @@ def load_recipe_manifest(recipe_id: str) -> dict[str, Any]:
     if not normalized_recipe_id:
         raise ValidationError("recipe_id must not be empty.")
 
-    manifest_path = _recipes_root() / normalized_recipe_id / "recipe.json"
+    manifest_path = _recipe_dir(normalized_recipe_id) / "recipe.json"
     try:
         manifest_text = manifest_path.read_text(encoding="utf-8")
     except FileNotFoundError as exc:
@@ -114,7 +153,7 @@ def load_recipe_manifest(recipe_id: str) -> dict[str, Any]:
 def recipe_bundle_path(recipe_id: str, bundle_name: str) -> Traversable:
     """Return one artifact path inside a recipe bundle."""
 
-    return _recipes_root() / recipe_id.strip() / bundle_name
+    return _recipe_dir(recipe_id.strip()) / bundle_name
 
 
 def read_recipe_manifest_text(recipe_id: str) -> str:
@@ -263,7 +302,7 @@ def read_workflow_instruction_markdown(instruction_id: str) -> str:
     """Read one workflow instruction document from its recipe bundle."""
 
     entry = resolve_workflow_instruction_entry(instruction_id)
-    document_path = _recipes_root() / entry.recipe_id / entry.document
+    document_path = _recipe_dir(entry.recipe_id) / entry.document
     try:
         return document_path.read_text(encoding="utf-8")
     except FileNotFoundError as exc:
@@ -278,11 +317,13 @@ __all__ = [
     "clear_recipes_root_cache",
     "list_recipe_index_entries",
     "list_workflow_instruction_entries",
+    "load_recipe_index",
     "load_recipe_manifest",
     "read_recipe_document",
     "read_recipe_manifest_text",
     "read_recipe_schematic_bytes",
     "read_workflow_instruction_markdown",
+    "recipe_attribution",
     "recipe_bundle_path",
     "resolve_workflow_instruction_entry",
 ]

@@ -150,7 +150,12 @@ def test_scaffold_dll_device_places_next_to_schematic_when_requested(
 
 
 def test_parse_dll_source_contract_text_reads_buck_style_export_and_pins() -> None:
-    bundle = files("qspice_mcp.data.recipes") / "buck_converter_cpp" / "buck_controller.cpp"
+    bundle = (
+        files("qspice_mcp.data.recipes")
+        / "non_isolated_dc_dc"
+        / "buck_converter_cpp"
+        / "buck_controller.cpp"
+    )
     source_text = bundle.read_text(encoding="utf-8")
 
     contract = parse_dll_source_contract_text(
@@ -176,9 +181,12 @@ def test_validate_dll_symbol_signature_reports_matching_contract(
 
     source_path = tmp_path / "buck_controller.cpp"
     source_path.write_text(
-        (files("qspice_mcp.data.recipes") / "buck_converter_cpp" / "buck_controller.cpp").read_text(
-            encoding="utf-8"
-        ),
+        (
+            files("qspice_mcp.data.recipes")
+            / "non_isolated_dc_dc"
+            / "buck_converter_cpp"
+            / "buck_controller.cpp"
+        ).read_text(encoding="utf-8"),
         encoding="utf-8",
     )
 

@@ -949,11 +949,16 @@ Expected outputs:
 - `title`
 - `description`
 - `discovery_guidance` (shared catalog discovery workflow text)
+- `source` (attribution for recipes adapted from an external author; `null` for clean-room recipes. When present: `author`, `repo`, `path`, `commit`, `permission`, `video`, `note`)
 - `files` (each with `relative_path`, `bundle_name`, `encoding`)
 - `build_required`
 - `build_hint`
 - `workflows` (each with `instruction_id`, `title`, `summary`, `track`, `document`, `related_instruction_id`)
 - `topology_digest` (when a schematic is bundled: `schematic_file`, `component_count`, `components`, `analyses`, `parameters`, `size_bytes`)
+
+Recipes adapted from J. Marcos Alonso's public repositories (redistributed with
+his permission) return their provenance in the `source` block so the original
+author is always credited; see `local-dev-docs/docs/recipe_crossref.md`.
 
 ## materialize_reference_circuit
 

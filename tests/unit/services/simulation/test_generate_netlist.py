@@ -22,7 +22,10 @@ COMPARATOR_QSCH_FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "schematics" / "co
 
 def _buck_schematic_bytes() -> bytes:
     return (
-        files("qspice_mcp.data.recipes") / "buck_converter_cpp" / "Buck-converter.qsch"
+        files("qspice_mcp.data.recipes")
+        / "non_isolated_dc_dc"
+        / "buck_converter_cpp"
+        / "Buck-converter.qsch"
     ).read_bytes()
 
 

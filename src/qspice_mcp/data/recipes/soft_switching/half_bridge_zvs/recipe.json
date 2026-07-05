@@ -1,0 +1,37 @@
+{
+  "recipe_id": "half_bridge_zvs",
+  "title": "Half-Bridge ZVS Leg",
+  "description": "Half-bridge MOSFET leg with an L-R load illustrating zero-voltage switching and the role of dead-time.",
+  "source": {
+    "author": "J. Marcos Alonso",
+    "video": "Understanding Zero Voltage Switching in Half-Bridge Converters",
+    "repo": "https://github.com/marcosalonsoelectronics/PE-79-80",
+    "path": "1.- Half-bridge-LR-mosfets.qsch",
+    "commit": "d89487c397b9ecec4921a8216d758ef72eddc63e",
+    "permission": "Adapted and redistributed with the author's permission.",
+    "note": "circuit.qsch is Alonso's schematic; the .cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
+  },
+  "files": [
+    {
+      "relative_path": "half_bridge_zvs.qsch",
+      "bundle_name": "half_bridge_zvs.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "half_bridge_zvs.cir",
+      "bundle_name": "half_bridge_zvs.cir",
+      "encoding": "binary"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "half-bridge-zvs-catalog",
+      "title": "Half-Bridge ZVS Leg -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the self-contained .cir (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ]
+}

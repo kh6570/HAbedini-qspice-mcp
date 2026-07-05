@@ -1,0 +1,245 @@
+*$
+* UC1846
+*****************************************************************************
+* (C) Copyright 2010 Texas Instruments Incorporated. All rights reserved.                                            
+*****************************************************************************
+** This model is designed as an aid for customers of Texas Instruments.
+** TI and its licensors and suppliers make no warrenties, either expressed
+** or implied, with respect to this model, including the warranties of 
+** merchantability or fitness for a particular purpose.  The model is
+** provided solely on an "as is" basis.  The entire risk as to its quality
+** and performance is with the customer
+*****************************************************************************
+*
+* This model was developed for Texas Instruments Incorporated by:
+*   AEi Systems, LLC
+*   5933 W. Century Blvd., Suite 1100
+*   Los Angeles, California  90045
+*
+* This model is subject to change without notice. Neither Texas Instruments Incorporated 
+* nor AEi Systems is responsible for updating this model.
+* For more information regarding modeling services, model libraries and simulation 
+* products, please call AEi Systems at (310) 216-1144, or contact AEi Systems by email: 
+* info@AENG.com. Or visit AEi Systems on the web at http://www.AENG.com.
+*
+*****************************************************************************
+*
+** Released by: Analog eLab Design Center, Texas Instruments Inc.
+* Part: UC1846
+* Date: 05/28/2010
+* Model Type: Transient
+* Simulator: PSPICE
+* Simulator Version: 16.0.0.p001
+* Datasheet: SLUS352A JANUARY 1997 REVISED MARCH 2002
+*
+* Model Version: Final 1.00
+*
+*****************************************************************************
+*
+* Updates:
+*
+* Final 1.00
+* Release to Web.
+*
+*****************************************************************************
+.SUBCKT UC1846 ILIM VREF CSNEG CSPOS EAPOS EANEG COMP CT RT 
++ SYNC AOUT GND VC BOUT VIN SD
+Q3 GND NODE35 COMP _QP
+R22 NODE50 GND 3.58K
+V4 NODE23 NODE18 0
+GB1 GND CT Value={ IF ( V(SYNC) > 2.5 & V(VREF) > 4.35 , 
++ -0.013 , 0 ) }
+E5 NODE25 GND CSPOS CSNEG 3
+S1 VREF NODE34 CT GND _S1_MOD
+GB8 GND NODE28 Value={ IF ( V(SD)>0.35 , 150U , 0 ) }
+S2 VIN NODE33 VIN GND _S2_MOD
+R23 SD GND 6K
+EBE1 NODE23 GND Value={ IF ( V(VIN,GND)>7.1 , 5.1 , 
++ IF ( V(VIN,GND)<2 , 0 , (V(VIN,GND)-2) ) ) }
+Q1 VREF NODE34 SYNC QMOD
+R7 GND NODE34 150K
+EBE4 NODE26 GND Value={ IF ( V(SYNC)>3 , 10 , 0 ) }
+R20 NODE37 NODE35 10K
+GB4 VIN GND Value={I(V4)}
+R9 NODE34 VREF 100K
+R21 ILIM NODE35 1K
+D6X COMP 21 DMOD
+R10 SYNC GND 10K
+R19 COMP ILIM 1MEG
+R5 NODE33 0 100K
+R16X NODE32 GND 100K
+D5 NODE29 NODE27 DMOD
+R3 NODE18 VREF 0.33
+X9 NODE26 NODE13 GND GND NODE13 NODE14 FFLOP380X 
+EBE9 NODE36 GND Value={ if ( V(Node28) > 0.6, 5,  
++ if (V(Node50) > 0.6, 5, IF( V(Node29)>3.5, 5,0))) }
+V5 21 NODE32 DC=0.5
+R2 VIN GND 882
+R1 GND NODE18 300
+C2 NODE29 GND 2.00P
+R25 NODE27 NODE29 100K
+EBECOMP NODE27 GND Value={ IF ( V(NODE25) > V(NODE32) ,  5  ,  0 ) }
+X2 VC GND NODE19 BOUT 1846OUT 
+X3 VREF GND EAPOS EANEG COMP 1846AMP 
+X10 GND GND NODE36 NODE26 NODE31 NODE30 FFLOP380X 
+GB3 GND CT Value={ IF ( V(VREF) > 4.35 , I(V2) , 0 ) }
+X1 VC GND NODE20 AOUT 1846OUT
+S3 CT GND VREF GND _S3_MOD
+D1 VREF 29 D2
+V2 NODE11 RT 0
+D6 29 NODE11 D2
+EBE6 NODE19 GND Value={ IF ( V(NODE14)>2.5 & V(NODE26)<2.5 & 
++ V(NODE33) >5 & V(NODE31)<2.5 , 10 , 0 ) }
+EBE7 NODE20 GND Value={ IF ( V(NODE13)>2.5 & V(NODE26)<2.5 & 
++ V(NODE33) >3.5 & V(NODE31)<2.5 , 10 , 0 ) }
+Q7 NODE35 NODE28 GND QMOD
+*Q4 NODE28 NODE37 ILIM _Q4_MOD
+Q4 NODE50 NODE37 ILIM _Q4_MOD
+Q9 NODE37 NODE50 GND QMOD
+.MODEL _QP PNP
+.MODEL _S1_MOD VSWITCH RON=0.01 ROFF=1MEG VT=2.06 VH=0.88 
+.MODEL _S2_MOD VSWITCH RON=0.01 ROFF=1MEG VT=7.32 VH=0.375
+.MODEL _S3_MOD VSWITCH RON=100MEG ROFF=10K VT=2.5 VH=0
+.MODEL QMOD NPN
+.MODEL DMOD D
+.MODEL D2 D BV=2.1 IBV=1M RS=250
+.MODEL _Q4_MOD PNP CJC=0.1P CJE=10P
+.ENDS
+*$
+.SUBCKT FFLOP380X 1  2 11 12 5  6
+*                CLK D R  S  QB Q
+X1 7 4 2 8 NAND3_03895 
+X2 8 3 10 9 NAND3_03895 
+X3 1 8 10 7 NAND3_13895 
+X4 4 9 1 10 NAND3_03895 
+X5 4 7 6 5 NAND3_13895 
+X6 5 10 3 6 NAND3_03895 
+X7 11 4 INV_13895
+X8 12 3 INV_13895
+.ENDS 
+*$
+.SUBCKT NAND3_03895 1 2 3 4
+E1 5 0 VALUE = { IF ( (V(1)>2.5) & (V(2)>2.5) & (V(3)>2.5), 0, 5 ) }
+R1 5 4 10
+C1 4 0 10P IC=0
+.ENDS
+*$
+.SUBCKT NAND3_13895 1 2 3 4
+E1 5 0 VALUE = { IF ( (V(1)>2.5) & (V(2)>2.5) & (V(3)>2.5), 0, 5 ) }
+R1 5 4 10
+C1 4 0 10P IC=5
+.ENDS
+*$
+.SUBCKT INV_13895 1 2
+E1 3 0 VALUE = { IF ( V(1)>2.5, 0, 5 ) }
+R1 3 2 10
+C1 2 0 10P IC=5
+.ENDS
+*$
+.SUBCKT 1846OUT  4  7  3  12
+*                +V -V IN OUT
+I3 4 8 100U
+D3 8 4 DMOD
+D4 12 8 DMOD
+Q3 8 1 9 QIN
+Q4 12 9 7 QMOD
+Q5 4 8 6 QMOD
+I4 7 1 .9M
+R1 3 2 10K
+Q8 1 2 7 QIN
+Q2 4 6 12 QMOD2
+.ENDS
+.MODEL QMOD NPN RC=1.5 RE=.5 RB=100 
+.MODEL QMOD2 NPN
+.MODEL QIN NPN BF=100 BR=2 IS=1E-16 VAF=50 
++ CJE=1.5P CJC=.25P TR=1N TF=3N
+.MODEL DMOD D RS=1 IS=0.4U
+*$
+.SUBCKT 1846AMP 4   11  12   1   9
+*              VCC GND NINV INV OUT
+R2 12 11 8MEG
+R3 6 11 1G
+C1 6 11 14P
+E1 5 11 6 0 1
+R4 1 11 8MEG
+I2 4 9 .5M
+R6 0 15 300
+D11 9 14 DMOD
+Q1 11 13 14 QPMOD
+I3 13 11 65U
+D14 15 13 DMOD
+D15 11 6 DCLAMP
+L1 3 15 10U
+C2 15 11 200P
+R9 5 3 5
+C5 3 11 .02U
+G1 11 6 12 1 100U
+.MODEL QPMOD PNP
+.MODEL DCLAMP D (RS=10 BV=4 IBV=.01)
+.MODEL DMOD D
+.ENDS
+*$
+.SUBCKT XFMRAUX 1    2    3     4     10    
++ 11  PARAMS: RATIO_POW=1 RATIO_AUX=1
+*Connections     +Pri -Pri +SecP -SecP +SecA -SecA
+*Parameters:
+* Ratio = Secondary/Primary turns ratio
+*
+*  1_______   _______3
+*    +     ) (          A VsPower
+*          ) (_______4   
+*    VPrim )  _______10
+*          ) (
+*    -     ) (          B VsAux
+*  2_______) (_______11
+*
+*  RATIO_POW = 1:A
+*  RATIO_AUX = 1:B
+*
+Rpri 1 2 1MEG
+E1 5 4 Value={RATIO_POW*V(1,2)}
+G1 1 2 Value={RATIO_POW*I(Vvs)}
+Ra 6 3 1U
+Vvs 5 6
+E2 20 11 Value={RATIO_AUX*V(2,1)}
+G2 2 1 Value={RATIO_AUX*I(Vaux)}
+Rb2 21 10 1U
+Vaux 20 21 
+.ENDS
+*$
+.MODEL MUR110rl D
++ IS=9.82502e-09 N=1.57715 RS=0.0304421
++ CJO=5.37397E-11 M=.55676 VJ=1.24876 ISR=0 NR=4.9950 BV=100 IBV=2u
++ TT=1.63843E-8
+*$
+.SUBCKT 10TQ045 1 2
+LS 3 2 8p ; 8n
+D1 1 3 10TQ045mod
+.MODEL 10TQ045mod D (IS=9.81804E-08 RS=0.00739225 ISR=10.010E-21 NR=4.9950 BV=45.0  IBV=0.0001
++ CJO=1.42434E-09 M=0.479175 VJ=1.5 N=0.993075 TT=0)
+.ENDS
+*$
+.SUBCKT IRF520    9  60 14
+*     TERMINALS:  D  G  S
+M1 9 6 14 14 _M520 
+.MODEL _M520 NMOS KP=17.6091 RD=0.1 RS=0.0612421 VTO=3.3
+RG 60 6 1
+C5 6 14 300p
+C6 6 9 30p
+C7 9 14 20p
+DSD 14 9 DSUB
+.MODEL DSUB D (N=1.15 RS=0.01)
+.ENDS
+*$
+.SUBCKT XFMR 1 2 3 4 PARAMS: RATIO=1
+* SINGLE WINDING TRANSFORMER 
+Rpar 1 2 1MEG
+Ea 5 4 VALUE = { V(1,2)*RATIO }
+Ga 1 2 VALUE = { I(VMa)*RATIO }
+Rser 6 3 1U
+VMa 5 6 
+RP2 5 0 100Meg
+RP3 6 0 100Meg
+.ENDS XFMR
+*$
+
