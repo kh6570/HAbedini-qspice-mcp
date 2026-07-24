@@ -31,6 +31,7 @@ _DLL_FROM_SYMBOL_TEMPLATE = r"""// QSpice custom device DLL scaffold
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <cmath>
+#include <stdlib.h>
 
 union uData
 {{
@@ -56,21 +57,44 @@ int __stdcall DllMain(void *module, unsigned int reason, void *reserved) {{
     return 1;
 }}
 
+// Per-instance device state. QSpice passes the same *opaque pointer back on
+// every call for a given schematic instance, so each instance keeps its own
+// copy of these fields and multiple instances never share mutable state.
+struct s{safe_name}
+{{
+    bool initialized;
+    // TODO: add state fields here (registers, counters, previous values, ...).
+}};
+
 {undef_lines}
 
 extern "C" __declspec(dllexport) void {export_name}(
-    void **opaque,
+    struct s{safe_name} **opaque,
     double t,
     union uData *data
 )
 {{
-    (void)opaque;
     (void)t;
 {pin_bindings}
 
-    // TODO: implement device behaviour here.
-    // Avoid shared global mutable state when multiple schematic instances use the same DLL.
+    if (!*opaque)
+    {{
+        // Zero-initialized on first call for this schematic instance.
+        *opaque = (struct s{safe_name} *)calloc(1, sizeof(struct s{safe_name}));
+        (*opaque)->initialized = true;
+        // One-time per-instance initialization goes here.
+    }}
+    struct s{safe_name} *inst = *opaque;
+    (void)inst;
+
+    // TODO: implement device behaviour here using per-instance state in inst.
 {output_initializers}
+}}
+
+// QSpice calls Destroy once per instance at the end of the simulation.
+extern "C" __declspec(dllexport) void Destroy(struct s{safe_name} *inst)
+{{
+    free(inst);
 }}
 """
 
@@ -218,7 +242,9 @@ def scaffold_dll_device_from_symbol(
         notes=(
             f"Derived from {reference} in {resolved_schematic_path.name}.",
             f"Build with: cl /LD /EHsc {safe_name}.cpp /Fe{symbol_contract.device_name}.dll",
-            "Avoid shared global mutable state when multiple instances use the same DLL.",
+            "Avoid shared global mutable state when multiple instances use the same DLL; "
+            f"keep per-instance state in struct s{safe_name} (allocated via *opaque, "
+            "freed in Destroy).",
         ),
     )
 

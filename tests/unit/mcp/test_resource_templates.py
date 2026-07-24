@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pytest
 from mcp.server.fastmcp import FastMCP
 
 from qspice_mcp.mcp.resources.registration import (
+    read_reference_document,
     read_workspace_artifact_bytes,
     register_resource_templates,
 )
@@ -25,6 +27,7 @@ def test_register_resource_templates_exposes_recipe_templates(tmp_path: Path) ->
     assert "recipe://{recipe_id}/schematic" in uri_templates
     assert "recipe://{recipe_id}/{document}" in uri_templates
     assert "workspace-artifact://{relpath}" in uri_templates
+    assert "reference://{document}" in uri_templates
 
 
 def test_read_workspace_artifact_bytes_reads_nested_file(tmp_path: Path) -> None:
@@ -34,3 +37,15 @@ def test_read_workspace_artifact_bytes_reads_nested_file(tmp_path: Path) -> None
 
     payload = read_workspace_artifact_bytes("artifacts~demo.qraw", workspace_root=tmp_path)
     assert payload == b"payload"
+
+
+def test_read_reference_document_returns_directive_cheatsheet() -> None:
+    text = read_reference_document("directives")
+    assert ".bode" in text
+    assert "cshunt" in text
+    assert ".meas NAME fra" in text
+
+
+def test_read_reference_document_rejects_unknown_document() -> None:
+    with pytest.raises(ValueError, match="Unknown reference document"):
+        read_reference_document("nonexistent")

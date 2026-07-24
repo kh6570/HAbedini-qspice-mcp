@@ -50,6 +50,14 @@ def get_prompt_definitions() -> tuple[PromptDefinition, ...]:
             title="Sweep Design Parameter",
             description="Plan and execute a parameter sweep on an existing schematic.",
         ),
+        PromptDefinition(
+            name="qspice_smps_loop_gain",
+            title="SMPS Loop Gain",
+            description=(
+                "Extract closed-loop SMPS frequency response with `.bode`, measure "
+                "stability margins, and verify crossover points with `.meas fra`."
+            ),
+        ),
     )
 
 
@@ -127,12 +135,41 @@ def _sweep_design_prompt(schematic_path: str, param: str, sweep_range: str) -> s
     )
 
 
+def _smps_loop_gain_prompt(
+    schematic_path: str,
+    perturbation_source: str = "Vinj",
+    settling_time: str = "2m",
+) -> str:
+    return (
+        "Extract the open-loop frequency response of this closed-loop SMPS and "
+        "assess stability.\n\n"
+        f"Schematic/source: {schematic_path}\n"
+        f"Perturbation source: {perturbation_source} (series source inserted in the "
+        "feedback loop, between the output and the top of the feedback divider)\n"
+        f"Settling time: {settling_time}\n\n"
+        "Workflow:\n"
+        "1. prepare_transient + run_simulation first to confirm the supply settles "
+        "within the stated settling time; adjust if it does not.\n"
+        "2. prepare_bode_analysis with the perturbation source and settling time. "
+        "If the feedback reference is not at AC ground, pass reference_node "
+        "(stages `.options boderef=<node>`).\n"
+        "3. run_simulation on the staged artifact, then measure_stability_margins "
+        "for crossover frequency, phase margin, and gain margin.\n"
+        '4. Verify the crossover point independently: prepare_meas(kind="fra") at '
+        "the measured crossover frequency, re-run, and read_measures — `.meas fra` "
+        "is the most reliable frequency-domain check QSpice offers.\n"
+        "5. Report margins (target: phase margin >= 45 deg, positive gain margin) "
+        "and note any Bode artifacts the fra check contradicted."
+    )
+
+
 _PROMPT_BUILDERS: dict[str, Callable[..., str]] = {
     "qspice_buck_converter_from_scratch": _buck_converter_prompt,
     "qspice_debug_convergence": _debug_convergence_prompt,
     "qspice_run_and_measure": _run_and_measure_prompt,
     "qspice_author_dll_device": _author_dll_device_prompt,
     "qspice_sweep_design": _sweep_design_prompt,
+    "qspice_smps_loop_gain": _smps_loop_gain_prompt,
 }
 
 

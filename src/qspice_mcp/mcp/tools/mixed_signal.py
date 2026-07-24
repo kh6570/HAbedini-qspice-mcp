@@ -5,6 +5,12 @@ from __future__ import annotations
 from qspice_mcp.services.mixed_signal.build_dll_device import (
     build_dll_device as build_dll_device_service,
 )
+from qspice_mcp.services.mixed_signal.create_dll_device_from_spec import (
+    create_dll_device_from_spec as create_dll_device_from_spec_service,
+)
+from qspice_mcp.services.mixed_signal.describe_device_spec import (
+    describe_device_spec as describe_device_spec_service,
+)
 from qspice_mcp.services.mixed_signal.describe_mixed_signal_support import (
     describe_mixed_signal_support as describe_mixed_signal_support_service,
 )
@@ -29,6 +35,8 @@ from qspice_mcp.services.mixed_signal.validate_dll_symbol_signature import (
 
 __all__ = [
     "build_dll_device_service",
+    "create_dll_device_from_spec_service",
+    "describe_device_spec_service",
     "describe_mixed_signal_support_service",
     "scaffold_dll_device_from_symbol_service",
     "scaffold_dll_device_service",

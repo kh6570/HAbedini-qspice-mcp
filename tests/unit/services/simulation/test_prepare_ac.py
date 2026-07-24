@@ -5,6 +5,8 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
+import pytest
+
 from qspice_mcp.services.schematic.add_instruction import InstructionAdd
 from qspice_mcp.services.simulation.prepare_ac import prepare_ac
 
@@ -65,3 +67,29 @@ def test_prepare_ac_appends_to_netlist_copy(tmp_path: Path) -> None:
 
     assert prepared.source_kind == "netlist"
     assert staged.read_text(encoding="utf-8") == "* base\n.ac oct 20 10 100k\n.end\n"
+
+
+def test_prepare_ac_list_sweep(tmp_path: Path) -> None:
+    netlist = tmp_path / "filter.net"
+    netlist.write_text("* base\n.end\n", encoding="utf-8")
+
+    prepared = prepare_ac(
+        netlist,
+        workspace_root=tmp_path,
+        sweep_type="list",
+        frequencies=["1k", "10k", "100k"],
+        output_path=tmp_path / "filter-ac.net",
+    )
+
+    assert prepared.instruction == ".ac list 1k 10k 100k"
+
+
+def test_prepare_ac_list_sweep_requires_frequencies(tmp_path: Path) -> None:
+    netlist = tmp_path / "filter.net"
+    netlist.write_text("* base\n.end\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="frequencies"):
+        prepare_ac(netlist, workspace_root=tmp_path, sweep_type="list")
+
+    with pytest.raises(ValueError, match="requires points, start, and stop"):
+        prepare_ac(netlist, workspace_root=tmp_path, sweep_type="dec")

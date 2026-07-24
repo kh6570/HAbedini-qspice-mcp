@@ -235,6 +235,54 @@ def test_add_dll_block_adds_custom_device_to_blank_schematic(tmp_path: Path) -> 
     assert tuple(pin.name for pin in metadata.pins) == ("in0", "clk", "pwm", "saw")
 
 
+def test_reopened_component_keeps_reference_shaped_value_and_multiword_metadata(
+    tmp_path: Path,
+) -> None:
+    """Reference-shaped device names and multiword metadata tags survive reopen.
+
+    Device names such as ``ATTINY85`` match the refdes pattern, and tags such
+    as ``shorted pins:`` / ``library file:`` contain a space; both used to be
+    mangled after a save + reopen round trip.
+    """
+    output_path, _ = create_blank_schematic_file(tmp_path / "blank.qsch", workspace_root=tmp_path)
+    editor, _, _ = open_schematic_editor(output_path, workspace_root=tmp_path)
+
+    add_dll_block(
+        editor,
+        reference="X1",
+        device_name="ATTINY85",
+        input_pin_names=("PB0",),
+        output_pin_names=("PB3",),
+        position=(0, 0),
+        rotation_degrees=0,
+    )
+    add_simple_component(
+        editor,
+        component_kind="nmos",
+        reference="M1",
+        value="BSC123N08NS3",
+        position=(800, 0),
+    )
+    editor.save_as(output_path)
+    reopened, _, _ = open_schematic_editor(output_path, workspace_root=tmp_path)
+
+    dll_metadata = read_component_symbol_metadata(reopened, reference="X1")
+    nmos_metadata = read_component_symbol_metadata(reopened, reference="M1")
+
+    assert reopened.get_component_value("X1") == "ATTINY85"
+    assert reopened.get_component_parameters("X1") == {"Value": "ATTINY85"}
+    assert dll_metadata.shorted_pins is False
+    assert nmos_metadata.library_file == "NMOS.txt"
+    assert "shorted" not in nmos_metadata.drawing_tags
+    assert "library" not in nmos_metadata.drawing_tags
+
+    # A second round trip must serialize the multiword tags unchanged.
+    reopened.save_as(output_path)
+    saved_text = output_path.read_bytes().decode("latin-1")
+    assert "«shorted pins: false»" in saved_text
+    assert "«library file: NMOS.txt»" in saved_text
+
+
 def test_set_component_symbol_pin_metadata_updates_created_dll_block(tmp_path: Path) -> None:
     output_path, _ = create_blank_schematic_file(tmp_path / "blank.qsch", workspace_root=tmp_path)
     editor, _, _ = open_schematic_editor(output_path, workspace_root=tmp_path)

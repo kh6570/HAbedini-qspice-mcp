@@ -61,6 +61,8 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `build_dll_device` | implemented | Compile a workspace C or C++ source file into a `.dll` custom device using QSpice-bundled DMC, MSVC (`cl`), or CMake. |
 | `scaffold_dll_device` | implemented | Generate a C++ DLL custom-device project scaffold with the documented QSpice entry points. See [C-Block Build Guide](cblock_build_guide.md) for compilation. |
 | `scaffold_dll_device_from_symbol` | implemented | Generate a C++ DLL scaffold directly from one existing `.DLL` schematic block. See [C-Block Build Guide](cblock_build_guide.md) for compilation. |
+| `describe_device_spec` | implemented | Return the v1 PinDef-style device-spec JSON schema and bundled example for `create_dll_device_from_spec`. |
+| `create_dll_device_from_spec` | implemented | Create one `.DLL` device from a PinDef-style pin spec (inline or workspace JSON) in one call: block + all pins + optional C++ scaffold. |
 | `scaffold_verilog_device` | implemented | Generate a Verilog module scaffold for QSpice Verilog device integration. |
 | `scaffold_socket_device` | implemented | Generate a Python socket-server scaffold for QSpice socket-based device workflows. |
 | `scaffold_python_device` | implemented | Generate a Python-backed custom-device server scaffold for QSpice Python device integration. |
@@ -111,6 +113,8 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `set_component_position` | implemented | Unified placement: move and/or rotate one component; follows attached wires and normalizes refdes/value text by default. |
 | `move_component_preserving_connections` | implemented | Deprecated alias: `set_component_position` now preserves connections by default. |
 | `add_library_component` | implemented | Clone one component symbol from a template `.qsch` into a target schematic. |
+| `export_symbol_to_qsym` | implemented | Export one embedded component symbol to a standalone `.qsym` symbol file. |
+| `add_component_from_qsym` | implemented | Place one component into a schematic from a standalone `.qsym` symbol file. |
 | `render_schematic_image` | implemented | Render a supported `.qsch` (wires, junctions, components, labels) to a PNG. |
 | `set_component_parameters` | implemented | Update one or more component-local parameters. |
 | `set_component_symbol_drawing` | implemented | Update one embedded symbol drawing item by replacing its raw tag name or arguments. |
@@ -136,15 +140,21 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `add_library_include` | implemented | Append one `.include`, `.inc`, or `.lib` directive to a netlist artifact. |
 | `add_model` | implemented | Append one SPICE model definition block to a library or netlist file. |
 | `save_netlist_copy` | implemented | Resolve or generate a derived netlist artifact at an explicit destination path. |
-| `prepare_bode_analysis` | implemented | Stage a source with a documented `.bode` directive for closed-loop SMPS analysis. |
-| `prepare_ac` | implemented | Stage a source with a documented `.ac` directive for small-signal frequency analysis. |
-| `prepare_dc_sweep` | implemented | Stage a source with a documented `.dc` directive for DC sweep analysis. |
+| `prepare_bode_analysis` | implemented | Stage a source with a documented `.bode` directive (optionally with `boderef` and amplitude-shaping options) for closed-loop SMPS analysis. |
+| `prepare_ac` | implemented | Stage a source with a documented `.ac` directive (dec/oct/lin sweeps or an explicit frequency list). |
+| `prepare_dc_sweep` | implemented | Stage a source with a documented `.dc` directive (lin/oct/dec/list sweeps, optional second sweep dimension). |
 | `prepare_loop_gain_analysis` | implemented | Stage a source with `.ac` plus Tian or Middlebrook loop-gain guidance. |
-| `prepare_noise` | implemented | Stage a source with a documented `.noise` directive. |
+| `prepare_noise` | implemented | Stage a source with a documented `.noise` directive (dec/oct/lin sweeps or an explicit frequency list). |
 | `prepare_sensitivity` | implemented | Stage a source with a documented `.sens` directive. |
 | `prepare_temperature_sweep` | implemented | Stage a source with a documented `.step temp` directive. |
 | `prepare_transfer_function` | implemented | Stage a source with a documented `.tf` directive. |
 | `prepare_transient` | implemented | Stage a source with a documented `.tran` directive for transient simulation. |
+| `prepare_op` | implemented | Stage a source with a documented `.op` bias-point directive. |
+| `prepare_save` | implemented | Stage a source with a documented `.save` directive limiting stored waveform traces. |
+| `prepare_options` | implemented | Stage a source with a documented `.options` directive for convergence, Bode/FRA, and output bookkeeping options. |
+| `prepare_meas` | implemented | Stage a source with a documented `.meas` statement, including `.meas fra` verification points. |
+| `prepare_net` | implemented | Stage a source with a documented `.net` directive for S/Y/Z/H network-parameter extraction alongside `.ac`. |
+| `prepare_four` | implemented | Stage a source with a documented `.four` THD directive parsed post-simulation by `read_fourier`. |
 | `prepare_monte_carlo` | implemented | Persist explicit Monte Carlo parameter and component-value samples, with optional native `mc(...)` schematic staging and per-prefix component presets. |
 | `prepare_worst_case` | implemented | Persist explicit worst-case corner assignments with shared component preset expansion. |
 | `list_plot_suggestions` | implemented | Surface `.plot`, `.print`, `.probe`, and `.abscissa` hints from a source netlist. |
@@ -633,9 +643,78 @@ Expected outputs:
 
 Notes:
 This tool is schematic-first by design. It reads the existing symbol pin order
-and labels, emits matching `#undef` lines plus `data[]` pin bindings, and adds
-an explicit note warning against shared global mutable state across multiple
-DLL instances.
+and labels, emits matching `#undef` lines plus `data[]` pin bindings, and
+includes the per-instance state idiom: a `struct s<Device>` allocated lazily
+through the `**opaque` parameter on first call, plus a `Destroy` export QSpice
+calls once per instance at the end of the simulation. Keep mutable device
+state inside that struct rather than in shared globals so multiple schematic
+instances of the same DLL never interfere.
+
+## describe_device_spec
+
+Purpose:
+Return the v1 PinDef-style device-spec JSON schema, accepted pin directions,
+and a bundled example document for one-call `.DLL` device creation via
+`create_dll_device_from_spec`.
+
+Typical inputs:
+- none
+
+Expected outputs:
+- `schema_version`
+- `pin_directions`
+- `json_schema`
+- `example_document`
+- `bundled_example_path`
+- `notes`
+
+Notes:
+The bundled example (`attiny85.v1.json`) is an ATtiny-style pin map showing
+the exact shape `create_dll_device_from_spec` accepts through `spec_path`.
+Pin order in the spec becomes the pin order on the placed `.DLL` block and in
+the generated C++ `uData` bindings. Direction accepts `input`/`in` and
+`output`/`out`; model bidirectional pins as an input/output pair.
+
+## create_dll_device_from_spec
+
+Purpose:
+Create one `.DLL` custom device from a PinDef-style pin specification in a
+single call: place the block with all pins, then (by default) scaffold the
+matching C++ source with `scaffold_dll_device_from_symbol`.
+
+Typical inputs:
+- `schematic_path`
+- `reference`
+- `device_name` + `pins` (inline mode), or
+- `spec_path` (workspace JSON file mode)
+- `position_x`, `position_y`, `rotation_degrees` (optional)
+- `scaffold_source` (optional, default `true`)
+- `output_dir` (optional, scaffold destination)
+- `output_path` (optional, edited schematic destination)
+
+Expected outputs:
+- `schematic_path`
+- `output_path`
+- `reference`
+- `device_name`
+- `description`
+- `pins` (ordered `{name, direction}` entries)
+- `input_pin_names`
+- `output_pin_names`
+- `spec_path`
+- `source_path`, `cmake_path`, `export_name` (when scaffolding)
+- `notes`
+
+Notes:
+The spec file schema is `{"schema_version": 1, "device_name": "...",
+"description": "...", "pins": [{"name": "PB0", "direction": "input"}, ...]}`.
+Pin order is preserved within each direction group (inputs on the left edge,
+outputs on the right). This replaces the one-call-per-pin
+`add_dll_block_pin` loop for multi-pin devices such as microcontrollers: an
+agent can derive the pin list from a datasheet, write the spec, and get a
+placed block plus contract-matched source in one step. Provide either inline
+`device_name` + `pins` or `spec_path`, not both. Call `describe_device_spec`
+for the machine-readable schema and a bundled example document.
 
 ## scaffold_dll_device
 
@@ -1454,6 +1533,62 @@ Notes:
 This is a clean-room template clone: the full symbol subtree (symbol name,
 `library file:`, drawing primitives, and pins) is deep-copied, so no `.asy`
 library parser is required.
+
+## export_symbol_to_qsym
+
+Purpose:
+Export one embedded component symbol from a schematic to a standalone `.qsym`
+symbol file so the symbol can be reused across schematics and shared with
+external QSpice symbol libraries.
+
+Typical inputs:
+- `schematic_path`
+- `reference`
+- `output_path` (optional; defaults to `<symbol name>.qsym` beside the schematic)
+- `symbol_name` (optional override for the exported symbol name token)
+
+Expected outputs:
+- `schematic_path`, `reference`
+- `symbol_name`
+- `output_path`
+- `type_name`
+- `pin_names`
+- `byte_count`
+
+Notes:
+`.qsym` files share the `.qsch` guillemet wire format: a 4-byte binary prefix
+followed by one Latin-1 `«symbol NAME ...»` tag tree. The export deep-copies
+the full embedded symbol (type, description, `library file:`, drawing
+primitives, texts, and pins) and normalizes the root tag to carry the symbol
+name token that standalone files require. Whitespace in the symbol name is
+replaced with underscores.
+
+## add_component_from_qsym
+
+Purpose:
+Place one component into a schematic from a standalone `.qsym` symbol file,
+embedding the full symbol and assigning a new reference designator.
+
+Typical inputs:
+- `schematic_path`
+- `qsym_path`
+- `reference`
+- `position_x` / `position_y` / `rotation_degrees` (optional)
+- `value` (optional override; defaults to the symbol's value text)
+- `output_path` (optional)
+
+Expected outputs:
+- `schematic_path`, `output_path`, `qsym_path`
+- `reference`, `symbol_name`, `type_name`, `library_file`, `value`
+- `pin_names`
+- `position_x`, `position_y`, `rotation_degrees`
+
+Notes:
+This is the import half of `export_symbol_to_qsym`: together they round-trip
+symbols between embedded `.qsch` form and standalone `.qsym` libraries (for
+example device symbols generated by external PinDef-style toolchains). The
+symbol subtree is embedded verbatim, so subcircuit-backed symbols keep their
+inline `library file:` definitions.
 
 ## render_schematic_image
 
@@ -3363,6 +3498,10 @@ Typical inputs:
 - `debug` (optional)
 - `skip_bias_point` (optional)
 - `use_initial_conditions` (optional)
+- `reference_node` (optional; stages a companion `.options boderef=<node>` line)
+- `bode_amplitude_frequency` (optional; `BODEAMPFREQ`, `0` for constant amplitude)
+- `bode_low_power` (optional; `BODELOPOW`)
+- `bode_high_power` (optional; `BODEHIPOW`)
 - `output_path` (optional)
 
 Expected outputs:
@@ -3370,6 +3509,7 @@ Expected outputs:
 - `output_path`
 - `source_kind`
 - `instruction`
+- `companion_instruction` (the staged `.options` line, or null)
 - `warnings`
 
 Notes:
@@ -3377,7 +3517,10 @@ The frequency and time parameters are accepted as strings so the caller can use
 QSpice-friendly engineering suffixes such as `5m`, `1k`, or `1Meg` without the
 server reformatting them. For `.qsch` sources the tool stages a schematic copy
 with the added directive; for `.net` and `.cir` sources it appends the
-directive to the staged netlist artifact.
+directive to the staged netlist artifact. When `reference_node` or the
+amplitude-shaping parameters are given, one companion `.options` line is staged
+in the same artifact. Use `reference_node` when the feedback reference is not
+at AC ground.
 
 ## prepare_ac
 
@@ -3387,10 +3530,11 @@ can be simulated as a dedicated AC analysis artifact.
 
 Typical inputs:
 - `source_path`
-- `sweep_type` (`dec`, `oct`, or `lin`)
-- `points`
-- `start`
-- `stop`
+- `sweep_type` (`dec`, `oct`, `lin`, or `list`)
+- `points` (required for `dec`/`oct`/`lin`)
+- `start` (required for `dec`/`oct`/`lin`)
+- `stop` (required for `dec`/`oct`/`lin`)
+- `frequencies` (required for `list`; explicit frequency values)
 - `output_path` (optional)
 
 Expected outputs:
@@ -3403,6 +3547,7 @@ Expected outputs:
 Notes:
 Frequency parameters are accepted as strings so the caller can use QSpice-friendly
 engineering suffixes such as `1`, `1k`, or `1Meg` without server-side reformatting.
+A `list` sweep renders `.ac list F1 F2 ...` for corner-case frequency points.
 
 ## prepare_dc_sweep
 
@@ -3413,9 +3558,13 @@ can be simulated as a dedicated DC sweep artifact.
 Typical inputs:
 - `source_path`
 - `source` (independent source or element name to sweep)
-- `start`
-- `stop`
-- `step`
+- `sweep_mode` (`lin` default, `oct`, `dec`, or `list`)
+- `start`, `stop`, `step` (required for `lin`/`oct`/`dec`; `step` is the
+  increment for `lin` and points per octave/decade for `oct`/`dec`)
+- `list_values` (required for `list`)
+- `second_source`, `second_sweep_mode`, `second_start`, `second_stop`,
+  `second_step`, `second_list_values` (optional second sweep dimension for
+  curve tracing)
 - `output_path` (optional)
 
 Expected outputs:
@@ -3427,7 +3576,9 @@ Expected outputs:
 
 Notes:
 Sweep parameters are accepted as strings so the caller can use QSpice-friendly
-engineering suffixes without server-side reformatting.
+engineering suffixes without server-side reformatting. A second dimension
+renders both sweeps on one `.dc` line (QSpice supports up to six); the first
+dimension is the fastest-varying one.
 
 ## prepare_loop_gain_analysis
 
@@ -3472,10 +3623,11 @@ Typical inputs:
 - `source_path`
 - `output_node`
 - `input_source`
-- `sweep_type` (`dec`, `oct`, or `lin`)
-- `points`
-- `start`
-- `stop`
+- `sweep_type` (`dec`, `oct`, `lin`, or `list`)
+- `points` (required for `dec`/`oct`/`lin`)
+- `start` (required for `dec`/`oct`/`lin`)
+- `stop` (required for `dec`/`oct`/`lin`)
+- `frequencies` (required for `list`)
 - `output_path` (optional)
 
 Expected outputs:
@@ -3484,6 +3636,10 @@ Expected outputs:
 - `source_kind`
 - `instruction`
 - `warnings`
+
+Notes:
+`.save` directives are ignored during `.noise` simulations; all noise traces
+are stored.
 
 ## prepare_transfer_function
 
@@ -3576,6 +3732,165 @@ layout on `source_path` only; re-run this tool after placement changes; simulate
 Analysis directives (`.tran`, `.ac`, etc.) are placed **below the lowest
 component** on the sheet so they do not overlap long source value strings such as
 `PULSE(...)`.
+
+## prepare_op
+
+Purpose:
+Stage a schematic or netlist with one documented `.op` directive for a
+standalone DC bias-point analysis.
+
+Typical inputs:
+- `source_path`
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+Notes:
+After simulation, inspect the bias point with `read_device_operating_points`,
+`filter_device_operating_points`, or `summarize_device_operating_points`.
+
+## prepare_save
+
+Purpose:
+Stage a schematic or netlist with one documented `.save` directive that limits
+which waveform traces the simulator stores.
+
+Typical inputs:
+- `source_path`
+- `patterns` (list of trace patterns such as `V(out)` or `I?(M1)`; wildcards
+  `*` and `?` are supported)
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+Notes:
+Use this before long switching transients to keep `.qraw` files within budget.
+`.save` is ignored for `.noise` simulations.
+
+## prepare_options
+
+Purpose:
+Stage a schematic or netlist with one documented `.options` directive built
+from an allowlisted set of simulator options.
+
+Typical inputs (all optional; at least one option is required):
+- `source_path`
+- Convergence: `cshunt`, `gshunt`, `gmin`, `gminsteps`, `srcsteps`,
+  `noopiter` (flag), `feather`, `reltol`, `abstol`, `vntol`,
+  `method` (`trap` or `gear`), `itl1`, `itl4`, `maxstep`, `max1ststep`, `ric`
+- Bode/FRA: `boderef`, `bodeampfreq`, `bodelopow`, `bodehipow`
+- Output: `savepowers` (flag), `keepopinfo` (flag), `fastmath2` (flag)
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+Notes:
+All requested options render onto one `.options` line. Values are passed as
+strings so engineering suffixes survive unchanged; flag options render as
+`name=1`. The allowlist intentionally excludes unknown options — use
+`add_instruction` for anything exotic.
+
+## prepare_meas
+
+Purpose:
+Stage a schematic or netlist with one documented `.meas` statement whose result
+is computed post-simulation by QPOST and read back with `read_measures`.
+
+Typical inputs:
+- `source_path`
+- `kind` (`find_at`, `avg`, `trig_targ`, `fra`, `four`, or `raw`)
+- `name` (measurement name; required except for `raw`)
+- `find_at`: `expression` and `at`
+- `avg`: `statistic` (`avg` default, `max`, `min`, `pp`, `rms`, `integ`),
+  `expression`, optional `start`/`stop` window (rendered as `from ... to ...`)
+- `trig_targ`: `trig` and `targ` conditions in `EXPRESSION=EXPRESSION` form
+- `fra`: `frequency`, `input_expression`, `output_expression`
+- `four`: `frequency`, `expression`
+- `raw`: `instruction` (expert escape hatch; must start with `.meas`)
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `kind`
+- `instruction`
+- `warnings`
+
+Notes:
+`.meas <name> fra <freq> <input> <output>` is the most reliable
+frequency-domain measurement QSpice offers — use it to verify individual
+`.bode` gain/phase points (for example at the measured crossover frequency).
+Batch runners export numeric `.meas` results to CSV automatically.
+
+## prepare_net
+
+Purpose:
+Stage a schematic or netlist with one documented `.net` directive for network
+(S/Y/Z/H) parameter extraction during an `.ac` analysis.
+
+Typical inputs:
+- `source_path`
+- `input_source` (independent voltage/current source driving the network)
+- `output_resistor` (optional; adds two-port extraction against that resistor)
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+Notes:
+`.net` produces results only when paired with an `.ac` directive — stage one
+with `prepare_ac` if not already present. The input source must declare its
+source impedance via `Rser`. Without `output_resistor` only one-port
+parameters (S11, Zin, Yin) are computed; S11 supports Smith-chart plotting.
+Two-port results can be exported with `export_touchstone_s2p`.
+
+## prepare_four
+
+Purpose:
+Stage a schematic or netlist with one documented `.four` directive so THD and
+harmonic content are computed by QPOST after a transient simulation.
+
+Typical inputs:
+- `source_path`
+- `frequency` (fundamental)
+- `expressions` (one or more waveform expressions such as `V(out)`)
+- `harmonics` (optional; defaults to QSpice's built-in count)
+- `periods` (optional; requires `harmonics` because the directive arguments
+  are positional)
+- `output_path` (optional)
+
+Expected outputs:
+- `source_path`
+- `output_path`
+- `source_kind`
+- `instruction`
+- `warnings`
+
+Notes:
+Parse results from the `.log` with `read_fourier`. For a waveform-side THD that
+does not require re-running the simulation, use `compute_thd` on the `.qraw`
+instead. `.four` analyzes the trailing periods of the transient, so make sure
+`.tran` runs long enough to reach steady state.
 
 ## prepare_monte_carlo
 

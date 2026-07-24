@@ -5,6 +5,9 @@ from __future__ import annotations
 from qspice_mcp.services.schematic.add_component import (
     add_component as add_component_service,
 )
+from qspice_mcp.services.schematic.add_component_from_qsym import (
+    add_component_from_qsym as add_component_from_qsym_service,
+)
 from qspice_mcp.services.schematic.add_component_symbol_drawing import (
     add_component_symbol_drawing as add_component_symbol_drawing_service,
 )
@@ -35,6 +38,9 @@ from qspice_mcp.services.schematic.describe_edit_capability import (
 )
 from qspice_mcp.services.schematic.describe_schematic_edit_support import (
     describe_schematic_edit_support as describe_schematic_edit_support_service,
+)
+from qspice_mcp.services.schematic.export_symbol_to_qsym import (
+    export_symbol_to_qsym as export_symbol_to_qsym_service,
 )
 from qspice_mcp.services.schematic.import_circuit_bundle import (
     import_circuit_bundle as import_circuit_bundle_service,
@@ -105,6 +111,7 @@ from qspice_mcp.services.schematic.set_element_model import (
 from qspice_mcp.services.schematic.set_parameter import set_parameter as set_parameter_service
 
 __all__ = [
+    "add_component_from_qsym_service",
     "add_component_service",
     "add_component_symbol_drawing_service",
     "add_dll_block_pin_service",
@@ -117,6 +124,7 @@ __all__ = [
     "create_starter_schematic_service",
     "describe_edit_capability_service",
     "describe_schematic_edit_support_service",
+    "export_symbol_to_qsym_service",
     "import_circuit_bundle_service",
     "inspect_schematic_service",
     "list_components_service",

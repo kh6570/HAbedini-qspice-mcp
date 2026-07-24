@@ -26,14 +26,32 @@ from qspice_mcp.services.simulation.prepare_bode_analysis import (
 from qspice_mcp.services.simulation.prepare_dc_sweep import (
     prepare_dc_sweep as prepare_dc_sweep_service,
 )
+from qspice_mcp.services.simulation.prepare_four import (
+    prepare_four as prepare_four_service,
+)
 from qspice_mcp.services.simulation.prepare_loop_gain_analysis import (
     prepare_loop_gain_analysis as prepare_loop_gain_analysis_service,
+)
+from qspice_mcp.services.simulation.prepare_meas import (
+    prepare_meas as prepare_meas_service,
 )
 from qspice_mcp.services.simulation.prepare_monte_carlo import (
     prepare_monte_carlo as prepare_monte_carlo_service,
 )
+from qspice_mcp.services.simulation.prepare_net import (
+    prepare_net as prepare_net_service,
+)
 from qspice_mcp.services.simulation.prepare_noise import (
     prepare_noise as prepare_noise_service,
+)
+from qspice_mcp.services.simulation.prepare_op import (
+    prepare_op as prepare_op_service,
+)
+from qspice_mcp.services.simulation.prepare_options import (
+    prepare_options as prepare_options_service,
+)
+from qspice_mcp.services.simulation.prepare_save import (
+    prepare_save as prepare_save_service,
 )
 from qspice_mcp.services.simulation.prepare_sensitivity import (
     prepare_sensitivity as prepare_sensitivity_service,
@@ -87,9 +105,15 @@ __all__ = [
     "prepare_ac_service",
     "prepare_bode_analysis_service",
     "prepare_dc_sweep_service",
+    "prepare_four_service",
     "prepare_loop_gain_analysis_service",
+    "prepare_meas_service",
     "prepare_monte_carlo_service",
+    "prepare_net_service",
     "prepare_noise_service",
+    "prepare_op_service",
+    "prepare_options_service",
+    "prepare_save_service",
     "prepare_sensitivity_service",
     "prepare_temperature_sweep_service",
     "prepare_transfer_function_service",

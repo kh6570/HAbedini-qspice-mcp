@@ -76,6 +76,23 @@ def test_prepare_noise_appends_to_netlist(tmp_path) -> None:
     assert staged.read_text(encoding="utf-8") == "* base\n.noise V(out) VIN dec 100 1 1Meg\n.end\n"
 
 
+def test_prepare_noise_list_sweep(tmp_path) -> None:
+    netlist = tmp_path / "amp.net"
+    netlist.write_text("* base\n.end\n", encoding="utf-8")
+
+    prepared = prepare_noise(
+        netlist,
+        workspace_root=tmp_path,
+        output_node="V(out)",
+        input_source="VIN",
+        sweep_type="list",
+        frequencies=["100", "1k", "10k"],
+        output_path=tmp_path / "amp-noise.net",
+    )
+
+    assert prepared.instruction == ".noise V(out) VIN list 100 1k 10k"
+
+
 def test_prepare_transfer_function_appends_to_netlist(tmp_path) -> None:
     netlist = tmp_path / "amp.net"
     netlist.write_text("* base\n.end\n", encoding="utf-8")

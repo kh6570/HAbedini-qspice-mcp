@@ -61,6 +61,42 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             },
         },
     },
+    "describe_device_spec": {
+        "title": "Describe Device Spec",
+        "description": "Return the v1 PinDef-style device-spec JSON schema, accepted pin directions, and a bundled example for one-call `.DLL` device creation via create_dll_device_from_spec.",
+        "input_schema": {"type": "object", "properties": {}},
+    },
+    "create_dll_device_from_spec": {
+        "title": "Create DLL Device From Spec",
+        "description": "Create one `.DLL` custom device from a PinDef-style pin specification in one call: place the block with all pins and (by default) scaffold the matching C++ source. Provide device_name + pins inline, or spec_path pointing to a workspace JSON file ({schema_version: 1, device_name, description?, pins: [{name, direction}]}).",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "reference"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "reference": {"type": "string"},
+                "device_name": {"type": "string"},
+                "pins": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["name", "direction"],
+                        "properties": {
+                            "name": {"type": "string"},
+                            "direction": {"type": "string", "enum": ["input", "output"]},
+                        },
+                    },
+                },
+                "spec_path": {"type": "string"},
+                "position_x": {"type": "integer"},
+                "position_y": {"type": "integer"},
+                "rotation_degrees": {"type": "integer"},
+                "scaffold_source": {"type": "boolean"},
+                "output_dir": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+        },
+    },
     "scaffold_verilog_device": {
         "title": "Scaffold Verilog Device",
         "description": "Generate a Verilog module scaffold for use as a QSpice custom device through the documented Verilog device integration path.",

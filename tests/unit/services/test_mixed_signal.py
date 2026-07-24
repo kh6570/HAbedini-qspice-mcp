@@ -369,6 +369,20 @@ def test_scaffold_dll_device_from_symbol_writes_contract_matched_files(
     assert "double in0 = data[0].d; // input" in source_text
     assert "double &pwm = data[2].d; // output" in source_text
 
+    # Per-instance state idiom: opaque struct, lazy allocation, Destroy export.
+    assert "struct sBuck_controller" in source_text
+    assert "struct sBuck_controller **opaque" in source_text
+    assert "calloc(1, sizeof(struct sBuck_controller))" in source_text
+    assert 'extern "C" __declspec(dllexport) void Destroy(struct sBuck_controller *inst)' in (
+        source_text
+    )
+
+    # The scaffold must keep matching the symbol contract parser.
+    source_contract = parse_dll_source_contract_text(source_text)
+    assert "Buck_controller" in source_contract.exported_function_names
+    assert source_contract.input_pin_names == ("in0", "clk")
+    assert source_contract.output_pin_names == ("pwm",)
+
     assert any("Avoid shared global mutable state" in note for note in result.notes)
 
 

@@ -85,5 +85,22 @@ def register_prompts(app: FastMCP, definitions: tuple[PromptDefinition, ...]) ->
             )
         )
 
+    loop_name, loop_title, loop_description = _meta("qspice_smps_loop_gain")
+
+    @app.prompt(name=loop_name, title=loop_title, description=loop_description)
+    def smps_loop_gain_prompt(
+        schematic_path: str,
+        perturbation_source: str = "Vinj",
+        settling_time: str = "2m",
+    ) -> list[dict[str, object]]:
+        return _messages_from_text(
+            render_prompt_message(
+                "qspice_smps_loop_gain",
+                schematic_path=schematic_path,
+                perturbation_source=perturbation_source,
+                settling_time=settling_time,
+            )
+        )
+
 
 __all__ = ["register_prompts"]

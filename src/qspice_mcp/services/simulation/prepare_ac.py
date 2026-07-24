@@ -13,10 +13,11 @@ from qspice_mcp.services.schematic.add_instruction import (
 from qspice_mcp.services.service_spec import ServiceSpec
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
 
 _NETLIST_SUFFIXES = (".net", ".cir")
-_AC_SWEEP_TYPES = frozenset({"dec", "oct", "lin"})
+_AC_SWEEP_TYPES = frozenset({"dec", "oct", "lin", "list"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -57,14 +58,22 @@ def _resolve_output_path(
 
 def _render_ac_instruction(
     sweep_type: str,
-    points: str,
-    start: str,
-    stop: str,
+    points: str | None,
+    start: str | None,
+    stop: str | None,
+    frequencies: Sequence[str] | None,
 ) -> str:
     normalized_sweep_type = sweep_type.strip().lower()
     if normalized_sweep_type not in _AC_SWEEP_TYPES:
         allowed = ", ".join(sorted(_AC_SWEEP_TYPES))
         raise ValueError(f"sweep_type must be one of: {allowed}")
+    if normalized_sweep_type == "list":
+        values = tuple(value.strip() for value in (frequencies or ()) if value.strip())
+        if not values:
+            raise ValueError("List sweep requires at least one value in frequencies.")
+        return " ".join((".ac", "list", *values))
+    if points is None or start is None or stop is None:
+        raise ValueError(f"`{normalized_sweep_type}` sweep requires points, start, and stop.")
     return " ".join(
         (
             ".ac",
@@ -98,9 +107,10 @@ def prepare_ac(
     *,
     workspace_root: Path,
     sweep_type: str,
-    points: str,
-    start: str,
-    stop: str,
+    points: str | None = None,
+    start: str | None = None,
+    stop: str | None = None,
+    frequencies: Sequence[str] | None = None,
     output_path: str | Path | None = None,
 ) -> PreparedAcAnalysis:
     """Stage a schematic or netlist with one documented `.ac` directive."""
@@ -111,7 +121,7 @@ def prepare_ac(
         workspace_root=normalized_workspace,
         suffixes=(".qsch", ".net", ".cir"),
     )
-    instruction = _render_ac_instruction(sweep_type, points, start, stop)
+    instruction = _render_ac_instruction(sweep_type, points, start, stop, frequencies)
 
     if resolved_source.suffix.lower() == ".qsch":
         destination = _resolve_output_path(

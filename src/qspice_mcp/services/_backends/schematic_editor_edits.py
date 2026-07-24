@@ -2201,6 +2201,66 @@ def clone_library_component(  # noqa: PLR0915
     )
 
 
+def export_component_symbol_tag(
+    editor: _QschEditorProtocol,
+    *,
+    reference: str,
+    symbol_name: str | None = None,
+) -> tuple[Any, str]:
+    """Deep-copy one embedded component symbol tag for standalone `.qsym` export.
+
+    Returns ``(symbol_tag, resolved_symbol_name)``.  The root tag is
+    normalized to carry the symbol name token (``«symbol NAME ...»``) that
+    standalone ``.qsym`` files require.
+    """
+
+    _component_tag, symbol_tag = _component_symbol_tag(editor, reference=reference)
+    exported = copy.deepcopy(symbol_tag)
+
+    resolved_name = (symbol_name or "").strip()
+    if not resolved_name and len(exported.tokens) > 1:
+        resolved_name = str(exported.tokens[1]).strip()
+    if not resolved_name:
+        resolved_name = str(editor.get_component_value(reference)).strip()
+    if not resolved_name:
+        resolved_name = reference.strip()
+    # Symbol name tokens are whitespace-delimited on the wire.
+    resolved_name = re.sub(r"\s+", "_", resolved_name)
+
+    if len(exported.tokens) > 1:
+        exported.tokens[1] = resolved_name
+    else:
+        exported.tokens.append(resolved_name)
+    return exported, resolved_name
+
+
+def add_qsym_symbol_component(
+    editor: _QschEditorProtocol,
+    *,
+    symbol_tag: Any,
+    reference: str,
+    position: tuple[int, int],
+    value: str | None = None,
+    rotation_degrees: int = 0,
+) -> ClonedLibraryComponent:
+    """Insert one standalone `.qsym` symbol tag as a new schematic component."""
+
+    if symbol_tag is None or getattr(symbol_tag, "tag", None) != "symbol":
+        raise QSpiceError("Expected a parsed .qsym symbol tag.")
+
+    qsch_module, _ = _load_qsch_support_modules()
+    component_tag = qsch_module.QschTag("component", "(0,0)", "0", "0")
+    component_tag.items.append(symbol_tag)
+    return clone_library_component(
+        editor,
+        template_component_tag=component_tag,
+        reference=reference,
+        position=position,
+        value=value,
+        rotation_degrees=rotation_degrees,
+    )
+
+
 @dataclass(frozen=True, slots=True)
 class WireFollowMove:
     """Result of moving one component while rewiring attached connection points."""

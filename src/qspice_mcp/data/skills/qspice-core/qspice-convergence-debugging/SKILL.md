@@ -41,10 +41,11 @@ circuit*, not the MCP server.
 | Log symptom | Likely cause | Fix |
 | --- | --- | --- |
 | `singular matrix`, floating node | No DC path to ground; dangling net | Add a path to GND (large `R` to ground), fix unconnected pins; verify with `list_components` |
-| `timestep too small` | Stiff switching, ideal edges, no parasitics | Add small series R / snubber; soften driver edges; relax `reltol` slightly |
+| `timestep too small` | Stiff switching, ideal edges, no parasitics | Add small series R / snubber; soften driver edges; `.options cshunt=1e-12`; relax `reltol` slightly |
 | `no convergence` at t=0 | Hard DC operating point | Add `.ic` initial conditions; enable gmin/source stepping; add soft-start to sources |
-| Stops mid-transient | Discontinuity / ideal switch chatter | Add hysteresis or RC snubber across the switch; add device parasitics |
+| Stops mid-transient | Discontinuity / ideal switch chatter | Add hysteresis or RC snubber across the switch; add device parasitics; cap `maxstep` |
 | Nonlinear/behavioral (`B`) blowup | Aggressive expression, divide-by-zero | Clamp/limit the `B` expression; add series resistance |
+| Trap ringing (numerical oscillation) | Trapezoidal integration on stiff circuit | `.options method=gear` or `.options feather=...` (trap damping factor) |
 
 ## Applying fixes via tools
 
@@ -53,8 +54,8 @@ circuit*, not the MCP server.
 - **Add a part** (snubber, bleeder to GND): `add_component` + `add_wire`
   (+ `add_junction` / `add_net_label` as needed).
 - **Simulator directives** (`.options reltol=...`, `.ic ...`, `.options gmin=...`):
-  add a SPICE directive. If editing the schematic's directives is not exposed for
-  your case, simulate the derived netlist: `generate_netlist`, append the
+  use `prepare_options` to stage a copy with the options line, or `add_instruction`
+  on the `.qsch`. For netlists you can also `generate_netlist`, append the
   `.options`/`.ic` line, then `run_simulation` on that `.net`/`.cir`.
 
 ### Useful directive starting points
@@ -67,6 +68,27 @@ circuit*, not the MCP server.
 ```
 
 Loosen tolerances only modestly — over-loosening trades accuracy for convergence.
+
+### QSpice-specific convergence options
+
+QSpice extends the classic option set (see the `.options` table in the QSpice
+help). The most useful for convergence work:
+
+| Option | Effect | When to try |
+| --- | --- | --- |
+| `cshunt=1e-12` | Adds that capacitance from every node to ground (aka CMIN) | Ideal-switch / resonant tanks that abort with `timestep too small`. Proven fix for the bundled `push_pull_resonant` recipe (1 pF is negligible at 100 kHz) |
+| `gshunt=1e-12` | Conductance from every node to ground | Floating or nearly-floating nodes that break the DC solve |
+| `gminsteps=0` / `srcsteps=0` | Disable gmin or source stepping (adaptive step counts are otherwise automatic) | When a stepping algorithm itself loops or misleads |
+| `noopiter` | Skip direct OP iteration, go straight to gmin stepping | Hard bias points where direct Newton iteration always fails |
+| `feather=<x>` | Trap integration damping factor | Trap ringing without paying Gear's accuracy cost |
+| `itl1=500` / `itl4=100` | Raise DC / transient iteration limits | `iteration limit` messages on legitimately hard circuits |
+| `maxstep=<t>` | Cap the timestep for `.tran` and `.bode` | Missed switching edges, chatter around discontinuities |
+| `max1ststep=<t>` | Cap only the very first timestep (default 100 ns) | First-step blowups right after the bias point |
+| `ric=<r>` | Impedance of sources asserting `.ic` (default 1 mΩ) | `.ic` conditions fighting the circuit at t=0 |
+
+Prefer physical fixes first; `cshunt`/`gshunt` are the gentlest global options
+because tiny values barely perturb the answer while removing infinitely fast
+nodes.
 
 ## Verify the fix
 

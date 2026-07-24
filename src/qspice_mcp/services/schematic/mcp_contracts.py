@@ -81,6 +81,38 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             },
         },
     },
+    "export_symbol_to_qsym": {
+        "title": "Export Symbol To Qsym",
+        "description": "Export one embedded component symbol from a schematic to a standalone `.qsym` symbol file (same guillemet wire format as `.qsch`) for reuse across schematics and external symbol libraries.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "reference"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "reference": {"type": "string"},
+                "output_path": {"type": "string"},
+                "symbol_name": {"type": "string"},
+            },
+        },
+    },
+    "add_component_from_qsym": {
+        "title": "Add Component From Qsym",
+        "description": "Place one component into a schematic from a standalone `.qsym` symbol file, embedding the full symbol (drawing, pins, type, library file) and assigning a new reference designator.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "qsym_path", "reference"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "qsym_path": {"type": "string"},
+                "reference": {"type": "string"},
+                "position_x": {"type": "integer"},
+                "position_y": {"type": "integer"},
+                "rotation_degrees": {"type": "integer"},
+                "value": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+        },
+    },
     "render_schematic_image": {
         "title": "Render Schematic Image",
         "description": "Render a supported `.qsch` schematic (wires, junctions, component anchors with refdes/value, and net labels) to a PNG image inside the workspace.",

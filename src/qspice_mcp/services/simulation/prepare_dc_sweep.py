@@ -13,9 +13,11 @@ from qspice_mcp.services.schematic.add_instruction import (
 from qspice_mcp.services.service_spec import ServiceSpec
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
 
 _NETLIST_SUFFIXES = (".net", ".cir")
+_DC_SWEEP_MODES = frozenset({"lin", "oct", "dec", "list"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,21 +56,39 @@ def _resolve_output_path(
     return resolved
 
 
-def _render_dc_instruction(
+def _render_dc_dimension(
     source: str,
-    start: str,
-    stop: str,
-    step: str,
-) -> str:
-    return " ".join(
-        (
-            ".dc",
-            source.strip(),
-            start.strip(),
-            stop.strip(),
-            step.strip(),
+    *,
+    sweep_mode: str,
+    start: str | None,
+    stop: str | None,
+    step: str | None,
+    list_values: Sequence[str] | None,
+    label: str,
+) -> tuple[str, ...]:
+    normalized_mode = sweep_mode.strip().lower()
+    if normalized_mode not in _DC_SWEEP_MODES:
+        allowed = ", ".join(sorted(_DC_SWEEP_MODES))
+        raise ValueError(f"{label} sweep mode must be one of: {allowed}")
+    normalized_source = source.strip()
+    if not normalized_source:
+        raise ValueError(f"{label} source must not be blank.")
+
+    if normalized_mode == "list":
+        values = tuple(value.strip() for value in (list_values or ()) if value.strip())
+        if not values:
+            raise ValueError(f"{label} list sweep requires at least one value in list_values.")
+        return (normalized_source, "list", *values)
+
+    if start is None or stop is None or step is None:
+        raise ValueError(
+            f"{label} `{normalized_mode}` sweep requires start, stop, and step "
+            "(step is the increment for `lin` and points per octave/decade for `oct`/`dec`)."
         )
-    )
+    tokens: tuple[str, ...] = (normalized_source, start.strip(), stop.strip(), step.strip())
+    if normalized_mode == "lin":
+        return tokens
+    return (normalized_mode, *tokens)
 
 
 def _append_instruction_to_netlist(netlist_path: Path, instruction: str) -> None:
@@ -93,12 +113,24 @@ def prepare_dc_sweep(
     *,
     workspace_root: Path,
     source: str,
-    start: str,
-    stop: str,
-    step: str,
+    start: str | None = None,
+    stop: str | None = None,
+    step: str | None = None,
+    sweep_mode: str = "lin",
+    list_values: Sequence[str] | None = None,
+    second_source: str | None = None,
+    second_start: str | None = None,
+    second_stop: str | None = None,
+    second_step: str | None = None,
+    second_sweep_mode: str = "lin",
+    second_list_values: Sequence[str] | None = None,
     output_path: str | Path | None = None,
 ) -> PreparedDcSweep:
-    """Stage a schematic or netlist with one documented `.dc` directive."""
+    """Stage a schematic or netlist with one documented `.dc` directive.
+
+    Supports linear, octave, decade, and explicit list sweeps, with an optional
+    second sweep dimension for curve tracing (QSpice allows up to six).
+    """
 
     normalized_workspace = workspace_root.resolve(strict=False)
     resolved_source = validate_existing_file(
@@ -106,7 +138,31 @@ def prepare_dc_sweep(
         workspace_root=normalized_workspace,
         suffixes=(".qsch", ".net", ".cir"),
     )
-    instruction = _render_dc_instruction(source, start, stop, step)
+    tokens: list[str] = [".dc"]
+    tokens.extend(
+        _render_dc_dimension(
+            source,
+            sweep_mode=sweep_mode,
+            start=start,
+            stop=stop,
+            step=step,
+            list_values=list_values,
+            label="primary",
+        )
+    )
+    if second_source is not None:
+        tokens.extend(
+            _render_dc_dimension(
+                second_source,
+                sweep_mode=second_sweep_mode,
+                start=second_start,
+                stop=second_stop,
+                step=second_step,
+                list_values=second_list_values,
+                label="second",
+            )
+        )
+    instruction = " ".join(tokens)
 
     if resolved_source.suffix.lower() == ".qsch":
         destination = _resolve_output_path(

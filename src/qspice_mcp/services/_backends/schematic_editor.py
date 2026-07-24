@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from ._qsch_editor import read_qsym_symbol_tag, write_qsym_file
 from .schematic_editor_backend import (
     _GROUND_NET_NAME,
     ComponentSymbolMetadata,
@@ -33,12 +34,14 @@ from .schematic_editor_edits import (
     add_dll_block_pin_metadata,
     add_junction,
     add_net_label,
+    add_qsym_symbol_component,
     add_simple_component,
     add_wire,
     bootstrap_blank_schematic,
     clone_library_component,
     collect_component_pin_coordinates,
     create_blank_schematic_file,
+    export_component_symbol_tag,
     move_component_preserving_connections,
     normalize_component_symbol_text_rotation,
     read_component_symbol_metadata,
@@ -79,6 +82,7 @@ __all__ = [
     "add_dll_block_pin_metadata",
     "add_junction",
     "add_net_label",
+    "add_qsym_symbol_component",
     "add_simple_component",
     "add_wire",
     "bootstrap_blank_schematic",
@@ -87,6 +91,7 @@ __all__ = [
     "component_rotation_degrees_to_index",
     "component_rotation_index_to_degrees",
     "create_blank_schematic_file",
+    "export_component_symbol_tag",
     "load_qsch_editor_factory",
     "move_component_preserving_connections",
     "normalize_component_parameters",
@@ -95,6 +100,7 @@ __all__ = [
     "normalize_component_symbol_text_rotation",
     "open_schematic_editor",
     "read_component_symbol_metadata",
+    "read_qsym_symbol_tag",
     "remove_component_symbol_drawing_metadata",
     "remove_component_with_orphan_cleanup",
     "remove_dll_block_pin_metadata",
@@ -111,4 +117,5 @@ __all__ = [
     "set_component_symbol_text_attributes",
     "set_dll_block_pin_role_metadata",
     "symbol_text_rotation_code_for_degrees",
+    "write_qsym_file",
 ]

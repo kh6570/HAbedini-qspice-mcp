@@ -58,15 +58,26 @@ def _decode_qsch_bytes(raw_bytes: bytes) -> str:
 
 
 def _split_qsch_tokens(line: str) -> list[str]:
-    """Split a QSCH tag's inner content into tokens, respecting double-quoted strings."""
+    """Split a QSCH tag's inner content into tokens.
+
+    Two delimiter pairs protect embedded whitespace: double quotes for text
+    values and pipes for inline library payloads (``«library file: |.subckt
+    ...|»``).  Each delimiter is inert inside the other's span, so quoted
+    expressions may contain ``|`` operators and pipe payloads may contain
+    quotes.
+    """
     tokens: list[str] = []
     current: list[str] = []
     in_quotes = False
+    in_pipes = False
     for ch in line:
-        if ch == '"':
+        if ch == '"' and not in_pipes:
             in_quotes = not in_quotes
             current.append(ch)
-        elif ch in (" ", "\t") and not in_quotes:
+        elif ch == "|" and not in_quotes:
+            in_pipes = not in_pipes
+            current.append(ch)
+        elif ch in (" ", "\t") and not in_quotes and not in_pipes:
             if current:
                 tokens.append("".join(current))
                 current = []
@@ -75,6 +86,24 @@ def _split_qsch_tokens(line: str) -> list[str]:
     if current:
         tokens.append("".join(current))
     return tokens
+
+
+# QSPICE metadata tag names that contain a space (e.g. «library file: "R.txt"»,
+# «shorted pins: false»).  The token splitter breaks these into two tokens, so
+# merge them back to keep the tag identity of parsed trees consistent with
+# programmatically built ones (get_items lookups, serialization).
+_MULTIWORD_TAG_NAMES = frozenset({"library file:", "shorted pins:"})
+
+
+def _tag_from_tokens(tokens: list[str]) -> QschTag:
+    """Build one QschTag from split tokens, re-joining multiword tag names."""
+    if (
+        len(tokens) >= 2  # noqa: PLR2004
+        and not tokens[0].endswith(":")
+        and f"{tokens[0]} {tokens[1]}" in _MULTIWORD_TAG_NAMES
+    ):
+        tokens = [f"{tokens[0]} {tokens[1]}", *tokens[2:]]
+    return QschTag(tokens[0], *tokens[1:])
 
 
 # ---------------------------------------------------------------------------
@@ -236,14 +265,13 @@ class QschEditor:
             tokens = _split_qsch_tokens(inner)
             if not tokens:
                 return QschTag(""), pos - start
-            tag = QschTag(tokens[0], *tokens[1:])
-            return tag, pos - start
+            return _tag_from_tokens(tokens), pos - start
 
         # Parent tag — tokens from the opening line
         tokens = _split_qsch_tokens(inner)
         if not tokens:
             return QschTag(""), pos - start
-        tag = QschTag(tokens[0], *tokens[1:])
+        tag = _tag_from_tokens(tokens)
 
         # Parse children until the closing »
         while pos < len(stream):
@@ -402,20 +430,35 @@ class QschEditor:
         return comp
 
     def get_component_value(self, element: str) -> str:
-        """Return the VALUE text of one component."""
+        """Return the VALUE text of one component.
+
+        Only the first reference-shaped text is treated as the refdes; the
+        next non-empty text is the value even when it also looks like a
+        reference (device names such as ``ATTINY85``).
+        """
         _comp_tag, symbol_tag = self._components.get(element, (None, None))
         if symbol_tag is None:
             raise QSpiceError(f"Component {element} not found.")
+        refdes_seen = False
         for text_tag in symbol_tag.items:
             if text_tag.tag != _TAG_TEXT:
                 continue
             val = self._get_text_value(text_tag)
-            if val and not _REFERENCE_PATTERN.match(val):
-                return val
+            if not val:
+                continue
+            if not refdes_seen and _REFERENCE_PATTERN.match(val):
+                refdes_seen = True
+                continue
+            return val
         return ""
 
     def get_component_parameters(self, element: str) -> dict[str, Any]:
-        """Return component-local parameters as a dict."""
+        """Return component-local parameters as a dict.
+
+        Only the first reference-shaped text is treated as the refdes; later
+        texts that also look like references (device names such as
+        ``ATTINY85``) are kept as the value or extra parameters.
+        """
         _comp_tag, symbol_tag = self._components.get(element, (None, None))
         if symbol_tag is None:
             raise QSpiceError(f"Component {element} not found.")
@@ -428,7 +471,7 @@ class QschEditor:
             val = self._get_text_value(text_tag)
             if val is None:
                 continue
-            if _REFERENCE_PATTERN.match(val):
+            if ref_val is None and _REFERENCE_PATTERN.match(val):
                 ref_val = val
                 continue
             if value_val is None and ref_val is not None:
@@ -537,7 +580,7 @@ class QschEditor:
             if text_tag.tag != _TAG_TEXT:
                 continue
             val = self._get_text_value(text_tag)
-            if val and _REFERENCE_PATTERN.match(val):
+            if not ref_found and val and _REFERENCE_PATTERN.match(val):
                 ref_found = True
                 continue
             if ref_found:
@@ -613,7 +656,7 @@ class QschEditor:
             if text_tag.tag != _TAG_TEXT:
                 continue
             val = self._get_text_value(text_tag)
-            if val and _REFERENCE_PATTERN.match(val):
+            if not ref_found and val and _REFERENCE_PATTERN.match(val):
                 ref_found = True
                 continue
             if ref_found:
@@ -793,3 +836,47 @@ class QschEditor:
         n_comps = len(self._components)
         n_instrs = len(self._instructions)
         return f"QschEditor(path={self._path!r}, components={n_comps}, instructions={n_instrs})"
+
+
+# ---------------------------------------------------------------------------
+# Standalone .qsym symbol files
+# ---------------------------------------------------------------------------
+
+_QSYM_ROOT_TAG = "symbol"
+
+
+def read_qsym_symbol_tag(qsym_path: Path) -> QschTag:
+    """Parse one standalone ``.qsym`` symbol file into its raw symbol tag.
+
+    ``.qsym`` files share the ``.qsch`` wire format: an optional 4-byte binary
+    prefix followed by one Latin-1 ``«symbol NAME ...»`` tag tree.
+    """
+    try:
+        raw_bytes = qsym_path.read_bytes()
+    except FileNotFoundError as exc:
+        raise QSpiceError(f"Symbol file not found: {qsym_path}") from exc
+    except OSError as exc:
+        raise QSpiceError(f"Cannot read symbol file {qsym_path}: {exc}") from exc
+
+    if raw_bytes.startswith(_QSCH_BINARY_PREFIX):
+        raw_bytes = raw_bytes[len(_QSCH_BINARY_PREFIX) :]
+    text = _decode_qsch_bytes(raw_bytes).replace("\x00", "")
+
+    tag, _consumed = QschEditor._parse_tree(text, 0)
+    if tag.tag != _QSYM_ROOT_TAG:
+        raise QSpiceError(
+            f"{qsym_path.name} does not contain a QSpice symbol tag; found {tag.tag!r}."
+        )
+    return tag
+
+
+def write_qsym_file(symbol_tag: QschTag, qsym_path: Path) -> None:
+    """Persist one symbol tag as a standalone ``.qsym`` file."""
+    if symbol_tag.tag != _QSYM_ROOT_TAG:
+        raise QSpiceError(f"Expected a symbol tag to write as .qsym; found {symbol_tag.tag!r}.")
+    out = symbol_tag.out(level=0)
+    # The instruction qualifier \ufeff cannot be encoded in Latin-1.
+    out = out.replace("\ufeff", "\xef\xbb\xbf")
+    data = _QSCH_BINARY_PREFIX + out.encode("latin-1")
+    qsym_path.parent.mkdir(parents=True, exist_ok=True)
+    qsym_path.write_bytes(data)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from importlib.resources import files
 from typing import TYPE_CHECKING
 
 from qspice_mcp.services._shared.paths import resolve_workspace_path
@@ -15,6 +16,11 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from mcp.server.fastmcp import FastMCP
+
+_REFERENCE_ROOT = "qspice_mcp.data.reference"
+_REFERENCE_DOCUMENTS = {
+    "directives": "qspice-directives.md",
+}
 
 _WORKSPACE_ARTIFACT_SUFFIXES = (
     ".qsch",
@@ -51,10 +57,33 @@ def read_workspace_artifact_bytes(relpath: str, *, workspace_root: Path) -> byte
     return resolved.read_bytes()
 
 
+def read_reference_document(document: str) -> str:
+    """Return one bundled agent-facing reference document as markdown text."""
+
+    filename = _REFERENCE_DOCUMENTS.get(document.strip().lower())
+    if filename is None:
+        allowed = ", ".join(sorted(_REFERENCE_DOCUMENTS))
+        raise ValueError(f"Unknown reference document {document!r}. Available: {allowed}")
+    return files(_REFERENCE_ROOT).joinpath(filename).read_text(encoding="utf-8")
+
+
 def register_resource_templates(app: FastMCP, *, workspace_root: Path) -> None:
     """Bind recipe and workspace artifact resource templates."""
 
     normalized_root = workspace_root.resolve(strict=False)
+
+    @app.resource(
+        "reference://{document}",
+        name="reference_document",
+        title="QSpice Reference Document",
+        description=(
+            "Return one bundled agent-facing QSpice reference document. "
+            "Available: `directives` (netlist directive and `.options` cheatsheet)."
+        ),
+        mime_type="text/markdown",
+    )
+    def reference_document(document: str) -> str:
+        return read_reference_document(document)
 
     @app.resource(
         "recipe://{recipe_id}/manifest",
@@ -103,4 +132,8 @@ def register_resource_templates(app: FastMCP, *, workspace_root: Path) -> None:
         return read_workspace_artifact_bytes(relpath, workspace_root=normalized_root)
 
 
-__all__ = ["read_workspace_artifact_bytes", "register_resource_templates"]
+__all__ = [
+    "read_reference_document",
+    "read_workspace_artifact_bytes",
+    "register_resource_templates",
+]

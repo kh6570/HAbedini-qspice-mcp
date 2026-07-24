@@ -9,9 +9,10 @@ from qspice_mcp.services.service_spec import ServiceSpec
 from qspice_mcp.services.simulation._analysis_directive import stage_analysis_directive
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
     from pathlib import Path
 
-_NOISE_SWEEP_TYPES = frozenset({"dec", "oct", "lin"})
+_NOISE_SWEEP_TYPES = frozenset({"dec", "oct", "lin", "list"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -41,9 +42,10 @@ def prepare_noise(
     output_node: str,
     input_source: str,
     sweep_type: str,
-    points: str,
-    start: str,
-    stop: str,
+    points: str | None = None,
+    start: str | None = None,
+    stop: str | None = None,
+    frequencies: Sequence[str] | None = None,
     output_path: str | Path | None = None,
 ) -> PreparedNoiseAnalysis:
     """Stage a source with one documented `.noise` directive."""
@@ -52,17 +54,27 @@ def prepare_noise(
     if normalized_sweep_type not in _NOISE_SWEEP_TYPES:
         allowed = ", ".join(sorted(_NOISE_SWEEP_TYPES))
         raise ValueError(f"sweep_type must be one of: {allowed}")
-    instruction = " ".join(
-        (
-            ".noise",
-            output_node.strip(),
-            input_source.strip(),
-            normalized_sweep_type,
-            points.strip(),
-            start.strip(),
-            stop.strip(),
+    if normalized_sweep_type == "list":
+        values = tuple(value.strip() for value in (frequencies or ()) if value.strip())
+        if not values:
+            raise ValueError("List sweep requires at least one value in frequencies.")
+        instruction = " ".join(
+            (".noise", output_node.strip(), input_source.strip(), "list", *values)
         )
-    )
+    else:
+        if points is None or start is None or stop is None:
+            raise ValueError(f"`{normalized_sweep_type}` sweep requires points, start, and stop.")
+        instruction = " ".join(
+            (
+                ".noise",
+                output_node.strip(),
+                input_source.strip(),
+                normalized_sweep_type,
+                points.strip(),
+                start.strip(),
+                stop.strip(),
+            )
+        )
     source, destination, source_kind, warning = stage_analysis_directive(
         source_path,
         workspace_root=workspace_root,
