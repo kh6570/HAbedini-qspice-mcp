@@ -56,6 +56,9 @@ gain/phase points.
 
 ## High-value `.options`
 
+Stage any option in these tables with `prepare_options` (allowlisted `.options`
+staging) instead of hand-writing directive text.
+
 Convergence (see the `qspice-convergence-debugging` skill for triage order):
 
 | Option | Meaning |

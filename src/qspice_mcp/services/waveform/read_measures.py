@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.services._internals.step_filters import StepFilterValue, resolve_step_selection
 from qspice_mcp.services.service_spec import ServiceSpec
 from qspice_mcp.services.waveform.read_log import LogMeasurement, LogStepVariable, read_log
@@ -45,6 +46,7 @@ class MeasureRead:
     resolved_step: int | None
     measures: tuple[MeasureResult, ...]
     warnings: tuple[str, ...] = ()
+    measure_rows_truncated: bool = False
 
 
 SERVICE_SPEC = ServiceSpec(
@@ -52,6 +54,8 @@ SERVICE_SPEC = ServiceSpec(
     title="Read Measures",
     summary="Return QPOST-derived measurement values with optional step filtering.",
     phase="implemented",
+    # Not read-only: refresh_measures (default) materializes a `.meas` sidecar via QPOST.
+    read_only=False,
 )
 
 
@@ -156,9 +160,16 @@ def read_measures(
     refresh_measures: bool = True,
     meas_path: str | Path | None = None,
     timeout_s: float | None = None,
+    max_measure_rows: int | None = None,
 ) -> MeasureRead:
-    """Return requested measurement values from one `.log` file."""
+    """Return requested measurement values from one `.log` file.
 
+    ``max_measure_rows`` bounds the rows returned per measurement block after
+    step filtering; ``measure_rows_truncated`` flags cuts.
+    """
+
+    if max_measure_rows is not None and max_measure_rows < 1:
+        raise ValidationError("max_measure_rows must be a positive integer.")
     resolved_workspace_root = workspace_root.resolve(strict=False)
     if timeout_s is None:
         inspection = read_log(
@@ -190,6 +201,7 @@ def read_measures(
     )
 
     rendered_measures: list[MeasureResult] = []
+    measure_rows_truncated = False
     for measure in selected_measures:
         rows = tuple(_row_to_measure_row(measure, row) for row in measure.rows)
         if resolved_step is not None:
@@ -200,6 +212,9 @@ def read_measures(
                     "Requested step selection is not available because the "
                     "selected measure is not stepped."
                 )
+        if max_measure_rows is not None and len(rows) > max_measure_rows:
+            rows = rows[:max_measure_rows]
+            measure_rows_truncated = True
         rendered_measures.append(
             MeasureResult(
                 name=measure.name,
@@ -219,6 +234,7 @@ def read_measures(
         resolved_step=resolved_step,
         measures=tuple(rendered_measures),
         warnings=inspection.warnings,
+        measure_rows_truncated=measure_rows_truncated,
     )
 
 

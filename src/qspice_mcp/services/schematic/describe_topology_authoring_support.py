@@ -95,9 +95,12 @@ _CAPABILITY_CATALOG: tuple[TopologyCapabilityEntry, ...] = (
     TopologyCapabilityEntry(
         capability="component_rotation",
         label="Rotate placed component",
-        tool="set_component_rotation",
+        tool="set_component_position",
         supported=True,
-        limitations=("Pin coordinates change with rotation; verify wires after rotating.",),
+        limitations=(
+            "Attached wires follow the pins by default (preserve_connections); "
+            "verify layout after rotating.",
+        ),
     ),
     TopologyCapabilityEntry(
         capability="inductor",

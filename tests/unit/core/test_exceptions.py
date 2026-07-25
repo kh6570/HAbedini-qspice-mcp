@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 from qspice_mcp.core import error_taxonomy
 from qspice_mcp.core.exceptions import (
     AdapterNotFoundError,
@@ -60,6 +63,22 @@ def test_exceptions_expose_stable_error_codes() -> None:
         UnsupportedManifestVersionError("bad version").error_code == "unsupported_manifest_version"
     )
     assert ConfigurationError("bad config").error_code == "configuration_invalid"
+
+
+def test_errors_document_matches_error_taxonomy() -> None:
+    """docs/errors.md code rows must not drift from ERROR_CODE_DEFINITIONS."""
+    repo_root = Path(__file__).resolve().parents[3]
+    document = (repo_root / error_taxonomy.ERRORS_DOCUMENT_PATH).read_text(encoding="utf-8")
+    row_pattern = re.compile(r"^\|\s*`(?P<code>[a-z_]+)`\s*\|\s*(?P<status>\w+)\s*\|", re.MULTILINE)
+    documented = {
+        match.group("code"): match.group("status") for match in row_pattern.finditer(document)
+    }
+
+    published = {
+        definition.code: definition.status for definition in error_taxonomy.ERROR_CODE_DEFINITIONS
+    }
+
+    assert documented == published
 
 
 def test_error_taxonomy_publishes_documented_codes() -> None:

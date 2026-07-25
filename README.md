@@ -31,6 +31,7 @@ Configure your MCP client to spawn `qspice-mcp` with `QSPICE_EXE` set, then ask 
 | --- | --- |
 | [User guide](docs/user-guide.md) | Complete usage documentation |
 | [Tool reference](docs/tool_reference.md) | MCP tool contracts |
+| [Architecture](docs/architecture.md) | Layered design and principles |
 | [Error codes](docs/errors.md) | Stable client error codes |
 | [Security](docs/security.md) | Threat model |
 | [C-Block build guide](docs/cblock_build_guide.md) | Compile DLL custom devices |

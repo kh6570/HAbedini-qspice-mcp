@@ -1,0 +1,35 @@
+{
+  "recipe_id": "half_bridge_converter",
+  "title": "Half-Bridge Converter (Isolated)",
+  "description": "Isolated half-bridge converter: capacitive input divider, two NMOS switches with complementary floating gate drives, 1:1 coupled-inductor transformer with primary RC snubber, and a full-wave rectifier into an LC filter. Steps 48 V down to roughly 7.9 V (D=0.2 per switch, fsw=100 kHz). Authored clean-room with qspice-mcp tools and validated end-to-end.",
+  "files": [
+    {
+      "relative_path": "half_bridge_converter.qsch",
+      "bundle_name": "half_bridge_converter.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "half_bridge_converter.cir",
+      "bundle_name": "half_bridge_converter.cir",
+      "encoding": "text"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "half-bridge-converter-catalog",
+      "title": "Half-bridge converter -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the validated netlist (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "half_bridge_converter",
+  "tags": [
+    "half-bridge",
+    "isolated",
+    "dc-dc",
+    "transformer"
+  ]
+}

@@ -10,6 +10,9 @@ from qspice_mcp.core.error_taxonomy import describe_error_taxonomy
 from qspice_mcp.core.exceptions import AdapterNotFoundError
 from qspice_mcp.infra.telemetry import describe_telemetry_state
 from qspice_mcp.mcp.definition import build_server_definition
+from qspice_mcp.mcp.prompts import get_prompt_definitions
+from qspice_mcp.mcp.resources import get_resource_definitions
+from qspice_mcp.mcp.resources.registration import reference_document_names
 from qspice_mcp.services._backends.schematic_editor import load_qsch_editor_factory
 from qspice_mcp.services._backends.waveform import _load_rawread_factory
 from qspice_mcp.services.artifacts._raw_write import load_rawwrite_api
@@ -87,21 +90,28 @@ _LIVE_GUI_TOOLS = frozenset(
 _SCHEMATIC_EDITING_TOOLS = frozenset(
     {
         "add_component",
+        "add_component_from_qsym",
         "add_component_symbol_drawing",
         "add_dll_block",
         "add_dll_block_pin",
         "add_instruction",
         "add_junction",
+        "add_library_component",
         "add_net_label",
         "add_wire",
+        "apply_schematic_layout_spec",
+        "check_schematic",
         "create_schematic",
         "create_starter_schematic",
         "describe_edit_capability",
         "describe_schematic_edit_support",
+        "describe_schematic_layout_spec",
+        "export_symbol_to_qsym",
         "inspect_schematic",
         "import_circuit_bundle",
         "list_components",
         "materialize_reference_circuit",
+        "normalize_component_text_rotation",
         "read_component",
         "read_component_symbol",
         "remove_component",
@@ -112,9 +122,10 @@ _SCHEMATIC_EDITING_TOOLS = frozenset(
         "remove_net_label",
         "remove_wire",
         "rename_component_reference",
+        "render_schematic_image",
         "save_schematic_as",
         "set_component_parameters",
-        "set_component_rotation",
+        "set_component_position",
         "set_component_symbol_drawing",
         "set_component_symbol_pin",
         "set_component_symbol_text",
@@ -122,6 +133,7 @@ _SCHEMATIC_EDITING_TOOLS = frozenset(
         "set_dll_block_pin_role",
         "set_element_model",
         "set_parameter",
+        "suggest_component_placement",
     }
 )
 _TOPOLOGY_AUTHORING_TOOLS = frozenset(
@@ -132,6 +144,8 @@ _TOPOLOGY_AUTHORING_TOOLS = frozenset(
         "write_workspace_text_file",
         "list_reference_circuit_recipes",
         "describe_reference_circuit_recipe",
+        "describe_device_spec",
+        "create_dll_device_from_spec",
         "build_dll_device",
     }
 )
@@ -144,6 +158,43 @@ _TOPOLOGY_KNOWLEDGE_TOOLS = frozenset(
         "ingest_topology_contribution",
     }
 )
+
+
+def _guidance_summary() -> dict[str, object]:
+    """Advertise the non-tool surfaces: prompts, resources, and installable skills."""
+
+    return {
+        "prompts": [
+            {
+                "name": definition.name,
+                "title": definition.title,
+                "description": definition.description,
+            }
+            for definition in get_prompt_definitions()
+        ],
+        "resources": {
+            "static": [definition.uri for definition in get_resource_definitions()],
+            "templates": [
+                "reference://{document}",
+                "recipe://{recipe_id}/manifest",
+                "recipe://{recipe_id}/schematic",
+                "recipe://{recipe_id}/{document}",
+                "workspace-artifact://{relpath}",
+            ],
+            "reference_documents": list(reference_document_names()),
+        },
+        "skills": {
+            "description": (
+                "Bundled agent skills (client-side guidance, not MCP tools) ship in "
+                "the qspice_mcp package under data/skills/."
+            ),
+            "groups": ["qspice-core"],
+            "install_hint": (
+                "pwsh -File scripts/install_skills.ps1 "
+                "(copies skills into ~/.agents/skills/ by default)"
+            ),
+        },
+    }
 
 
 def _selected_adapter_summary(probe: ProbeResult) -> dict[str, object] | None:
@@ -510,6 +561,7 @@ def describe_server_capabilities(
         },
         "error_taxonomy": describe_error_taxonomy(),
         "feature_flags": _feature_flags(tools),
+        "guidance": _guidance_summary(),
         "tool_groups": list(tool_groups),
         "degraded_groups": [group for group in tool_groups if group["state"] != "healthy"],
         "workflow_hints": {

@@ -47,22 +47,6 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             },
         },
     },
-    "move_component_preserving_connections": {
-        "title": "Move Component Preserving Connections",
-        "description": "Deprecated alias: prefer set_component_position, which now preserves connections by default. Move and/or rotate one placed component and follow attached wire endpoints, junctions, and net labels so existing connections stay intact. Provide at least one of position_x, position_y, or rotation_degrees.",
-        "input_schema": {
-            "type": "object",
-            "required": ["schematic_path", "reference"],
-            "properties": {
-                "schematic_path": {"type": "string"},
-                "reference": {"type": "string"},
-                "position_x": {"type": "integer"},
-                "position_y": {"type": "integer"},
-                "rotation_degrees": {"type": "integer"},
-                "output_path": {"type": "string"},
-            },
-        },
-    },
     "add_library_component": {
         "title": "Add Library Component",
         "description": "Clone one component symbol (symbol name, library file, drawing primitives, and pins) from a reference template `.qsch` into a target schematic at a position, assigning a new reference designator.",
@@ -186,7 +170,10 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["schematic_path", "component_kind"],
             "properties": {
-                "schematic_path": {"type": "string"},
+                "schematic_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch` file to edit.",
+                },
                 "component_kind": {
                     "type": "string",
                     "enum": [
@@ -201,11 +188,23 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                         "ground",
                     ],
                 },
-                "reference": {"type": "string"},
+                "reference": {
+                    "type": "string",
+                    "description": "Designator such as R1, C2, V1 (required except for ground).",
+                },
                 "value": _SCALAR_VALUE,
-                "position_x": {"type": "integer"},
-                "position_y": {"type": "integer"},
-                "rotation_degrees": {"type": "integer"},
+                "position_x": {
+                    "type": "integer",
+                    "description": "Grid X coordinate; QSpice grid pitch is 100 units.",
+                },
+                "position_y": {
+                    "type": "integer",
+                    "description": "Grid Y coordinate; QSpice grid pitch is 100 units.",
+                },
+                "rotation_degrees": {
+                    "type": "integer",
+                    "description": "Rotation in degrees: 0, 90, 180, or 270.",
+                },
                 "auto_place": {
                     "type": "boolean",
                     "description": (
@@ -404,7 +403,7 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "add_instruction": {
         "title": "Add Instruction",
-        "description": "Append one analysis instruction line to a schematic using `instruction=`.",
+        "description": "Append one analysis instruction line to a schematic using `instruction=`. Prefer the typed `prepare_*` staging tools (prepare_transient, prepare_ac, prepare_meas, prepare_options, ...) which validate syntax; use this only for directives without a dedicated tool.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "instruction"],
@@ -425,6 +424,11 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "schematic_path": {"type": "string"},
                 "include_parameters": {"type": "boolean"},
                 "include_connectivity": {"type": "boolean"},
+                "max_components": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Bound the returned component rows; component_count stays exact and components_truncated flags cuts.",
+                },
             },
         },
     },
@@ -670,22 +674,6 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             },
         },
     },
-    "set_component_rotation": {
-        "title": "Set Component Rotation",
-        "description": "Deprecated alias for set_component_position (rotation only). Rotate one placed component in 45-degree steps; attached wires/junctions/net labels follow the pins and refdes/value text is reset upright by default. Set preserve_connections=false or normalize_text=false to opt out.",
-        "input_schema": {
-            "type": "object",
-            "required": ["schematic_path", "reference", "rotation_degrees"],
-            "properties": {
-                "schematic_path": {"type": "string"},
-                "reference": {"type": "string"},
-                "rotation_degrees": {"type": "integer"},
-                "preserve_connections": {"type": "boolean"},
-                "normalize_text": {"type": "boolean"},
-                "output_path": {"type": "string"},
-            },
-        },
-    },
     "set_component_position": {
         "title": "Set Component Position",
         "description": "Unified placement tool: move and/or rotate one placed component. Attached wires, junctions, and net labels follow the pins by default (preserve_connections) and refdes/value text is reset to upright readability by default (normalize_text). Provide at least one of position_x, position_y, or rotation_degrees. Set preserve_connections=false or normalize_text=false to opt out.",
@@ -693,13 +681,34 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["schematic_path", "reference"],
             "properties": {
-                "schematic_path": {"type": "string"},
-                "reference": {"type": "string"},
-                "position_x": {"type": "integer"},
-                "position_y": {"type": "integer"},
-                "rotation_degrees": {"type": "integer"},
-                "preserve_connections": {"type": "boolean"},
-                "normalize_text": {"type": "boolean"},
+                "schematic_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch` file to edit.",
+                },
+                "reference": {
+                    "type": "string",
+                    "description": "Designator of the placed component (e.g. R1).",
+                },
+                "position_x": {
+                    "type": "integer",
+                    "description": "New grid X coordinate (pair with position_y).",
+                },
+                "position_y": {
+                    "type": "integer",
+                    "description": "New grid Y coordinate (pair with position_x).",
+                },
+                "rotation_degrees": {
+                    "type": "integer",
+                    "description": "Absolute rotation in degrees: 0, 90, 180, or 270.",
+                },
+                "preserve_connections": {
+                    "type": "boolean",
+                    "description": "Move attached wires/labels with the pins (default true).",
+                },
+                "normalize_text": {
+                    "type": "boolean",
+                    "description": "Keep refdes/value text upright after rotation (default true).",
+                },
                 "output_path": {"type": "string"},
             },
             "anyOf": [
@@ -873,9 +882,18 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["schematic_path", "spec_path"],
             "properties": {
-                "schematic_path": {"type": "string"},
-                "spec_path": {"type": "string"},
-                "skip_existing": {"type": "boolean"},
+                "schematic_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch` file to edit.",
+                },
+                "spec_path": {
+                    "type": "string",
+                    "description": "Workspace-relative JSON layout spec; see describe_schematic_layout_spec for the schema.",
+                },
+                "skip_existing": {
+                    "type": "boolean",
+                    "description": "Skip entries whose reference already exists instead of failing.",
+                },
                 "output_path": {"type": "string"},
             },
         },

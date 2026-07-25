@@ -92,8 +92,7 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         limitations=(
             "set_component_position preserves attached wires, junctions, and net labels and "
             "normalizes refdes/value text by default; pass preserve_connections=false or "
-            "normalize_text=false to opt out. move_component_preserving_connections is a "
-            "deprecated alias.",
+            "normalize_text=false to opt out.",
         ),
     ),
     IntentEntry(
@@ -105,7 +104,7 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         preconditions=("rotation_degrees must be a multiple of 45",),
         limitations=(
             "set_component_position (rotation only) preserves connections and normalizes "
-            "refdes/value text by default. set_component_rotation is a deprecated alias.",
+            "refdes/value text by default.",
         ),
     ),
     IntentEntry(
@@ -116,9 +115,9 @@ _INTENT_CATALOG: tuple[IntentEntry, ...] = (
         requires_backend=True,
         preconditions=("a compatible editor backend must be installed",),
         limitations=(
-            "Standalone fix-up; set_component_position/set_component_rotation already "
-            "normalize text by default. Adjusts embedded symbol text rotation only; does "
-            "not move wire endpoints.",
+            "Standalone fix-up; set_component_position already normalizes text by "
+            "default. Adjusts embedded symbol text rotation only; does not move "
+            "wire endpoints.",
         ),
     ),
     IntentEntry(

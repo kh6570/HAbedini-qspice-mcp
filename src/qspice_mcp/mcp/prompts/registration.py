@@ -102,5 +102,22 @@ def register_prompts(app: FastMCP, definitions: tuple[PromptDefinition, ...]) ->
             )
         )
 
+    tolerance_name, tolerance_title, tolerance_description = _meta("qspice_tolerance_analysis")
+
+    @app.prompt(name=tolerance_name, title=tolerance_title, description=tolerance_description)
+    def tolerance_analysis_prompt(
+        schematic_path: str,
+        metric: str = "V(out)",
+        runs: str = "50",
+    ) -> list[dict[str, object]]:
+        return _messages_from_text(
+            render_prompt_message(
+                "qspice_tolerance_analysis",
+                schematic_path=schematic_path,
+                metric=metric,
+                runs=runs,
+            )
+        )
+
 
 __all__ = ["register_prompts"]

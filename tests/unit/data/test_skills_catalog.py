@@ -8,6 +8,7 @@ shipped skill must declare valid frontmatter and a manifest whose
 
 from __future__ import annotations
 
+import re
 from importlib.resources import files
 from typing import TYPE_CHECKING
 
@@ -128,6 +129,21 @@ def test_skill_requires_tools_are_registered(skill: Traversable) -> None:
     registered = _registered_tool_names()
     unknown = [tool for tool in lists.get("requires-tools", []) if tool not in registered]
     assert not unknown, f"{skill.name}: requires-tools not registered: {unknown}"
+
+
+@pytest.mark.parametrize("skill", _iter_skill_dirs(), ids=lambda s: s.name)
+def test_skill_versions_match_between_manifest_and_frontmatter(skill: Traversable) -> None:
+    """manifest.yaml `version` must equal the SKILL.md `metadata.version`."""
+    scalars, _ = _parse_manifest((skill / "manifest.yaml").read_text(encoding="utf-8"))
+    manifest_version = scalars.get("version", "").strip('"')
+
+    skill_text = (skill / "SKILL.md").read_text(encoding="utf-8")
+    match = re.search(r'^\s+version:\s*"?([^"\n]+)"?\s*$', skill_text, re.MULTILINE)
+    assert match is not None, f"{skill.name}: SKILL.md frontmatter missing metadata.version"
+    assert match.group(1) == manifest_version, (
+        f"{skill.name}: manifest version {manifest_version!r} != "
+        f"SKILL.md version {match.group(1)!r}"
+    )
 
 
 @pytest.mark.parametrize("skill", _iter_skill_dirs(), ids=lambda s: s.name)

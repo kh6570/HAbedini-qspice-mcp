@@ -81,6 +81,19 @@ async def test_resolve_completion_routes_recipe_template() -> None:
 
 
 @pytest.mark.anyio
+async def test_resolve_completion_routes_reference_template() -> None:
+    completion = await resolve_completion(
+        ResourceTemplateReference(type="ref/resource", uri="reference://{document}"),
+        CompletionArgument(name="document", value="dir"),
+        None,
+        workspace_root=Path(),
+    )
+
+    assert completion is not None
+    assert "directives" in completion.values
+
+
+@pytest.mark.anyio
 async def test_resolve_completion_routes_workspace_artifact(tmp_path: Path) -> None:
     artifact = tmp_path / "demo.qraw"
     artifact.write_bytes(b"x")

@@ -40,3 +40,19 @@ def test_read_workflow_instruction_returns_catalog_doc() -> None:
 def test_read_workflow_instruction_rejects_unknown_id() -> None:
     with pytest.raises(ValidationError, match="Unknown instruction_id"):
         read_workflow_instruction("not-a-recipe")
+
+
+def test_read_workflow_instruction_returns_bounded_excerpt() -> None:
+    full = read_workflow_instruction("buck-converter-cpp")
+    excerpt = read_workflow_instruction("buck-converter-cpp", max_chars=100)
+
+    assert excerpt.content == full.content[:100]
+    assert excerpt.content_truncated is True
+    assert excerpt.content_length == len(full.content)
+    assert full.content_truncated is False
+    assert full.content_length == len(full.content)
+
+
+def test_read_workflow_instruction_rejects_non_positive_max_chars() -> None:
+    with pytest.raises(ValidationError, match="max_chars"):
+        read_workflow_instruction("buck-converter-cpp", max_chars=0)

@@ -35,7 +35,6 @@ from qspice_mcp.services.schematic.rename_component_reference import (
 )
 from qspice_mcp.services.schematic.save_schematic_as import save_schematic_as
 from qspice_mcp.services.schematic.set_component_parameters import set_component_parameters
-from qspice_mcp.services.schematic.set_component_rotation import set_component_rotation
 from qspice_mcp.services.schematic.set_component_value import set_component_value
 from qspice_mcp.services.schematic.set_element_model import set_element_model
 from qspice_mcp.services.schematic.set_parameter import set_parameter
@@ -1237,80 +1236,3 @@ def test_remove_component_delegates_to_editor(
     assert result.reference == "R1"
     assert result.output_path == output.resolve(strict=False)
     assert ("remove_component", "R1") in editor.calls
-
-
-# ---------------------------------------------------------------------------
-# set_component_rotation
-# ---------------------------------------------------------------------------
-
-
-def test_set_component_rotation_delegates_to_unified_placement(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    from qspice_mcp.services.schematic.set_component_position import (  # noqa: PLC0415
-        ComponentPositionUpdate,
-    )
-
-    schematic = tmp_path / "demo.qsch"
-    output = tmp_path / "edited.qsch"
-    schematic.write_text("schematic", encoding="utf-8")
-    calls: list[dict[str, object]] = []
-
-    def fake_set_component_position(
-        schematic_path: str | Path,
-        *,
-        workspace_root: Path,
-        reference: str,
-        position_x: int | None = None,
-        position_y: int | None = None,
-        rotation_degrees: int | None = None,
-        preserve_connections: bool = True,
-        normalize_text: bool = True,
-        output_path: str | Path | None = None,
-    ) -> ComponentPositionUpdate:
-        calls.append(
-            {
-                "reference": reference,
-                "rotation_degrees": rotation_degrees,
-                "position_x": position_x,
-                "position_y": position_y,
-                "preserve_connections": preserve_connections,
-                "normalize_text": normalize_text,
-            }
-        )
-        return ComponentPositionUpdate(
-            schematic_path=Path(schematic_path).resolve(strict=False),
-            output_path=Path(output_path or schematic_path).resolve(strict=False),
-            reference=reference,
-            position_x=400,
-            position_y=400,
-            rotation_degrees=rotation_degrees or 0,
-            preserve_connections=preserve_connections,
-            rewired_endpoints=2,
-            normalize_text=normalize_text,
-            normalized_text_count=1,
-        )
-
-    rotation_module = importlib.import_module(
-        "qspice_mcp.services.schematic.set_component_rotation"
-    )
-    monkeypatch.setattr(rotation_module, "set_component_position", fake_set_component_position)
-
-    result = set_component_rotation(
-        schematic,
-        workspace_root=tmp_path,
-        reference="R2",
-        rotation_degrees=90,
-        output_path=output,
-    )
-
-    assert result.reference == "R2"
-    assert result.rotation_degrees == 90
-    assert result.output_path == output.resolve(strict=False)
-    assert result.preserve_connections is True
-    assert result.rewired_endpoints == 2
-    assert result.normalized_text_count == 1
-    assert calls[0]["reference"] == "R2"
-    assert calls[0]["rotation_degrees"] == 90
-    assert calls[0]["position_x"] is None
-    assert calls[0]["preserve_connections"] is True

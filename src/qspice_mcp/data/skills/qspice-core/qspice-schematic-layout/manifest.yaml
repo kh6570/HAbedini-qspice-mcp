@@ -1,7 +1,7 @@
 schema_version: 1
 license: MIT
 scope: cross-product
-version: "1.4"
+version: "1.6"
 human-description: Place schematic components readably; refresh wires and upright text after move/rotate.
 requires-tools:
   - describe_topology_authoring_support
@@ -14,7 +14,11 @@ requires-tools:
   - normalize_component_text_rotation
   - set_component_symbol_text
   - set_component_position
-  - set_component_rotation
+  - add_library_component
+  - export_symbol_to_qsym
+  - add_component_from_qsym
+  - render_schematic_image
+  - check_schematic
   - remove_wire
   - read_workflow_instruction
 requires-skills:

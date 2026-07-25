@@ -27,6 +27,22 @@ def test_list_reference_circuit_recipes_includes_buck_converter() -> None:
     assert buck.title == "Buck Converter (C++ DLL)"
     assert buck.summary is not None
     assert "PWM" in buck.summary
+    assert buck.topology_block == "buck_converter"
+    assert "buck" in buck.tags
+
+
+def test_list_reference_circuit_recipes_exposes_topology_blocks_and_tags() -> None:
+    result = list_reference_circuit_recipes()
+
+    by_id = {entry.recipe_id: entry for entry in result.recipes}
+    # Every bundled recipe declares tags.
+    assert all(entry.tags for entry in result.recipes)
+    assert by_id["boost_converter_cpp"].topology_block == "boost_converter"
+    assert by_id["flyback_converter_cpp"].topology_block == "flyback_converter"
+    assert by_id["half_bridge_zvs"].topology_block == "half_bridge_converter"
+    # Recipes without a matching topology-pack entry link to nothing.
+    assert by_id["llc_resonant"].topology_block is None
+    assert "resonant" in by_id["llc_resonant"].tags
 
 
 def test_describe_reference_circuit_recipe_returns_manifest_and_topology() -> None:
@@ -62,6 +78,48 @@ def test_describe_reference_circuit_recipe_returns_manifest_and_topology() -> No
     assert digest.size_bytes > 0
 
 
+def test_describe_recipe_surfaces_topology_block_link_and_tags() -> None:
+    result = describe_reference_circuit_recipe("buck_converter_cpp")
+
+    assert result.topology_block == "buck_converter"
+    assert result.topology_block_note is None
+    assert "mixed-signal" in result.tags
+
+
+def test_describe_half_bridge_zvs_carries_topology_block_note() -> None:
+    result = describe_reference_circuit_recipe("half_bridge_zvs")
+
+    assert result.topology_block == "half_bridge_converter"
+    assert result.topology_block_note is not None
+    assert "ZVS" in result.topology_block_note
+
+
+def test_new_isolated_converter_recipes_are_listed_with_topology_links() -> None:
+    result = list_reference_circuit_recipes()
+
+    by_id = {entry.recipe_id: entry for entry in result.recipes}
+    for recipe_id in ("forward_converter", "half_bridge_converter", "full_bridge_converter"):
+        assert recipe_id in by_id, recipe_id
+        assert by_id[recipe_id].topology_block == recipe_id
+        assert "isolated" in by_id[recipe_id].tags
+
+
+def test_describe_forward_converter_recipe_bundles_validated_netlist() -> None:
+    result = describe_reference_circuit_recipe("forward_converter")
+
+    assert result.source is None
+    assert result.build_required is False
+    assert {entry.relative_path for entry in result.files} == {
+        "forward_converter.qsch",
+        "forward_converter.cir",
+    }
+    instruction_ids = {entry.instruction_id for entry in result.workflows}
+    assert instruction_ids == {"forward-converter-catalog"}
+    assert result.topology_digest is not None
+    refdes = {component.refdes for component in result.topology_digest.components}
+    assert {"M1", "L2", "L3", "L4"} <= refdes
+
+
 def test_describe_alonso_recipe_surfaces_source_attribution() -> None:
     result = describe_reference_circuit_recipe("flyback_qr")
 
@@ -87,10 +145,13 @@ def test_describe_boost_converter_recipe_uses_boost_bundle_files() -> None:
     result = describe_reference_circuit_recipe("boost_converter_cpp")
 
     assert result.recipe_id == "boost_converter_cpp"
-    assert result.build_hint == 'build_dll_device(source_path="boost_controller.cpp")'
+    assert result.build_required is False
+    assert result.build_hint is not None
+    assert 'build_dll_device(source_path="boost_controller.cpp")' in result.build_hint
     assert {entry.relative_path for entry in result.files} == {
         "Boost-converter.qsch",
         "boost_controller.cpp",
+        "boost_controller.dll",
     }
     assert result.topology_digest is not None
     assert result.topology_digest.schematic_file == "Boost-converter.qsch"

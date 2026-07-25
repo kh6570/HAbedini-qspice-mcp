@@ -1,15 +1,19 @@
 schema_version: 1
 license: MIT
 scope: cross-product
-version: "1.0"
+version: "1.1"
 human-description: Author, scaffold, build, and validate QSpice `.DLL` custom-device blocks for mixed-signal C/C++ models.
 requires-tools:
   - describe_mixed_signal_support
+  - describe_device_spec
+  - create_dll_device_from_spec
   - add_dll_block
   - add_dll_block_pin
   - remove_dll_block_pin
   - set_dll_block_pin_role
   - scaffold_dll_device_from_symbol
+  - export_symbol_to_qsym
+  - add_component_from_qsym
   - write_workspace_text_file
   - build_dll_device
   - validate_dll_symbol_signature

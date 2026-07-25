@@ -29,6 +29,9 @@ _DIODE_LIBRARY_FILE = "Diode.txt"
 _NMOS_LIBRARY_FILE = "NMOS.txt"
 _PMOS_LIBRARY_FILE = "PMOS.txt"
 _REFERENCE_TOKEN_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_:.\-$]*$")
+# Mutual-inductance element text (e.g. "K1 L1 L2 1"): QSPICE netlists these
+# schematic texts even though they do not start with a dot.
+_COUPLING_TEXT_PATTERN = re.compile(r"^[Kk]\S*(?:\s+[Ll]\S+){2,}\s+\S+$")
 
 # Component types that QSPICE handles through the schematic but cannot be
 # represented in a standard SPICE netlist.  The clean-room renderer skips
@@ -361,7 +364,9 @@ def _parse_qsch_schematic(  # noqa: PLR0912, PLR0915
             continue
         if line.startswith("text "):
             value = _extract_quoted_text(line)
-            if value is not None and value.startswith("."):
+            if value is not None and (
+                value.startswith(".") or _COUPLING_TEXT_PATTERN.fullmatch(value.strip())
+            ):
                 directives.append(value)
 
     _finalize_component(components, current)
@@ -589,10 +594,14 @@ def render_clean_room_netlist(schematic_path: Path) -> ParsedCleanRoomNetlist:
             "The qsch schematic did not contain any supported netlist-bearing components."
         )
 
+    coupling_lines = [
+        directive for directive in directives if _COUPLING_TEXT_PATTERN.fullmatch(directive.strip())
+    ]
     prelude_directives = [
         directive
         for directive in directives
-        if not directive.lower().startswith(_ANALYSIS_PREFIXES)
+        if _COUPLING_TEXT_PATTERN.fullmatch(directive.strip()) is None
+        and not directive.lower().startswith(_ANALYSIS_PREFIXES)
     ]
     analysis_directives = [
         directive for directive in directives if directive.lower().startswith(_ANALYSIS_PREFIXES)
@@ -601,6 +610,7 @@ def render_clean_room_netlist(schematic_path: Path) -> ParsedCleanRoomNetlist:
         f"* {schematic_path.name}",
         *prelude_directives,
         *component_lines,
+        *coupling_lines,
         *library_directives,
         *analysis_directives,
         ".end",

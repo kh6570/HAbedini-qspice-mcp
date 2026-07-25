@@ -1,0 +1,35 @@
+{
+  "recipe_id": "full_bridge_converter",
+  "title": "Full-Bridge Converter (Isolated)",
+  "description": "Isolated full-bridge (H-bridge) converter: four NMOS switches driven in diagonal pairs, 2:1 coupled-inductor transformer with primary RC snubber, and a full-wave rectifier into an LC filter. Steps 48 V down to roughly 7.4 V (D=0.175 per pair, fsw=100 kHz). Authored clean-room with qspice-mcp tools and validated end-to-end.",
+  "files": [
+    {
+      "relative_path": "full_bridge_converter.qsch",
+      "bundle_name": "full_bridge_converter.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "full_bridge_converter.cir",
+      "bundle_name": "full_bridge_converter.cir",
+      "encoding": "text"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "full-bridge-converter-catalog",
+      "title": "Full-bridge converter -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the validated netlist (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "full_bridge_converter",
+  "tags": [
+    "full-bridge",
+    "isolated",
+    "dc-dc",
+    "transformer"
+  ]
+}

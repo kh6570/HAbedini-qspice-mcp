@@ -4,7 +4,7 @@ description: Diagnose and fix QSpice simulations that fail to converge, stop ear
 license: MIT
 metadata:
   author: qspice-mcp
-  version: "1.0"
+  version: "1.1"
 ---
 
 # QSpice: Convergence Debugging
@@ -89,6 +89,9 @@ help). The most useful for convergence work:
 Prefer physical fixes first; `cshunt`/`gshunt` are the gentlest global options
 because tiny values barely perturb the answer while removing infinitely fast
 nodes.
+
+The full directive and `.options` cheatsheet is available at runtime as the
+`reference://directives` MCP resource.
 
 ## Verify the fix
 

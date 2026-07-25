@@ -87,6 +87,26 @@ def test_list_signals_summarizes_available_traces(
     assert result.signals[2].complex_data is True
 
 
+def test_list_signals_applies_name_filter_and_limit(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    raw_path = tmp_path / "demo.qraw"
+    raw_path.write_text("", encoding="utf-8")
+    monkeypatch.setattr(
+        waveform_backend, "_load_rawread_factory", lambda: (FakeRawRead, "fake-backend")
+    )
+
+    filtered = list_signals(raw_path, workspace_root=tmp_path, name_filter="v(*)")
+    assert tuple(signal.name for signal in filtered.signals) == ("V(out)", "V(ac)")
+    assert filtered.signal_count == 2
+    assert filtered.signals_truncated is False
+
+    limited = list_signals(raw_path, workspace_root=tmp_path, limit=1)
+    assert tuple(signal.name for signal in limited.signals) == ("V(out)",)
+    assert limited.signal_count == 3
+    assert limited.signals_truncated is True
+
+
 class FakeSteppedRawRead:
     def __init__(
         self,

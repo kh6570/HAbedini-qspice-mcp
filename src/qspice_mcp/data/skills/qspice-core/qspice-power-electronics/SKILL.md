@@ -4,7 +4,7 @@ description: Simulate and characterize switching power converters in QSpice. Use
 license: MIT
 metadata:
   author: qspice-mcp
-  version: "1.0"
+  version: "1.1"
 ---
 
 # QSpice: Power Electronics

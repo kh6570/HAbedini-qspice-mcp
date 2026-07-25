@@ -1,0 +1,35 @@
+{
+  "recipe_id": "forward_converter",
+  "title": "Forward Converter (Single-Switch)",
+  "description": "Single-switch forward converter with a third reset winding, coupled-inductor transformer (K1), and LC output filter. Steps 48 V down to roughly 9.2 V (n=0.5, n31=1, D=0.4, fsw=100 kHz). Authored clean-room with qspice-mcp tools and validated end-to-end.",
+  "files": [
+    {
+      "relative_path": "forward_converter.qsch",
+      "bundle_name": "forward_converter.qsch",
+      "encoding": "binary"
+    },
+    {
+      "relative_path": "forward_converter.cir",
+      "bundle_name": "forward_converter.cir",
+      "encoding": "text"
+    }
+  ],
+  "build_required": false,
+  "build_hint": null,
+  "workflows": [
+    {
+      "instruction_id": "forward-converter-catalog",
+      "title": "Forward converter -- materialize recipe",
+      "summary": "Copy the bundled files into the workspace and simulate the validated netlist (Track B).",
+      "track": "reference_catalog",
+      "document": "catalog.md"
+    }
+  ],
+  "topology_block": "forward_converter",
+  "tags": [
+    "forward",
+    "isolated",
+    "dc-dc",
+    "transformer"
+  ]
+}

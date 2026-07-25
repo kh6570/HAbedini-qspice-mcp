@@ -250,8 +250,6 @@ from .schematic.save_schematic_as import SERVICE_SPEC as SAVE_SCHEMATIC_AS_SERVI
 from .schematic.save_schematic_as import SavedSchematic, save_schematic_as
 from .schematic.set_component_parameters import SERVICE_SPEC as SET_COMPONENT_PARAMETERS_SERVICE
 from .schematic.set_component_parameters import ComponentParameterUpdate, set_component_parameters
-from .schematic.set_component_rotation import SERVICE_SPEC as SET_COMPONENT_ROTATION_SERVICE
-from .schematic.set_component_rotation import ComponentRotationUpdate, set_component_rotation
 from .schematic.set_component_symbol_drawing import (
     SERVICE_SPEC as SET_COMPONENT_SYMBOL_DRAWING_SERVICE,
 )
@@ -564,7 +562,6 @@ __all__ = [
     "SERVER_SERVICE_SPECS",
     "SERVICE_SPECS",
     "SET_COMPONENT_PARAMETERS_SERVICE",
-    "SET_COMPONENT_ROTATION_SERVICE",
     "SET_COMPONENT_SYMBOL_DRAWING_SERVICE",
     "SET_COMPONENT_SYMBOL_PIN_SERVICE",
     "SET_COMPONENT_SYMBOL_TEXT_SERVICE",
@@ -598,7 +595,6 @@ __all__ = [
     "ComponentCatalog",
     "ComponentParameterUpdate",
     "ComponentRead",
-    "ComponentRotationUpdate",
     "ComponentSummary",
     "ComponentSymbolDrawingAdd",
     "ComponentSymbolDrawingRemoval",
@@ -803,7 +799,6 @@ __all__ = [
     "scaffold_spi_device",
     "scaffold_verilog_device",
     "set_component_parameters",
-    "set_component_rotation",
     "set_component_symbol_drawing",
     "set_component_symbol_pin",
     "set_component_symbol_text",

@@ -87,9 +87,6 @@ from qspice_mcp.services.schematic.set_component_parameters import (
 from qspice_mcp.services.schematic.set_component_position import (
     set_component_position as set_component_position_service,
 )
-from qspice_mcp.services.schematic.set_component_rotation import (
-    set_component_rotation as set_component_rotation_service,
-)
 from qspice_mcp.services.schematic.set_component_symbol_drawing import (
     set_component_symbol_drawing as set_component_symbol_drawing_service,
 )
@@ -142,7 +139,6 @@ __all__ = [
     "save_schematic_as_service",
     "set_component_parameters_service",
     "set_component_position_service",
-    "set_component_rotation_service",
     "set_component_symbol_drawing_service",
     "set_component_symbol_pin_service",
     "set_component_symbol_text_service",

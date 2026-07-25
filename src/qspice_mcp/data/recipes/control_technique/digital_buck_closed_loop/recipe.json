@@ -39,5 +39,12 @@
       "document": "catalog.md"
     }
   ],
-  "topology_block": "buck_converter"
+  "topology_block": "buck_converter",
+  "tags": [
+    "buck",
+    "control",
+    "closed-loop",
+    "digital",
+    "cpp-dll"
+  ]
 }

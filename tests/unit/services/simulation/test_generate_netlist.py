@@ -216,6 +216,54 @@ def test_generate_netlist_clean_room_parser_handles_mirrored_components(
     assert ".tran 1m" in generated
 
 
+def test_generate_netlist_clean_room_parser_keeps_inductor_coupling_text(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    schematic = tmp_path / "coupled.qsch"
+    schematic.write_text(
+        "\n".join(
+            (
+                "schematic",
+                "  component (0,0) 0 0",
+                "    symbol ind",
+                "    type: L",
+                '    text (0,0) 1 0 0 0x0 -1 -1 "L1"',
+                '    text (0,100) 1 0 0 0x0 -1 -1 "2m"',
+                '    pin (0,200) (0,200) 1 0 0 0x0 -1 -1 "1"',
+                '    pin (0,-200) (0,-200) 1 0 0 0x0 -1 -1 "2"',
+                "  component (600,0) 0 0",
+                "    symbol ind",
+                "    type: L",
+                '    text (0,0) 1 0 0 0x0 -1 -1 "L2"',
+                '    text (0,100) 1 0 0 0x0 -1 -1 "500u"',
+                '    pin (0,200) (0,200) 1 0 0 0x0 -1 -1 "1"',
+                '    pin (0,-200) (0,-200) 1 0 0 0x0 -1 -1 "2"',
+                '  net (0,200) 1 0 0 "a"',
+                '  net (0,-200) 1 0 0 "0"',
+                '  net (600,200) 1 0 0 "b"',
+                '  net (600,-200) 1 0 0 "0"',
+                '  text (0,500) 1 0 0 0x0 -1 -1 "K1 L1 L2 1"',
+                '  text (0,600) 1 0 0 0x0 -1 -1 "plain annotation text"',
+                '  text (0,700) 1 0 0 0x0 -1 -1 ".tran 1m"',
+            )
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    destination = tmp_path / "artifacts" / "coupled.net"
+
+    monkeypatch.setattr(generate_netlist_service, "_load_qsch_editor_factory", lambda: (None, None))
+
+    result = generate_netlist(schematic, workspace_root=tmp_path, output_path=destination)
+    generated = destination.read_text(encoding="utf-8")
+
+    assert result.refreshed is True
+    assert "K1 L1 L2 1" in generated
+    assert "plain annotation text" not in generated
+    assert ".tran 1m" in generated
+
+
 def test_generate_netlist_clean_room_parser_handles_nested_hierarchy_blocks_and_reordered_text(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

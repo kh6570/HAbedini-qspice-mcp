@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from mcp.types import Completion, PromptReference, ResourceTemplateReference
 
+from qspice_mcp.mcp.resources.registration import reference_document_names
 from qspice_mcp.services.instructions._catalog import list_workflow_instruction_entries
 from qspice_mcp.services.recipes._catalog import list_recipe_index_entries, load_recipe_manifest
 from qspice_mcp.services.waveform.list_signals import list_signals
@@ -19,6 +20,7 @@ if TYPE_CHECKING:
 
 _MAX_COMPLETIONS = 100
 _RECIPE_URI_PREFIX = "recipe://"
+_REFERENCE_URI_PREFIX = "reference://"
 _WORKSPACE_ARTIFACT_URI_PREFIX = "workspace-artifact://"
 
 
@@ -33,10 +35,6 @@ def _filter_prefix(values: tuple[str, ...] | list[str], partial: str) -> list[st
 def _recipe_document_names(recipe_id: str) -> tuple[str, ...]:
     manifest = load_recipe_manifest(recipe_id)
     documents: set[str] = set()
-    for key in ("catalog_document", "scratch_document"):
-        raw_value = manifest.get(key)
-        if isinstance(raw_value, str) and raw_value.strip():
-            documents.add(raw_value.strip())
     for instruction in manifest.get("workflows", []):
         if isinstance(instruction, dict):
             document = instruction.get("document")
@@ -72,6 +70,13 @@ def _complete_recipe_template(
         return Completion(values=[])
 
     values = _filter_prefix(_recipe_document_names(recipe_id), argument.value)
+    return Completion(values=values, total=len(values))
+
+
+def _complete_reference_template(uri: str, argument: CompletionArgument) -> Completion | None:
+    if uri != "reference://{document}" or argument.name != "document":
+        return None
+    values = _filter_prefix(reference_document_names(), argument.value)
     return Completion(values=values, total=len(values))
 
 
@@ -154,6 +159,8 @@ async def resolve_completion(
     if isinstance(ref, ResourceTemplateReference):
         if ref.uri.startswith(_RECIPE_URI_PREFIX):
             return _complete_recipe_template(ref.uri, argument, context=context)
+        if ref.uri.startswith(_REFERENCE_URI_PREFIX):
+            return _complete_reference_template(ref.uri, argument)
         if ref.uri.startswith(_WORKSPACE_ARTIFACT_URI_PREFIX):
             return _complete_workspace_artifact_template(
                 argument,

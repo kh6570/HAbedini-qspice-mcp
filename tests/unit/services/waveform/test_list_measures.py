@@ -22,7 +22,7 @@ def test_list_measures_summarizes_measure_blocks(
     resolved_meas_path = tmp_path / "demo.meas"
 
     def fake_read_log(
-        raw_path: str | Path,
+        log_path: str | Path,
         *,
         workspace_root: Path,
         settings: object | None = None,
@@ -32,10 +32,10 @@ def test_list_measures_summarizes_measure_blocks(
         meas_path: str | Path | None = None,
     ) -> LogInspection:
         del settings, max_lines, include_measures, refresh_measures, meas_path
-        assert Path(raw_path) == log_path
+        assert Path(log_path) == tmp_path / "demo.log"
         assert workspace_root == tmp_path.resolve(strict=False)
         return LogInspection(
-            log_path=log_path.resolve(strict=False),
+            log_path=Path(log_path).resolve(strict=False),
             line_count=0,
             excerpt="",
             step_count=2,
@@ -71,7 +71,7 @@ def test_list_measures_forwards_timeout_to_read_log(
     log_path = tmp_path / "demo.log"
 
     def fake_read_log(
-        raw_path: str | Path,
+        log_path: str | Path,
         *,
         workspace_root: Path,
         settings: object | None = None,
@@ -82,11 +82,11 @@ def test_list_measures_forwards_timeout_to_read_log(
         timeout_s: float | None = None,
     ) -> LogInspection:
         del settings, max_lines, include_measures, refresh_measures, meas_path
-        assert Path(raw_path) == log_path
+        assert Path(log_path) == tmp_path / "demo.log"
         assert workspace_root == tmp_path.resolve(strict=False)
         assert timeout_s == 2.0
         return LogInspection(
-            log_path=log_path.resolve(strict=False),
+            log_path=Path(log_path).resolve(strict=False),
             line_count=0,
             excerpt="",
             step_count=0,

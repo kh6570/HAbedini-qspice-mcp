@@ -156,6 +156,6 @@ to your target machine. QSpice DLLs have no external dependencies beyond
 ## See Also
 
 - QSpice Help (`F1` in QSpice): **Digital/Custom Devices > C++ DLL Devices**
-- `docs/tool_reference.md` — `scaffold_dll_device`, `scaffold_dll_device_from_symbol`, `validate_dll_symbol_signature`
+- `docs/tool_reference.md` — `describe_device_spec` + `create_dll_device_from_spec` (one-call device authoring), `scaffold_dll_device`, `scaffold_dll_device_from_symbol`, `validate_dll_symbol_signature`
 - [User guide](user-guide.md) — install and MCP workflows
 - [Architecture](architecture.md) — high-level design principles

@@ -42,6 +42,15 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "raw_path": {"type": "string"},
                 "step": {"type": "integer", "minimum": 0},
                 "step_filters": _STEP_FILTERS,
+                "name_filter": {
+                    "type": "string",
+                    "description": "Case-insensitive glob restricting rows, e.g. 'V(*)' or 'I(L?)'.",
+                },
+                "limit": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Bound the returned signal rows; signals_truncated flags cuts.",
+                },
             },
         },
     },
@@ -87,14 +96,34 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["raw_path", "signal"],
             "properties": {
-                "raw_path": {"type": "string"},
-                "signal": {"type": "string"},
-                "step": {"type": "integer", "minimum": 0},
+                "raw_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qraw` produced by a simulation run.",
+                },
+                "signal": {
+                    "type": "string",
+                    "description": "Trace name or expression, e.g. 'V(out)' or 'I(L1)'.",
+                },
+                "step": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Zero-based step index for stepped (.step) runs.",
+                },
                 "step_filters": _STEP_FILTERS,
                 "component": _COMPONENT,
-                "t_start": {"type": "number"},
-                "t_end": {"type": "number"},
-                "max_points": {"type": "integer", "minimum": 3},
+                "t_start": {
+                    "type": "number",
+                    "description": "Optional window start on the sweep axis (seconds or Hz).",
+                },
+                "t_end": {
+                    "type": "number",
+                    "description": "Optional window end on the sweep axis (seconds or Hz).",
+                },
+                "max_points": {
+                    "type": "integer",
+                    "minimum": 3,
+                    "description": "Downsample budget; hard cap 2000 points.",
+                },
                 "max_bytes": {"type": "integer", "minimum": 1024},
             },
         },
@@ -106,10 +135,17 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["raw_path", "signal", "operation"],
             "properties": {
-                "raw_path": {"type": "string"},
-                "signal": {"type": "string"},
+                "raw_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qraw` produced by a simulation run.",
+                },
+                "signal": {
+                    "type": "string",
+                    "description": "Trace name or expression, e.g. 'V(out)' or 'I(L1)'.",
+                },
                 "operation": {
                     "type": "string",
+                    "description": "Scalar reduction applied over the (optionally windowed) trace.",
                     "enum": [
                         "min",
                         "max",
@@ -267,11 +303,32 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["log_path"],
             "properties": {
-                "log_path": {"type": "string"},
-                "max_lines": {"type": "integer", "minimum": 0},
-                "include_measures": {"type": "boolean"},
-                "refresh_measures": {"type": "boolean"},
-                "meas_path": {"type": "string"},
+                "log_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.log` produced by a simulation run.",
+                },
+                "max_lines": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Cap on returned log lines (tail-biased excerpt).",
+                },
+                "include_measures": {
+                    "type": "boolean",
+                    "description": "Also return parsed measurement blocks.",
+                },
+                "refresh_measures": {
+                    "type": "boolean",
+                    "description": "Rerun QPOST to regenerate the `.meas` sidecar (default true; writes a file).",
+                },
+                "meas_path": {
+                    "type": "string",
+                    "description": "Optional explicit `.meas` path when not the sibling default.",
+                },
+                "max_measure_rows": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Bound the rows returned per measurement block; measure_rows_truncated flags cuts.",
+                },
             },
         },
     },
@@ -301,6 +358,11 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "step_filters": _STEP_FILTERS,
                 "refresh_measures": {"type": "boolean"},
                 "meas_path": {"type": "string"},
+                "max_measure_rows": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Bound the rows returned per measurement block after step filtering; measure_rows_truncated flags cuts.",
+                },
             },
         },
     },

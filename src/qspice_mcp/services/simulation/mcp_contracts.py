@@ -15,7 +15,16 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
         "input_schema": {
             "type": "object",
             "required": ["source_path"],
-            "properties": {"source_path": {"type": "string"}, "output_path": {"type": "string"}},
+            "properties": {
+                "source_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch`, `.cir`, or `.net` source file.",
+                },
+                "output_path": {
+                    "type": "string",
+                    "description": "Optional destination; defaults to the sibling `.net` path.",
+                },
+            },
         },
     },
     "save_netlist_copy": {
@@ -41,12 +50,30 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "injection_amplitude",
             ],
             "properties": {
-                "source_path": {"type": "string"},
-                "perturbation_source": {"type": "string"},
-                "settling_time": {"type": "string"},
-                "start_frequency": {"type": "string"},
-                "stop_frequency": {"type": "string"},
-                "injection_amplitude": {"type": "string"},
+                "source_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch` or netlist to stage.",
+                },
+                "perturbation_source": {
+                    "type": "string",
+                    "description": "Reference of the injection source in the feedback path (e.g. V3).",
+                },
+                "settling_time": {
+                    "type": "string",
+                    "description": "Time to reach steady state before injection (e.g. '2m').",
+                },
+                "start_frequency": {
+                    "type": "string",
+                    "description": "Sweep start frequency (e.g. '100').",
+                },
+                "stop_frequency": {
+                    "type": "string",
+                    "description": "Sweep stop frequency (e.g. '100k').",
+                },
+                "injection_amplitude": {
+                    "type": "string",
+                    "description": "Perturbation amplitude; keep small vs. the operating point (e.g. '10m').",
+                },
                 "square_periods": {"type": "integer", "minimum": 1},
                 "debug": {"type": "boolean"},
                 "skip_bias_point": {"type": "boolean"},
@@ -66,15 +93,32 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["source_path", "sweep_type"],
             "properties": {
-                "source_path": {"type": "string"},
-                "sweep_type": {"type": "string", "enum": ["dec", "oct", "lin", "list"]},
-                "points": {"type": "string"},
-                "start": {"type": "string"},
-                "stop": {"type": "string"},
+                "source_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch` or netlist to stage.",
+                },
+                "sweep_type": {
+                    "type": "string",
+                    "enum": ["dec", "oct", "lin", "list"],
+                    "description": "Sweep spacing; 'list' uses explicit `frequencies`.",
+                },
+                "points": {
+                    "type": "string",
+                    "description": "Points per decade/octave, or total points for 'lin'.",
+                },
+                "start": {
+                    "type": "string",
+                    "description": "Start frequency (e.g. '10').",
+                },
+                "stop": {
+                    "type": "string",
+                    "description": "Stop frequency (e.g. '1Meg').",
+                },
                 "frequencies": {
                     "type": "array",
                     "minItems": 1,
                     "items": {"type": "string"},
+                    "description": "Explicit frequency list when sweep_type='list'.",
                 },
                 "output_path": {"type": "string"},
             },
@@ -211,12 +255,30 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["source_path", "step", "stop"],
             "properties": {
-                "source_path": {"type": "string"},
-                "step": {"type": "string"},
-                "stop": {"type": "string"},
-                "start": {"type": "string"},
-                "max_step": {"type": "string"},
-                "use_initial_conditions": {"type": "boolean"},
+                "source_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch` or netlist to stage.",
+                },
+                "step": {
+                    "type": "string",
+                    "description": "Suggested output timestep (e.g. '1u').",
+                },
+                "stop": {
+                    "type": "string",
+                    "description": "Simulation end time (e.g. '5m').",
+                },
+                "start": {
+                    "type": "string",
+                    "description": "Optional time at which waveform recording starts.",
+                },
+                "max_step": {
+                    "type": "string",
+                    "description": "Optional cap on the internal integration timestep.",
+                },
+                "use_initial_conditions": {
+                    "type": "boolean",
+                    "description": "Append `uic` to honor `.ic` values instead of solving the bias point.",
+                },
                 "skip_bias_point": {"type": "boolean"},
                 "output_path": {"type": "string"},
             },
@@ -293,13 +355,27 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["source_path", "kind"],
             "properties": {
-                "source_path": {"type": "string"},
+                "source_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch` or netlist to stage.",
+                },
                 "kind": {
                     "type": "string",
                     "enum": ["find_at", "avg", "trig_targ", "fra", "four", "raw"],
+                    "description": (
+                        "Measurement family: find_at (value at time), avg (avg/max/min/pp/rms/integ "
+                        "over an interval), trig_targ (interval between events), fra (frequency-"
+                        "response check), four (Fourier component), raw (verbatim instruction)."
+                    ),
                 },
-                "name": {"type": "string"},
-                "expression": {"type": "string"},
+                "name": {
+                    "type": "string",
+                    "description": "Measure name used to look the result up via `read_measures`.",
+                },
+                "expression": {
+                    "type": "string",
+                    "description": "Waveform expression to measure (e.g. 'V(out)').",
+                },
                 "at": {"type": "string"},
                 "statistic": {
                     "type": "string",
@@ -556,15 +632,35 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["source_path"],
             "properties": {
-                "source_path": {"type": "string"},
-                "dry_run": {"type": "boolean"},
-                "timeout_s": {"type": "number", "minimum": 0},
+                "source_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch`, `.cir`, or `.net` to simulate.",
+                },
+                "dry_run": {
+                    "type": "boolean",
+                    "description": "When true, report the planned command without executing QSpice.",
+                },
+                "timeout_s": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Per-run timeout in seconds; overrides the server default.",
+                },
                 "log_path": {"type": "string"},
                 "raw_output_path": {"type": "string"},
                 "netlist_output_path": {"type": "string"},
-                "ascii_raw": {"type": "boolean"},
-                "extra_switches": {"type": "array", "items": {"type": "string"}},
-                "run_id": {"type": "string"},
+                "ascii_raw": {
+                    "type": "boolean",
+                    "description": "Emit ASCII `.qraw` instead of binary (larger but inspectable).",
+                },
+                "extra_switches": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "Additional QSPICE64 command-line switches.",
+                },
+                "run_id": {
+                    "type": "string",
+                    "description": "Optional caller-chosen id enabling `cancel_run`.",
+                },
             },
         },
     },

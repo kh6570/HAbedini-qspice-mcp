@@ -12,10 +12,15 @@
       "relative_path": "flyback_controller.cpp",
       "bundle_name": "flyback_controller.cpp",
       "encoding": "text"
+    },
+    {
+      "relative_path": "flyback_controller.dll",
+      "bundle_name": "flyback_controller.dll",
+      "encoding": "binary"
     }
   ],
-  "build_required": true,
-  "build_hint": "build_dll_device(source_path=\"flyback_controller.cpp\")",
+  "build_required": false,
+  "build_hint": "A prebuilt flyback_controller.dll is materialized with the recipe. If QSpice fails to load it, rebuild locally: build_dll_device(source_path=\"flyback_controller.cpp\")",
   "workflows": [
     {
       "instruction_id": "flyback-converter-cpp-catalog",
@@ -24,5 +29,13 @@
       "track": "reference_catalog",
       "document": "catalog.md"
     }
+  ],
+  "topology_block": "flyback_converter",
+  "tags": [
+    "flyback",
+    "isolated",
+    "dc-dc",
+    "mixed-signal",
+    "cpp-dll"
   ]
 }

@@ -4,7 +4,7 @@ description: Drive the QSpice MCP server end to end — discover or author a cir
 license: MIT
 metadata:
   author: qspice-mcp
-  version: "1.0"
+  version: "1.1"
 ---
 
 # QSpice: Getting Started
@@ -59,7 +59,7 @@ returns a backend error.
 3. Build topology: `add_component` (`R/C/D/V/L/B/nmos/pmos` or `GND`; use
    `auto_place=true` or `suggest_component_placement` for readable grids),
    `add_wire`, `add_junction`, `add_net_label`; adjust with `set_component_value`,
-   `set_component_parameters`, `set_component_rotation`.
+   `set_component_parameters`, `set_component_position`.
 4. For custom devices, `write_workspace_text_file` writes a `.c`/`.cpp` source and
    auto-builds the sibling `.dll` (see the mixed-signal/DLL skills).
 
@@ -78,10 +78,15 @@ so placement stays collision-free and upright.
 1. `generate_netlist` — resolve/stage the derived netlist (refreshes a stale
    sibling `.net` when the schematic is newer). Often optional —
    `run_simulation` can take a `.qsch` directly.
-2. `prepare_transient` / `prepare_ac` / etc. — optional staging that writes a
-   sibling file (e.g. `filter-tran.qsch`). **Simulate `output_path`; edit layout on
-   `source_path`.** After any placement change on the source, call `prepare_*`
-   again so the sibling matches.
+2. `prepare_*` staging tools — optional staging that writes a sibling file
+   (e.g. `filter-tran.qsch`). The family covers every documented analysis:
+   `prepare_transient`, `prepare_ac`, `prepare_dc_sweep`, `prepare_noise`,
+   `prepare_bode_analysis`, `prepare_loop_gain_analysis`, `prepare_transfer_function`,
+   `prepare_sensitivity`, `prepare_temperature_sweep`, `prepare_op`, `prepare_four`,
+   `prepare_net`, plus output/bookkeeping staging (`prepare_save`, `prepare_options`,
+   `prepare_meas`). Prefer these over hand-written `add_instruction` lines.
+   **Simulate `output_path`; edit layout on `source_path`.** After any placement
+   change on the source, call `prepare_*` again so the sibling matches.
 3. `run_simulation` — execute from a `.qsch`, `.cir`, or `.net`. This is
    long-running; expect a wait for transient analyses.
 
@@ -91,7 +96,9 @@ duplicate `(position_x, position_y)` pairs and fix with
 
 For design exploration use the sweep tools instead of repeated single runs:
 `run_value_sweep`, `run_param_sweep`, `run_model_sweep`, `run_monte_carlo`,
-`run_worst_case`. (These currently require a `.qsch` source.)
+`run_worst_case`. (These currently require a `.qsch` source.) For tolerance
+studies, `prepare_monte_carlo` and `prepare_worst_case` stage the plan first
+and `summarize_tolerance_analysis` condenses the batch statistics.
 
 ## Read results
 

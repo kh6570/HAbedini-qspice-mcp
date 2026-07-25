@@ -192,6 +192,18 @@ def test_build_service_call_kwargs_preserves_explicit_none_defaults(
     assert "step" not in kwargs
 
 
+def test_read_log_handler_accepts_contract_log_path_argument(tmp_path: Path) -> None:
+    """The MCP contract exposes log_path; the handler must reach the service with it."""
+    runtime = _runtime(tmp_path)
+    log_file = tmp_path / "demo.log"
+    log_file.write_text("QSPICE analysis log\nTotal elapsed time: 1s\n", encoding="utf-8")
+
+    payload = runtime.get_handler("read_log")(log_path="demo.log", include_measures=False)
+
+    assert payload["line_count"] == 2
+    assert str(payload["log_path"]).endswith("demo.log")
+
+
 def test_normalize_tool_kwargs_coerces_text_roles_to_tuple() -> None:
     normalized = _normalize_tool_kwargs(
         "normalize_component_text_rotation",

@@ -32,6 +32,21 @@
       "directory": "isolated_dc_dc/flyback_qr"
     },
     {
+      "recipe_id": "forward_converter",
+      "title": "Forward Converter (Single-Switch)",
+      "directory": "isolated_dc_dc/forward_converter"
+    },
+    {
+      "recipe_id": "half_bridge_converter",
+      "title": "Half-Bridge Converter (Isolated)",
+      "directory": "isolated_dc_dc/half_bridge_converter"
+    },
+    {
+      "recipe_id": "full_bridge_converter",
+      "title": "Full-Bridge Converter (Isolated)",
+      "directory": "isolated_dc_dc/full_bridge_converter"
+    },
+    {
       "recipe_id": "buck_boost_dcm",
       "title": "Buck-Boost Converter (DCM)",
       "directory": "non_isolated_dc_dc/buck_boost_dcm"

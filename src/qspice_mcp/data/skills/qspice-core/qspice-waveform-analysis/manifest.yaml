@@ -1,7 +1,7 @@
 schema_version: 1
 license: MIT
 scope: cross-product
-version: "1.0"
+version: "1.1"
 human-description: Inspect, derive, and measure QSpice waveform results after a simulation.
 requires-tools:
   - list_signals
@@ -10,7 +10,14 @@ requires-tools:
   - evaluate_waveform_expression
   - measure_waveform
   - plot_waveforms
+  - prepare_four
   - read_fourier
+  - compute_thd
+  - export_fft_spectrum
+  - measure_bode_response
+  - prepare_meas
+  - list_measures
+  - read_measures
   - read_noise
   - export_waveform_csv
 requires-skills:

@@ -48,6 +48,41 @@ def test_inspect_schematic_extracts_components_and_analyses(tmp_path: Path) -> N
     assert summary.analyses[0].raw == ".tran 5m"
 
 
+def test_inspect_schematic_truncates_component_rows_when_bounded(tmp_path: Path) -> None:
+    schematic = tmp_path / "demo.qsch"
+    schematic.write_bytes(
+        b"".join(
+            (
+                b"\xabschematic\r\n",
+                b"  \xabcomponent (0,0) 0 0\r\n",
+                b"    \xabsymbol V\r\n",
+                b"      \xabtype: V\xbb\r\n",
+                b'      \xabtext (100,150) 1 7 0 0x1000000 -1 -1 "V1"\xbb\r\n',
+                b'      \xabtext (100,-150) 1 7 0 0x1000000 -1 -1 "10"\xbb\r\n',
+                b"    \xbb\r\n",
+                b"  \xabcomponent (0,0) 0 0\r\n",
+                b"    \xabsymbol R\r\n",
+                b"      \xabtype: R\xbb\r\n",
+                b'      \xabtext (100,150) 1 7 0 0x1000000 -1 -1 "R1"\xbb\r\n',
+                b'      \xabtext (100,-150) 1 7 0 0x1000000 -1 -1 "1k"\xbb\r\n',
+                b"    \xbb\r\n",
+                b"\xbb\r\n",
+            )
+        )
+    )
+
+    summary = inspect_schematic(schematic, workspace_root=tmp_path, max_components=1)
+
+    assert summary.component_count == 2
+    assert len(summary.components) == 1
+    assert summary.components[0].refdes == "V1"
+    assert summary.components_truncated is True
+
+    unbounded = inspect_schematic(schematic, workspace_root=tmp_path)
+    assert unbounded.components_truncated is False
+    assert len(unbounded.components) == 2
+
+
 def test_inspect_schematic_decodes_latin1_qsch_bytes(tmp_path: Path) -> None:
     schematic = tmp_path / "latin1.qsch"
     schematic.write_bytes(

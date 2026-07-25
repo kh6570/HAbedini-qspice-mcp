@@ -106,7 +106,7 @@ def _render_meas_instruction(
         rendered_input = _require(input_expression, field="input_expression", kind=kind)
         rendered_output = _require(output_expression, field="output_expression", kind=kind)
         return f".meas {measure_name} fra {rendered_frequency} {rendered_input} {rendered_output}"
-    # kind == "four"
+    # The remaining kind is Fourier analysis.
     rendered_frequency = _require(frequency, field="frequency", kind=kind)
     rendered_expression = _require(expression, field="expression", kind=kind)
     return f".meas {measure_name} four {rendered_frequency} {rendered_expression}"

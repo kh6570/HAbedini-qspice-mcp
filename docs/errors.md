@@ -25,7 +25,7 @@ first emitting tool lands. Until a more specific code is available,
 | `sandbox_violation` | implemented | A requested filesystem path escaped the configured workspace sandbox. | `SandboxViolationError` |
 | `validation_failed` | implemented | Caller-supplied input failed a precondition such as a suffix, axis range, or required field check before the request reached an adapter or backend. | `ValidationError` |
 | `unsupported_manifest_version` | implemented | A persisted batch manifest, prepared plan, or related saved artifact uses a schema_version this server does not support. | `UnsupportedManifestVersionError` |
-| `configuration_invalid` | implemented | The server runtime configuration is missing a required value or contains a value that cannot be honored. | `ConfigurationError` |
+| `configuration_invalid` | reserved | The server runtime configuration is missing a required value or contains a value that cannot be honored. | `ConfigurationError` |
 
 ## Notes
 

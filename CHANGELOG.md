@@ -13,6 +13,70 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Added
 
+- **MCP server** — FastMCP stdio server (`qspice-mcp`) with runtime capability
+  discovery (`describe_server_capabilities`), a stable error taxonomy
+  ([docs/errors.md](docs/errors.md)), a `trace_id` on every response, and
+  optional OpenTelemetry spans.
+- **Schematic inspection and editing** — repo-owned clean-room `.qsch` editor
+  with component, parameter, instruction, subcircuit, and embedded-symbol tools,
+  plus preflight helpers (`describe_edit_capability`,
+  `describe_schematic_edit_support`).
+- **Schematic authoring** — build schematics from scratch (components, wires,
+  junctions, net labels, `.DLL` blocks) plus bundled reference-circuit recipes
+  and step-by-step workflow instructions.
+- **Netlist and simulation** — run `.qsch`, `.cir`, or `.net` sources with
+  transparent result caching; clean-room netlist generation with a companion
+  `QUX.exe -Netlist` fallback for DLL/C-block schematics.
+- **Sweeps and batches** — value, parameter, and model sweeps; background
+  batches with resumable manifests and per-run recovery; remote-style session
+  transport with artifact download.
+- **Statistical analysis** — Monte Carlo and worst-case prepare/run/summarize
+  with persisted plans and shared `.meas` aggregation.
+- **Waveforms and results** — signal listing, budget-bounded waveform reads,
+  scalar measurements, plots, operating-point inspection, log excerpts, and
+  QPOST-backed measure extraction.
+- **Exports** — QUX CSV/ASCII/SPICE/Touchstone exports, derived raw export and
+  merge, and frequency-domain FFT/THD/Bode helpers.
+- **Mixed-signal devices** — scaffold generators for C++ DLL, Verilog, socket,
+  Python, I2C, and SPI custom devices; `build_dll_device` compiles C/C++ sources
+  with the QSpice-bundled Digital Mars C++ toolchain, MSVC, or CMake.
+- **Live GUI (Windows, optional)** — open or refresh schematics in the QSpice
+  GUI and drive a version-gated external bridge for live cross-probing.
+- **Safety** — workspace-sandboxed paths, validated CLI switches, and
+  transactional artifact writes (see [docs/security.md](docs/security.md)).
+- **Packaging** — base install runs without optional backends; `[backends]`,
+  `[telemetry]`, and `[dev]` extras are opt-in; ships a `py.typed` marker for
+  downstream type checkers.
+- **Agent skills catalog** — bundled client-side skills under
+  `qspice_mcp/data/skills/` (`qspice-core`: `qspice-getting-started`,
+  `qspice-convergence-debugging`), shipped as package data and installed into an
+  agent's skills directory via `scripts/install_skills.ps1`. Skills are loaded by
+  the agent (not the MCP server), adding no per-request server cost. Each skill's
+  `manifest.yaml` `requires-tools` is validated against the live tool registry
+  ([user guide](docs/user-guide.md)).
+- **Three clean-room isolated converter recipes** — `forward_converter`,
+  `half_bridge_converter`, and `full_bridge_converter` under
+  `data/recipes/isolated_dc_dc/`, authored from the topology-pack blueprints with
+  this server's own schematic tools (components, pin-anchored wires, coupled-inductor
+  transformers via `K` statements, staged `.tran`) and validated end-to-end with local
+  QSpice (`materialize` → `run_simulation` → `V(out)` inside the design band). Each
+  ships the `.qsch` source of truth plus the validated `.cir` netlist and links to its
+  matching topology block.
+- **`qspice_tolerance_analysis` MCP prompt** — Monte Carlo plus worst-case tolerance
+  workflow: `prepare_monte_carlo` → `run_monte_carlo`, `prepare_worst_case` →
+  `run_worst_case`, then `summarize_tolerance_analysis` for a compact yield/extreme
+  report.
+- **`describe_server_capabilities` `guidance` block** — advertises available MCP
+  prompt names, static and template resource URIs, and the bundled skills install
+  pointer so agents can discover guidance surfaces at runtime.
+- **Output budget parameters** — `inspect_schematic(max_components=…)`,
+  `list_signals(name_filter=…, limit=…)`, `read_log`/`read_measures(max_measure_rows=…)`,
+  and `read_workflow_instruction(max_chars=…)` bound large responses; each reports a
+  matching `*_truncated` flag. Defaults preserve prior behavior.
+- **Recipe `topology_block` + `tags` surfaced** — `list_reference_circuit_recipes`
+  rows and `describe_reference_circuit_recipe` now expose each recipe's topology-pack
+  link (plus an optional `topology_block_note`) and discovery tags; all bundled
+  manifests declare `tags`.
 - **`create_dll_device_from_spec` tool** — creates one `.DLL` custom device from a
   PinDef-style pin specification in a single call: place the block with all pins
   (inline `device_name` + `pins` array, or a workspace JSON spec file with
@@ -237,7 +301,6 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`prepare_dc_sweep` tool** — stage a schematic or netlist with a documented `.dc` directive.
 - **`prepare_loop_gain_analysis` tool** — stage `.ac` plus Tian/Middlebrook loop-gain guidance.
 - **`set_component_position` tool** — move one placed schematic component to new coordinates.
-- **`move_component_preserving_connections` tool** — move or rotate one component and follow attached wires, junctions, and net labels to the new pin coordinates.
 - **`add_library_component` tool** — clone one component symbol from a template `.qsch` into a target schematic (generic library parts beyond the built-in kinds).
 - **`render_schematic_image` tool** — render a supported `.qsch` (wires, junctions, components, labels) to a PNG preview.
 - **`read_net_connectivity` tool** — report electrical nets and the component pins connected to each (read-only).
@@ -282,16 +345,6 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`create_starter_schematic` net naming** — series V–R–GND starter labels `VIN` on the source side and uses separate GND symbols (no spanning GND bus).
 - **`qspice-schematic-layout` skill** — bundled agent guidance for readable scratch placement.
 
-### Fixed
-
-- **`build_dll_device` MSVC vcvars quoting on Windows** — the `cl` bootstrap via
-  `vcvars64.bat` now passes the script path as a discrete `cmd /c` argument instead of
-  pre-quoting it inside a single command string. Pre-quoting caused Python's
-  `list2cmdline` to backslash-escape the quotes (`\"...\"`), so `cmd.exe` could not find
-  `vcvars64.bat` and every MSVC-only DLL build failed on machines without `cl` on PATH.
-
-### Changed
-
 - **Buck, boost, and buck-boost topology blocks enriched with CCM/DCM and small-signal
   theory** — the bundled `buck_converter`, `boost_converter`, and `buck_boost_converter`
   manifests and blueprints now cover the lossy CCM conversion ratio (buck
@@ -323,13 +376,12 @@ drive the QSpice circuit simulator through stable JSON tools.
   labels follow the pins, `preserve_connections=true`) and resets refdes/value text to
   upright readability (`normalize_text=true`), reporting `rewired_endpoints` and
   `normalized_text_count`. Opt out with `preserve_connections=false` /
-  `normalize_text=false`. `set_component_rotation` and
-  `move_component_preserving_connections` are retained as **deprecated aliases** that
-  delegate to this path (removal in a future breaking release). `describe_edit_capability`
-  gains a `move_component` intent and both `move_component`/`rotate_component` now point
-  at `set_component_position`. *(Default-on connection-preservation and text
-  normalization change the output of existing `set_component_position`/
-  `set_component_rotation` callers — acceptable pre-1.0, called out here.)*
+  `normalize_text=false`. The former `set_component_rotation` and
+  `move_component_preserving_connections` aliases are removed (see Removed).
+  `describe_edit_capability` gains a `move_component` intent and both
+  `move_component`/`rotate_component` now point at `set_component_position`.
+  *(Default-on connection-preservation and text normalization change the output of
+  existing `set_component_position` callers — acceptable pre-1.0, called out here.)*
 - **Opt-in orphan cleanup on `remove_component`** — new `remove_orphan_wires` flag
   (default `false`) prunes wires touching a now-orphaned pin coordinate plus junctions
   and net labels sitting on one, reporting `wires_removed` / `junctions_removed` /
@@ -368,48 +420,51 @@ drive the QSpice circuit simulator through stable JSON tools.
   such as `QSPICE_EXE`, `QSPICE64.exe`, and install paths under
   `Program Files\QSPICE\` are unchanged. Corrected `SECURITY.md` to reference
   `QSPICE64.exe` instead of the nonexistent `QSPICE.exe`.
+- **Leaner `tools/list` payload** — the per-call `workspace_root` override property is
+  now advertised only on tools that take path-like arguments (every tool still accepts
+  it at call time), its description is shortened, and every tool schema declares a
+  `required` array. High-traffic tools (`add_component`, `run_simulation`,
+  `read_waveform`, the `prepare_*` staging family, the DLL authoring trio, and more)
+  gained per-property descriptions, and tool descriptions now cross-link alternatives
+  (device-spec vs from-symbol vs blank DLL scaffolds; `add_instruction` points to the
+  typed `prepare_*` tools).
+- **Guidance surfaces refreshed** — all six bundled skills and their manifests now name
+  the current tool surface (`prepare_*` staging family, device-spec DLL path, `.qsym`
+  round-trip, measures tools); `qspice_author_dll_device` leads with
+  `describe_device_spec` → `create_dll_device_from_spec`; `qspice_debug_convergence`
+  names `run_simulation`/`prepare_options`; the `reference://directives` and
+  measurement-guideline resources cover `prepare_options`, the measures tools, and
+  `.meas fra`; `describe_server_capabilities` tool groups match the shipped registry.
 
-### Added
+### Removed
 
-- **Agent skills catalog** — bundled client-side skills under
-  `qspice_mcp/data/skills/` (`qspice-core`: `qspice-getting-started`,
-  `qspice-convergence-debugging`), shipped as package data and installed into an
-  agent's skills directory via `scripts/install_skills.ps1`. Skills are loaded by
-  the agent (not the MCP server), adding no per-request server cost. Each skill's
-  `manifest.yaml` `requires-tools` is validated against the live tool registry
-  ([user guide](docs/user-guide.md)).
+- **Deprecated placement alias tools** — `set_component_rotation` and
+  `move_component_preserving_connections` are removed (breaking). Use
+  `set_component_position`, which moves and/or rotates in one call, preserves
+  attached connections by default, and normalizes refdes/value text.
+- **Unregistered boost scratch document** — deleted the wrong-content
+  `boost_converter_cpp/scratch.md` (a stale buck copy that no workflow referenced);
+  the boost `catalog.md` was upgraded to the full Track-B structure instead.
 
-- **MCP server** — FastMCP stdio server (`qspice-mcp`) with runtime capability
-  discovery (`describe_server_capabilities`), a stable error taxonomy
-  ([docs/errors.md](docs/errors.md)), a `trace_id` on every response, and
-  optional OpenTelemetry spans.
-- **Schematic inspection and editing** — repo-owned clean-room `.qsch` editor
-  with component, parameter, instruction, subcircuit, and embedded-symbol tools,
-  plus preflight helpers (`describe_edit_capability`,
-  `describe_schematic_edit_support`).
-- **Schematic authoring** — build schematics from scratch (components, wires,
-  junctions, net labels, `.DLL` blocks) plus bundled reference-circuit recipes
-  and step-by-step workflow instructions.
-- **Netlist and simulation** — run `.qsch`, `.cir`, or `.net` sources with
-  transparent result caching; clean-room netlist generation with a companion
-  `QUX.exe -Netlist` fallback for DLL/C-block schematics.
-- **Sweeps and batches** — value, parameter, and model sweeps; background
-  batches with resumable manifests and per-run recovery; remote-style session
-  transport with artifact download.
-- **Statistical analysis** — Monte Carlo and worst-case prepare/run/summarize
-  with persisted plans and shared `.meas` aggregation.
-- **Waveforms and results** — signal listing, budget-bounded waveform reads,
-  scalar measurements, plots, operating-point inspection, log excerpts, and
-  QPOST-backed measure extraction.
-- **Exports** — QUX CSV/ASCII/SPICE/Touchstone exports, derived raw export and
-  merge, and frequency-domain FFT/THD/Bode helpers.
-- **Mixed-signal devices** — scaffold generators for C++ DLL, Verilog, socket,
-  Python, I2C, and SPI custom devices; `build_dll_device` compiles C/C++ sources
-  with the QSpice-bundled Digital Mars C++ toolchain, MSVC, or CMake.
-- **Live GUI (Windows, optional)** — open or refresh schematics in the QSpice
-  GUI and drive a version-gated external bridge for live cross-probing.
-- **Safety** — workspace-sandboxed paths, validated CLI switches, and
-  transactional artifact writes (see [docs/security.md](docs/security.md)).
-- **Packaging** — base install runs without optional backends; `[backends]`,
-  `[telemetry]`, and `[dev]` extras are opt-in; ships a `py.typed` marker for
-  downstream type checkers.
+### Fixed
+
+- **`read_log` broken over MCP** — the service parameter was renamed `raw_path` →
+  `log_path` (it takes a `.log` path, matching `list_measures`/`read_measures`), fixing
+  a `Missing required tool argument` failure for every MCP `read_log` call; an
+  MCP-handler-level regression test now covers the wiring.
+- **Measure tools annotation honesty** — `read_log`, `list_measures`, and
+  `read_measures` default `refresh_measures=true` can write a `.meas` sidecar via
+  QPOST, so their ServiceSpecs no longer claim `read_only`.
+- **Clean-room netlist keeps inductor coupling statements** — mutual-inductance
+  schematic texts (e.g. `K1 L1 L2 1`), which QSpice netlists even though they do not
+  start with a dot, previously vanished from clean-room generated netlists, silently
+  breaking every transformer simulation. They are now emitted with the element lines.
+- **`docs/errors.md` drift** — `configuration_invalid` is documented as `reserved`
+  (matching `error_taxonomy.py`), and a unit test now asserts the errors table matches
+  `ERROR_CODE_DEFINITIONS` so statuses cannot drift again.
+- **`build_dll_device` MSVC vcvars quoting on Windows** — the `cl` bootstrap via
+  `vcvars64.bat` now passes the script path as a discrete `cmd /c` argument instead of
+  pre-quoting it inside a single command string. Pre-quoting caused Python's
+  `list2cmdline` to backslash-escape the quotes (`\"...\"`), so `cmd.exe` could not find
+  `vcvars64.bat` and every MSVC-only DLL build failed on machines without `cl` on PATH.
+

@@ -1,10 +1,11 @@
 schema_version: 1
 license: MIT
 scope: cross-product
-version: "1.0"
+version: "1.1"
 human-description: Diagnose and fix QSpice simulations that fail to converge, stop early, or produce no usable waveform.
 requires-tools:
   - read_log
+  - prepare_options
   - inspect_schematic
   - list_components
   - run_simulation

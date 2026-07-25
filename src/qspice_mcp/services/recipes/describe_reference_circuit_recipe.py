@@ -91,6 +91,9 @@ class ReferenceCircuitRecipeDescription:
     build_hint: str | None
     workflows: tuple[RecipeWorkflowSummary, ...]
     topology_digest: TopologyDigest | None
+    topology_block: str | None = None
+    topology_block_note: str | None = None
+    tags: tuple[str, ...] = ()
 
 
 def _parse_file_entries(raw_files: object, *, recipe_id: str) -> tuple[RecipeFileEntry, ...]:
@@ -232,6 +235,16 @@ def describe_reference_circuit_recipe(recipe_id: str) -> ReferenceCircuitRecipeD
     build_hint_raw = manifest.get("build_hint")
     build_hint = str(build_hint_raw).strip() if build_hint_raw else None
     source = _parse_source(manifest.get("source"), recipe_id=normalized_recipe_id)
+    raw_topology_block = manifest.get("topology_block")
+    topology_block = str(raw_topology_block).strip() if raw_topology_block else None
+    raw_topology_block_note = manifest.get("topology_block_note")
+    topology_block_note = str(raw_topology_block_note).strip() if raw_topology_block_note else None
+    raw_tags = manifest.get("tags")
+    tags = (
+        tuple(str(tag).strip() for tag in raw_tags if str(tag).strip())
+        if isinstance(raw_tags, list)
+        else ()
+    )
     return ReferenceCircuitRecipeDescription(
         recipe_id=normalized_recipe_id,
         title=str(manifest.get("title", normalized_recipe_id)).strip(),
@@ -243,6 +256,9 @@ def describe_reference_circuit_recipe(recipe_id: str) -> ReferenceCircuitRecipeD
         build_hint=build_hint,
         workflows=workflows,
         topology_digest=topology_digest,
+        topology_block=topology_block,
+        topology_block_note=topology_block_note,
+        tags=tags,
     )
 
 

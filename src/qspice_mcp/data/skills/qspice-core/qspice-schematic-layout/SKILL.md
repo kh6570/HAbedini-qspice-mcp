@@ -4,7 +4,7 @@ description: Place schematic components readably without overlap — use suggest
 license: MIT
 metadata:
   author: qspice-mcp
-  version: "1.5"
+  version: "1.6"
 ---
 
 # QSpice: Schematic Layout
@@ -58,9 +58,8 @@ set_component_position(schematic_path="filter.qsch", reference="R1",
   the `remove_wire`/`add_wire` refresh.
 - `normalize_text=false` — leave text rotation untouched.
 
-**Deprecated aliases** (still work, slated for removal): `set_component_rotation`
-(rotation only) and `move_component_preserving_connections` both delegate to
-`set_component_position`. Prefer the unified tool.
+The former `set_component_rotation` and `move_component_preserving_connections`
+aliases were removed; `set_component_position` is the single placement tool.
 
 **Still prefer place → wire order** when building from scratch: finalize
 `(position_x, position_y, rotation_degrees)`, then `add_wire` using **pin selectors**
@@ -171,8 +170,8 @@ re-layout inside `-tran`.
 - Treating `*-tran.qsch` as the editable master schematic
 - Passing `preserve_connections=false` on a wired edit and then forgetting the manual
   **`remove_wire` / `add_wire`** refresh — breaks connectivity while the drawing still looks fine
-- Reaching for deprecated `set_component_rotation` / `move_component_preserving_connections`
-  instead of the unified **`set_component_position`**
+- Reaching for the removed `set_component_rotation` / `move_component_preserving_connections`
+  names instead of the unified **`set_component_position`**
 - Ignoring `read_workflow_instruction` coordinate tables for the full buck converter
 - Skipping `read_component` verification after large automated edits
 
@@ -181,6 +180,10 @@ re-layout inside `-tran`.
 - `normalize_component_text_rotation` — upright refdes/value after symbol body rotation
 - `read_component_symbol` / `set_component_symbol_text` — inspect or manually tweak text layout
 - `describe_schematic_layout_spec` / `apply_schematic_layout_spec` — batch JSON placement
+- `add_library_component` — clone a symbol from a template `.qsch` (parts beyond the built-in kinds)
+- `export_symbol_to_qsym` / `add_component_from_qsym` — reuse symbols as standalone `.qsym` files
+- `render_schematic_image` — PNG preview of the sheet to eyeball placement without the GUI
+- `check_schematic` — quick ERC pass (floating nets, missing ground) before simulating
 - `read_workflow_instruction(instruction_id="buck-converter-cpp")` — full coordinate tables
 - `inspect_schematic` — topology summary (not placement audit)
 - `list_components` — ref list only; use `read_component` for coordinates

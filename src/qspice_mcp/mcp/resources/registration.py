@@ -57,6 +57,12 @@ def read_workspace_artifact_bytes(relpath: str, *, workspace_root: Path) -> byte
     return resolved.read_bytes()
 
 
+def reference_document_names() -> tuple[str, ...]:
+    """Return the valid `reference://{document}` names."""
+
+    return tuple(sorted(_REFERENCE_DOCUMENTS))
+
+
 def read_reference_document(document: str) -> str:
     """Return one bundled agent-facing reference document as markdown text."""
 
@@ -135,5 +141,6 @@ def register_resource_templates(app: FastMCP, *, workspace_root: Path) -> None:
 __all__ = [
     "read_reference_document",
     "read_workspace_artifact_bytes",
+    "reference_document_names",
     "register_resource_templates",
 ]

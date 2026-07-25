@@ -23,7 +23,7 @@ Build `Buck-converter.qsch` and `buck_controller.cpp` in an **empty workspace** 
   `rotation_degrees=0` unless the table specifies otherwise.
 - After placement, use `read_component` to verify coordinates; nudge with
   `set_component_position` if needed.
-- Rotate (`set_component_rotation`) only when the workflow table calls for non-zero rotation.
+- Rotate (`set_component_position` with `rotation_degrees`) only when the workflow table calls for non-zero rotation.
 
 ## Build steps
 
@@ -37,7 +37,7 @@ Build `Buck-converter.qsch` and `buck_controller.cpp` in an **empty workspace** 
 8. `write_workspace_text_file(relative_path="buck_controller.cpp", content=<cpp below>, overwrite=true, schematic_path="Buck-converter.qsch", dll_reference="X1")` — auto-builds `buck_controller.dll` and validates X1 (uses bundled DMC when `QSPICE_EXE` is set; else MSVC/CMake)
 9. `run_simulation` → `read_waveform` on `V(out)` (~5–6 V steady state)
 
-Use `set_component_rotation` if `read_component` shows wrong `rotation_degrees` on rotated parts.
+Use `set_component_position` if `read_component` shows wrong `rotation_degrees` on rotated parts.
 
 ## Components (12)
 

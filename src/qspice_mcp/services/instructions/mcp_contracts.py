@@ -14,7 +14,14 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
         "input_schema": {
             "type": "object",
             "required": ["instruction_id"],
-            "properties": {"instruction_id": {"type": "string"}},
+            "properties": {
+                "instruction_id": {"type": "string"},
+                "max_chars": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "Return only a leading excerpt of the markdown body; content_truncated flags cuts.",
+                },
+            },
         },
     },
 }

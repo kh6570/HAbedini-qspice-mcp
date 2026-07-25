@@ -9,7 +9,7 @@
     "path": "2.- QR-Flyback - ideal-switch.qsch",
     "commit": "02be5df8421af606a7a346ace3498aeacd975209",
     "permission": "Adapted and redistributed with the author's permission.",
-    "note": "circuit.qsch is Alonso's schematic; the .cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
+    "note": "flyback_qr.qsch is Alonso's schematic; flyback_qr.cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
   },
   "files": [
     {
@@ -34,5 +34,11 @@
       "document": "catalog.md"
     }
   ],
-  "topology_block": "flyback_converter"
+  "topology_block": "flyback_converter",
+  "tags": [
+    "flyback",
+    "quasi-resonant",
+    "isolated",
+    "dc-dc"
+  ]
 }

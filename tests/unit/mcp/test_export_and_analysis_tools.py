@@ -232,6 +232,29 @@ def test_mcp_describe_server_capabilities_reports_backend_state(
         for group in result["degraded_groups"]
     )
 
+    schematic_group = next(
+        group for group in result["tool_groups"] if group["name"] == "schematic_editing"
+    )
+    assert "set_component_position" in schematic_group["tools"]
+    assert "suggest_component_placement" in schematic_group["tools"]
+    assert "apply_schematic_layout_spec" in schematic_group["tools"]
+    assert "export_symbol_to_qsym" in schematic_group["tools"]
+    assert "set_component_rotation" not in schematic_group["tools"]
+    topology_group = next(
+        group for group in result["tool_groups"] if group["name"] == "topology_authoring"
+    )
+    assert "create_dll_device_from_spec" in topology_group["tools"]
+    assert "describe_device_spec" in topology_group["tools"]
+
+    guidance = result["guidance"]
+    prompt_names = {prompt["name"] for prompt in guidance["prompts"]}
+    assert "qspice_smps_loop_gain" in prompt_names
+    assert "qspice_tolerance_analysis" in prompt_names
+    assert "guidelines://qspice-measurements" in guidance["resources"]["static"]
+    assert "reference://{document}" in guidance["resources"]["templates"]
+    assert "directives" in guidance["resources"]["reference_documents"]
+    assert "qspice-core" in guidance["skills"]["groups"]
+
 
 def test_mcp_describe_server_capabilities_reports_partial_waveform_support_without_rawread(
     monkeypatch,

@@ -43,6 +43,8 @@ SERVICE_SPEC = ServiceSpec(
     title="List Measures",
     summary="Enumerate the QPOST-derived measurement blocks available for one simulation log.",
     phase="implemented",
+    # Not read-only: refresh_measures (default) materializes a `.meas` sidecar via QPOST.
+    read_only=False,
 )
 
 

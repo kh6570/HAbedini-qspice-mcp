@@ -28,16 +28,26 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["source_path"],
             "properties": {
-                "source_path": {"type": "string"},
-                "output_path": {"type": "string"},
-                "toolchain": {"type": "string", "enum": ["auto", "dmc", "msvc", "cmake"]},
+                "source_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.c`/`.cpp` custom-device source file.",
+                },
+                "output_path": {
+                    "type": "string",
+                    "description": "Optional `.dll` destination; defaults to the sibling path.",
+                },
+                "toolchain": {
+                    "type": "string",
+                    "enum": ["auto", "dmc", "msvc", "cmake"],
+                    "description": "Compiler selection; 'auto' tries DMC, then MSVC, then CMake.",
+                },
                 "timeout_s": {"type": "number"},
             },
         },
     },
     "scaffold_dll_device": {
         "title": "Scaffold DLL Device",
-        "description": "Generate a C++ DLL custom-device project scaffold with the documented QSpice entry points (dll_device_count, dll_device, dll_device_end). When schematic_path is provided, the .cpp and CMakeLists.txt are placed next to the schematic so QSpice's Show Source can find them.",
+        "description": "Generate a blank C++ DLL custom-device project scaffold with the documented QSpice entry points (dll_device_count, dll_device, dll_device_end). When schematic_path is provided, the .cpp and CMakeLists.txt are placed next to the schematic so QSpice's Show Source can find them. Prefer create_dll_device_from_spec when you know the pin list, or scaffold_dll_device_from_symbol when the block is already placed.",
         "input_schema": {
             "type": "object",
             "required": ["device_name"],
@@ -50,14 +60,23 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "scaffold_dll_device_from_symbol": {
         "title": "Scaffold DLL Device From Symbol",
-        "description": "Generate a C++ DLL custom-device scaffold directly from one existing `.DLL` schematic block so the source stub matches the symbol contract. By default the .cpp and CMakeLists.txt are placed next to the schematic so QSpice's Show Source command can find them automatically.",
+        "description": "Generate a C++ DLL custom-device scaffold directly from one existing `.DLL` schematic block so the source stub matches the symbol contract. By default the .cpp and CMakeLists.txt are placed next to the schematic so QSpice's Show Source command can find them automatically. Prefer create_dll_device_from_spec when the block is not placed yet.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "reference"],
             "properties": {
-                "schematic_path": {"type": "string"},
-                "reference": {"type": "string"},
-                "output_dir": {"type": "string"},
+                "schematic_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch` containing the placed `.DLL` block.",
+                },
+                "reference": {
+                    "type": "string",
+                    "description": "Designator of the placed `.DLL` block (e.g. U1).",
+                },
+                "output_dir": {
+                    "type": "string",
+                    "description": "Optional scaffold destination; defaults next to the schematic.",
+                },
             },
         },
     },
@@ -73,11 +92,21 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
             "type": "object",
             "required": ["schematic_path", "reference"],
             "properties": {
-                "schematic_path": {"type": "string"},
-                "reference": {"type": "string"},
-                "device_name": {"type": "string"},
+                "schematic_path": {
+                    "type": "string",
+                    "description": "Workspace-relative `.qsch` receiving the new block.",
+                },
+                "reference": {
+                    "type": "string",
+                    "description": "Designator for the new `.DLL` block (e.g. U1).",
+                },
+                "device_name": {
+                    "type": "string",
+                    "description": "Device/DLL name (inline alternative to spec_path).",
+                },
                 "pins": {
                     "type": "array",
+                    "description": "Inline pin list; mutually exclusive with spec_path.",
                     "items": {
                         "type": "object",
                         "required": ["name", "direction"],
@@ -87,11 +116,17 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                         },
                     },
                 },
-                "spec_path": {"type": "string"},
+                "spec_path": {
+                    "type": "string",
+                    "description": "Workspace JSON device spec; see describe_device_spec for the schema.",
+                },
                 "position_x": {"type": "integer"},
                 "position_y": {"type": "integer"},
                 "rotation_degrees": {"type": "integer"},
-                "scaffold_source": {"type": "boolean"},
+                "scaffold_source": {
+                    "type": "boolean",
+                    "description": "Also generate the matching C++ source stub (default true).",
+                },
                 "output_dir": {"type": "string"},
                 "output_path": {"type": "string"},
             },

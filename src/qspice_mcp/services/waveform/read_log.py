@@ -12,6 +12,7 @@ from qspice_mcp.core.exceptions import (
     BackendUnavailableError,
     SimulationError,
     SimulationTimeoutError,
+    ValidationError,
 )
 from qspice_mcp.infra.config import QSpiceSettings
 from qspice_mcp.infra.subprocess import run_subprocess
@@ -62,6 +63,7 @@ class LogInspection:
     meas_path: Path | None
     qpost_command: tuple[str, ...] | None
     warnings: tuple[str, ...] = ()
+    measure_rows_truncated: bool = False
 
 
 SERVICE_SPEC = ServiceSpec(
@@ -69,6 +71,8 @@ SERVICE_SPEC = ServiceSpec(
     title="Read Simulation Log",
     summary="Return a concise log excerpt plus optional QPOST-derived measure data.",
     phase="implemented",
+    # Not read-only: refresh_measures (default) materializes a `.meas` sidecar via QPOST.
+    read_only=False,
 )
 
 
@@ -211,8 +215,35 @@ def _derive_qpost_path(settings: QSpiceSettings) -> Path:
     return qpost_path.resolve(strict=False)
 
 
+def _bound_measure_rows(
+    measures: tuple[LogMeasurement, ...],
+    max_measure_rows: int | None,
+) -> tuple[tuple[LogMeasurement, ...], bool]:
+    """Cap the rows of each measurement block and report whether any were cut."""
+
+    if max_measure_rows is None or not measures:
+        return measures, False
+    truncated = False
+    bounded: list[LogMeasurement] = []
+    for measure in measures:
+        if len(measure.rows) > max_measure_rows:
+            truncated = True
+            bounded.append(
+                LogMeasurement(
+                    name=measure.name,
+                    analysis=measure.analysis,
+                    expression=measure.expression,
+                    columns=measure.columns,
+                    rows=measure.rows[:max_measure_rows],
+                )
+            )
+        else:
+            bounded.append(measure)
+    return tuple(bounded), truncated
+
+
 def read_log(
-    raw_path: str | Path,
+    log_path: str | Path,
     *,
     workspace_root: Path,
     settings: QSpiceSettings | None = None,
@@ -221,19 +252,26 @@ def read_log(
     refresh_measures: bool = True,
     meas_path: str | Path | None = None,
     timeout_s: float | None = None,
+    max_measure_rows: int | None = None,
 ) -> LogInspection:
-    """Read a QSpice log file and optionally materialize `.MEAS` results through QPOST."""
+    """Read a QSpice log file and optionally materialize `.MEAS` results through QPOST.
 
+    ``max_measure_rows`` bounds the rows returned per measurement block;
+    ``measure_rows_truncated`` flags cuts.
+    """
+
+    if max_measure_rows is not None and max_measure_rows < 1:
+        raise ValidationError("max_measure_rows must be a positive integer.")
     normalized_workspace = workspace_root.resolve(strict=False)
     effective_settings = (
         settings.normalized()
         if settings is not None
         else QSpiceSettings(workspace_root=normalized_workspace).normalized()
     )
-    log_path = validate_existing_file(
-        raw_path, workspace_root=normalized_workspace, suffixes=(".log",)
+    resolved_log_path = validate_existing_file(
+        log_path, workspace_root=normalized_workspace, suffixes=(".log",)
     )
-    lines = tuple(log_path.read_text(encoding="utf-8", errors="replace").splitlines())
+    lines = tuple(resolved_log_path.read_text(encoding="utf-8", errors="replace").splitlines())
     excerpt = "\n".join(lines[-max_lines:]) if max_lines > 0 else ""
     step_count, step_variables = _parse_step_variables(lines)
 
@@ -248,10 +286,10 @@ def read_log(
         resolved_meas_path = _resolve_meas_path(
             meas_path,
             workspace_root=normalized_workspace,
-            default=log_path.with_suffix(".meas"),
+            default=resolved_log_path.with_suffix(".meas"),
         )
         if refresh_measures or not resolved_meas_path.is_file():
-            netlist_path = _find_associated_netlist(log_path)
+            netlist_path = _find_associated_netlist(resolved_log_path)
             if netlist_path is None:
                 warnings.append(
                     "No sibling .net or .cir file was found, so QPOST measures "
@@ -297,8 +335,10 @@ def read_log(
         else:
             warnings.append("No .meas file is available for this log yet.")
 
+    measures, measure_rows_truncated = _bound_measure_rows(measures, max_measure_rows)
+
     return LogInspection(
-        log_path=log_path,
+        log_path=resolved_log_path,
         line_count=len(lines),
         excerpt=excerpt,
         step_count=step_count,
@@ -307,6 +347,7 @@ def read_log(
         meas_path=resolved_meas_path,
         qpost_command=qpost_command,
         warnings=tuple(warnings),
+        measure_rows_truncated=measure_rows_truncated,
     )
 
 

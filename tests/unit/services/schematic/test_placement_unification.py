@@ -10,7 +10,6 @@ from qspice_mcp.services.schematic.create_starter_schematic import create_starte
 from qspice_mcp.services.schematic.read_net_connectivity import read_net_connectivity
 from qspice_mcp.services.schematic.remove_component import remove_component
 from qspice_mcp.services.schematic.set_component_position import set_component_position
-from qspice_mcp.services.schematic.set_component_rotation import set_component_rotation
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -72,23 +71,6 @@ def test_set_component_position_rotation_only_keeps_position(tmp_path: Path) -> 
     report = read_net_connectivity(rotated, workspace_root=tmp_path)
     vin_net = next(net for net in report.nets if net.net == "VIN")
     assert {pin.reference for pin in vin_net.pins} == {"V1", "R1"}
-
-
-def test_set_component_rotation_alias_preserves_connections(tmp_path: Path) -> None:
-    schematic = tmp_path / "starter.qsch"
-    create_starter_schematic(schematic, workspace_root=tmp_path, input_net_name="VIN")
-    rotated = tmp_path / "rotated.qsch"
-
-    result = set_component_rotation(
-        schematic,
-        workspace_root=tmp_path,
-        reference="R1",
-        rotation_degrees=90,
-        output_path=rotated,
-    )
-
-    assert result.rotation_degrees == 90
-    assert result.preserve_connections is True
 
 
 def test_remove_component_keeps_wires_without_opt_in(tmp_path: Path) -> None:

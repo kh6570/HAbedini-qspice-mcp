@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, TypedDict
 
-from qspice_mcp.core.exceptions import QSpiceError
+from qspice_mcp.core.exceptions import QSpiceError, ValidationError
 from qspice_mcp.core.models import Analysis, AnalysisKind
 from qspice_mcp.services._backends._qsch_editor import (
     _QCLOSE,
@@ -64,6 +64,7 @@ class SchematicInspection:
     size_bytes: int
     parameters: tuple[str, ...] = field(default_factory=tuple)
     connectivity: NetConnectivityReport | None = None
+    components_truncated: bool = False
 
 
 class _ComponentAccumulator(TypedDict, total=False):
@@ -259,14 +260,19 @@ def inspect_schematic(
     workspace_root: Path,
     include_connectivity: bool = False,
     include_parameters: bool = False,
+    max_components: int | None = None,
 ) -> SchematicInspection:
     """Inspect a `.qsch` file with a conservative text-scanning pass.
 
     Optional sections fold in detail that otherwise needs separate read calls:
     ``include_parameters`` surfaces schematic-level ``.param`` directives, and
     ``include_connectivity`` attaches the net-to-pin connectivity report.
+    ``max_components`` bounds the returned component rows; ``component_count``
+    always reflects the full schematic and ``components_truncated`` flags cuts.
     """
 
+    if max_components is not None and max_components < 1:
+        raise ValidationError("max_components must be a positive integer.")
     schematic_path = validate_existing_file(
         raw_path,
         workspace_root=workspace_root,
@@ -284,17 +290,23 @@ def inspect_schematic(
         if include_connectivity
         else None
     )
+    components = content.components
+    components_truncated = False
+    if max_components is not None and len(components) > max_components:
+        components = components[:max_components]
+        components_truncated = True
     return SchematicInspection(
         schematic_path=schematic_path,
         title=schematic_path.stem,
         component_count=content.component_count,
-        components=content.components,
+        components=components,
         analyses=content.analyses,
         format_hint=format_hint,
         line_count=len(cleaned_lines),
         size_bytes=content.size_bytes,
         parameters=content.parameters if include_parameters else (),
         connectivity=connectivity,
+        components_truncated=components_truncated,
     )
 
 

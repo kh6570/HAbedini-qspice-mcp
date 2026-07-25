@@ -58,6 +58,14 @@ def get_prompt_definitions() -> tuple[PromptDefinition, ...]:
                 "stability margins, and verify crossover points with `.meas fra`."
             ),
         ),
+        PromptDefinition(
+            name="qspice_tolerance_analysis",
+            title="Tolerance Analysis",
+            description=(
+                "Quantify how component tolerances affect a design metric via "
+                "Monte Carlo and worst-case runs, then summarize the spread."
+            ),
+        ),
     )
 
 
@@ -86,8 +94,11 @@ def _debug_convergence_prompt(log_path: str) -> str:
         "1. read_log on the log path (include tail + error sections).\n"
         "2. inspect_schematic if the source is `.qsch`; otherwise read the netlist sidecar.\n"
         "3. Classify: missing model/GND, timestep, initial condition, or device-specific issue.\n"
-        "4. Apply the smallest schematic/netlist fix and re-run with dry_run then full sim.\n"
-        "5. Report the root cause, fix applied, and whether the rerun succeeded."
+        "4. Apply the smallest fix. Prefer prepare_options for convergence knobs "
+        "(`cshunt`, `gmin`, `method`, `reltol`; see reference://directives) over "
+        "hand-written `.options` lines; use schematic edits for topology faults.\n"
+        "5. Re-run with run_simulation(dry_run=True), then the full run_simulation.\n"
+        "6. Report the root cause, fix applied, and whether the rerun succeeded."
     )
 
 
@@ -111,10 +122,14 @@ def _author_dll_device_prompt(device_kind: str = "control") -> str:
         f"Device kind: {device_kind}\n\n"
         "Workflow:\n"
         "1. describe_mixed_signal_support and describe_server_capabilities.\n"
-        "2. scaffold_dll_device or scaffold_dll_device_from_symbol as appropriate.\n"
-        "3. write_workspace_text_file for C/C++ source; build_dll_device when "
-        "MSVC/DMC is available.\n"
-        "4. add_dll_block / add_dll_block_pin on the schematic; validate_dll_symbol_signature.\n"
+        "2. Preferred path: describe_device_spec for the pin-spec JSON schema, then "
+        "create_dll_device_from_spec to place the block with all pins and scaffold "
+        "contract-matched C++ source in one call.\n"
+        "3. Fallback for ad-hoc blocks: add_dll_block + add_dll_block_pin, then "
+        "scaffold_dll_device_from_symbol (or scaffold_dll_device for a blank start).\n"
+        "4. Edit the source with write_workspace_text_file; build_dll_device when "
+        "MSVC/DMC is available; validate_dll_symbol_signature to keep symbol and "
+        "source in sync.\n"
         "5. generate_netlist with QUX fallback if needed, then run_simulation smoke test."
     )
 
@@ -163,6 +178,30 @@ def _smps_loop_gain_prompt(
     )
 
 
+def _tolerance_analysis_prompt(
+    schematic_path: str,
+    metric: str = "V(out)",
+    runs: str = "50",
+) -> str:
+    return (
+        "Quantify how component tolerances affect this design metric.\n\n"
+        f"Schematic/source: {schematic_path}\n"
+        f"Metric: {metric}\n"
+        f"Monte Carlo runs: {runs}\n\n"
+        "Workflow:\n"
+        "1. inspect_schematic to identify tolerance-bearing components (R/L/C values, "
+        "reference sources).\n"
+        "2. prepare_monte_carlo with per-component tolerances and the run count; "
+        "run_monte_carlo on the staged plan.\n"
+        "3. prepare_worst_case with the same tolerances; run_worst_case for the "
+        "deterministic corner extremes.\n"
+        "4. summarize_tolerance_analysis over both batches for the metric: mean, "
+        "sigma, min/max, and which corner produced each extreme.\n"
+        "5. Report the tolerance-driven spread against the design target and flag "
+        "components whose tolerance dominates the variation."
+    )
+
+
 _PROMPT_BUILDERS: dict[str, Callable[..., str]] = {
     "qspice_buck_converter_from_scratch": _buck_converter_prompt,
     "qspice_debug_convergence": _debug_convergence_prompt,
@@ -170,6 +209,7 @@ _PROMPT_BUILDERS: dict[str, Callable[..., str]] = {
     "qspice_author_dll_device": _author_dll_device_prompt,
     "qspice_sweep_design": _sweep_design_prompt,
     "qspice_smps_loop_gain": _smps_loop_gain_prompt,
+    "qspice_tolerance_analysis": _tolerance_analysis_prompt,
 }
 
 

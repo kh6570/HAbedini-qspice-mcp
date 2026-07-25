@@ -12,10 +12,15 @@
       "relative_path": "boost_controller.cpp",
       "bundle_name": "boost_controller.cpp",
       "encoding": "text"
+    },
+    {
+      "relative_path": "boost_controller.dll",
+      "bundle_name": "boost_controller.dll",
+      "encoding": "binary"
     }
   ],
-  "build_required": true,
-  "build_hint": "build_dll_device(source_path=\"boost_controller.cpp\")",
+  "build_required": false,
+  "build_hint": "A prebuilt boost_controller.dll is materialized with the recipe. If QSpice fails to load it, rebuild locally: build_dll_device(source_path=\"boost_controller.cpp\")",
   "workflows": [
     {
       "instruction_id": "boost-converter-cpp-catalog",
@@ -24,5 +29,13 @@
       "track": "reference_catalog",
       "document": "catalog.md"
     }
+  ],
+  "topology_block": "boost_converter",
+  "tags": [
+    "boost",
+    "non-isolated",
+    "dc-dc",
+    "mixed-signal",
+    "cpp-dll"
   ]
 }

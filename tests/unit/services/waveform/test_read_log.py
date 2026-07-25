@@ -120,6 +120,28 @@ def test_read_log_maps_qpost_timeout_and_cleans_staged_output(
     assert meas_path.read_text(encoding="utf-8") == "stale\n"
 
 
+def test_read_log_bounds_measure_rows_when_requested(tmp_path: Path) -> None:
+    executable = tmp_path / "QSPICE64.exe"
+    executable.write_text("", encoding="utf-8")
+    log_path = tmp_path / "demo.log"
+    log_path.write_text("plain log\n", encoding="utf-8")
+    log_path.with_suffix(".meas").write_text(
+        ".meas tran vmax MAX V(out)\n1.0\n2.0\n3.0\n",
+        encoding="utf-8",
+    )
+
+    result = read_log(
+        log_path,
+        workspace_root=tmp_path,
+        settings=QSpiceSettings(exe=executable, workspace_root=tmp_path),
+        refresh_measures=False,
+        max_measure_rows=2,
+    )
+
+    assert result.measures[0].rows == ((1.0,), (2.0,))
+    assert result.measure_rows_truncated is True
+
+
 def test_read_log_reports_missing_netlist_when_qpost_cannot_run(tmp_path: Path) -> None:
     executable = tmp_path / "QSPICE64.exe"
     executable.write_text("", encoding="utf-8")

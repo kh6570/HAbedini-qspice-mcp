@@ -20,7 +20,7 @@ def test_read_measures_filters_rows_by_step_filters(
     tmp_path / "demo.meas"
 
     def fake_read_log(
-        raw_path: str | Path,
+        log_path: str | Path,
         *,
         workspace_root: Path,
         settings: object | None = None,
@@ -30,11 +30,11 @@ def test_read_measures_filters_rows_by_step_filters(
         meas_path: str | Path | None = None,
     ) -> LogInspection:
         del settings, max_lines, include_measures, refresh_measures
-        assert Path(raw_path) == log_path
+        assert Path(log_path) == tmp_path / "demo.log"
         assert workspace_root == tmp_path.resolve(strict=False)
         _meas_path = meas_path.resolve(strict=False) if meas_path is not None else None
         return LogInspection(
-            log_path=log_path.resolve(strict=False),
+            log_path=Path(log_path).resolve(strict=False),
             line_count=0,
             excerpt="",
             step_count=2,
@@ -70,13 +70,64 @@ def test_read_measures_filters_rows_by_step_filters(
     )
 
 
+def test_read_measures_bounds_rows_per_measure_when_requested(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    log_path = tmp_path / "demo.log"
+
+    def fake_read_log(
+        log_path: str | Path,
+        *,
+        workspace_root: Path,
+        settings: object | None = None,
+        max_lines: int = 80,
+        include_measures: bool = True,
+        refresh_measures: bool = True,
+        meas_path: str | Path | None = None,
+    ) -> LogInspection:
+        del workspace_root, settings, max_lines, include_measures, refresh_measures, meas_path
+        return LogInspection(
+            log_path=Path(log_path).resolve(strict=False),
+            line_count=0,
+            excerpt="",
+            step_count=3,
+            step_variables=(LogStepVariable(name="vin", values=(10, 12, 14)),),
+            measures=(
+                LogMeasurement(
+                    name="vmax",
+                    analysis="tran",
+                    expression="MAX V(out)",
+                    columns=("step", "vmax"),
+                    rows=((1, 3.2), (2, 3.4), (3, 3.6)),
+                ),
+            ),
+            meas_path=None,
+            qpost_command=None,
+        )
+
+    monkeypatch.setattr(measure_service, "read_log", fake_read_log)
+
+    result = read_measures(
+        log_path,
+        workspace_root=tmp_path,
+        measures=("vmax",),
+        max_measure_rows=2,
+    )
+
+    assert result.measure_rows_truncated is True
+    assert result.measures[0].rows == (
+        measure_service.MeasureRow(step=0, values={"vmax": 3.2}),
+        measure_service.MeasureRow(step=1, values={"vmax": 3.4}),
+    )
+
+
 def test_read_measures_rejects_unknown_measure_name(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     log_path = tmp_path / "demo.log"
 
     def fake_read_log(
-        raw_path: str | Path,
+        log_path: str | Path,
         *,
         workspace_root: Path,
         settings: object | None = None,
@@ -86,7 +137,6 @@ def test_read_measures_rejects_unknown_measure_name(
         meas_path: str | Path | None = None,
     ) -> LogInspection:
         del (
-            raw_path,
             workspace_root,
             settings,
             max_lines,
@@ -95,7 +145,7 @@ def test_read_measures_rejects_unknown_measure_name(
             meas_path,
         )
         return LogInspection(
-            log_path=log_path.resolve(strict=False),
+            log_path=Path(log_path).resolve(strict=False),
             line_count=0,
             excerpt="",
             step_count=0,
@@ -125,7 +175,7 @@ def test_read_measures_forwards_timeout_to_read_log(
     log_path = tmp_path / "demo.log"
 
     def fake_read_log(
-        raw_path: str | Path,
+        log_path: str | Path,
         *,
         workspace_root: Path,
         settings: object | None = None,
@@ -136,11 +186,11 @@ def test_read_measures_forwards_timeout_to_read_log(
         timeout_s: float | None = None,
     ) -> LogInspection:
         del settings, max_lines, include_measures, refresh_measures, meas_path
-        assert Path(raw_path) == log_path
+        assert Path(log_path) == tmp_path / "demo.log"
         assert workspace_root == tmp_path.resolve(strict=False)
         assert timeout_s == 3.0
         return LogInspection(
-            log_path=log_path.resolve(strict=False),
+            log_path=Path(log_path).resolve(strict=False),
             line_count=0,
             excerpt="",
             step_count=0,

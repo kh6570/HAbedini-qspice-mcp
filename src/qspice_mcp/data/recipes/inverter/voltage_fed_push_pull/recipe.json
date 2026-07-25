@@ -34,5 +34,10 @@
       "document": "catalog.md"
     }
   ],
-  "topology_block": "push_pull_converter"
+  "topology_block": "push_pull_converter",
+  "tags": [
+    "push-pull",
+    "inverter",
+    "voltage-fed"
+  ]
 }

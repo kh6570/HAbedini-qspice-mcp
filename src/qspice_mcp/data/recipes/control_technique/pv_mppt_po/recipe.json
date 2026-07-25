@@ -39,5 +39,11 @@
       "document": "catalog.md"
     }
   ],
-  "topology_block": "buck_converter"
+  "topology_block": "buck_converter",
+  "tags": [
+    "mppt",
+    "pv",
+    "control",
+    "cpp-dll"
+  ]
 }

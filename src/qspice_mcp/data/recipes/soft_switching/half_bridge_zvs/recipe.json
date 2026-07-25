@@ -9,7 +9,7 @@
     "path": "1.- Half-bridge-LR-mosfets.qsch",
     "commit": "d89487c397b9ecec4921a8216d758ef72eddc63e",
     "permission": "Adapted and redistributed with the author's permission.",
-    "note": "circuit.qsch is Alonso's schematic; the .cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
+    "note": "half_bridge_zvs.qsch is Alonso's schematic; half_bridge_zvs.cir is the self-contained netlist produced by QSpice/QUX with his behavioral component library embedded."
   },
   "files": [
     {
@@ -33,5 +33,13 @@
       "track": "reference_catalog",
       "document": "catalog.md"
     }
+  ],
+  "topology_block": "half_bridge_converter",
+  "topology_block_note": "The power stage matches the half_bridge_converter topology block; this recipe adds a ZVS leg (dead-time drive plus resonant transition) on top of it.",
+  "tags": [
+    "half-bridge",
+    "zvs",
+    "soft-switching",
+    "dc-dc"
   ]
 }

@@ -23,6 +23,14 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 - Require all filesystem paths to stay within configured workspace roots.
 - Treat `.net`, `.log`, `.qraw`, and plot files as derived artifacts.
 
+### Per-call `workspace_root` override
+
+Every tool accepts an optional `workspace_root` string argument that overrides the
+server-configured workspace root for that single call (the server strips it before
+schema validation). To keep `tools/list` compact, the property is only advertised in
+the input schemas of tools that take path-like arguments (`*_path`, `*_dir`, and
+similar); tools without path arguments still honor the override when passed.
+
 ## Tool Set
 
 | Tool | Status | Purpose |
@@ -109,9 +117,7 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 | `read_subcircuit` | implemented | Return a resolved view of one subcircuit instance or definition. |
 | `save_schematic_as` | implemented | Write a `.qsch` file to a requested destination path. |
 | `set_component_value` | implemented | Update the value field of one schematic component. |
-| `set_component_rotation` | implemented | Deprecated alias for `set_component_position` (rotation only); preserves connections and normalizes text by default. |
 | `set_component_position` | implemented | Unified placement: move and/or rotate one component; follows attached wires and normalizes refdes/value text by default. |
-| `move_component_preserving_connections` | implemented | Deprecated alias: `set_component_position` now preserves connections by default. |
 | `add_library_component` | implemented | Clone one component symbol from a template `.qsch` into a target schematic. |
 | `export_symbol_to_qsym` | implemented | Export one embedded component symbol to a standalone `.qsym` symbol file. |
 | `add_component_from_qsym` | implemented | Place one component into a schematic from a standalone `.qsym` symbol file. |
@@ -990,6 +996,7 @@ Read one bundled workflow instruction (build steps, component/wire tables, C++ t
 
 Typical inputs:
 - `instruction_id` (for example `buck-converter-cpp`)
+- `max_chars` (optional) — return only a leading excerpt of the markdown body
 
 Expected outputs:
 - `instruction_id`
@@ -998,7 +1005,9 @@ Expected outputs:
 - `track`
 - `recipe_id`
 - `related_instruction_id`
-- `content` (markdown)
+- `content` (markdown; excerpt when `max_chars` is set)
+- `content_length` (full document size in characters)
+- `content_truncated` (`true` when `max_chars` cut the body)
 
 ## list_reference_circuit_recipes
 
@@ -1011,7 +1020,7 @@ Typical inputs:
 
 Expected outputs:
 - `discovery_guidance` (shared catalog discovery workflow text)
-- `recipes` (each with `recipe_id`, `title`, `summary`)
+- `recipes` (each with `recipe_id`, `title`, `summary`, `topology_block` — matching topology-pack block id or `null` — and `tags`)
 
 ## describe_reference_circuit_recipe
 
@@ -1034,6 +1043,9 @@ Expected outputs:
 - `build_hint`
 - `workflows` (each with `instruction_id`, `title`, `summary`, `track`, `document`, `related_instruction_id`)
 - `topology_digest` (when a schematic is bundled: `schematic_file`, `component_count`, `components`, `analyses`, `parameters`, `size_bytes`)
+- `topology_block` (matching topology-pack block id for `describe_topology_block`, or `null`)
+- `topology_block_note` (optional caveat about how the recipe differs from the linked block)
+- `tags` (topology/feature keywords for filtering)
 
 Recipes adapted from J. Marcos Alonso's public repositories (redistributed with
 his permission) return their provenance in the `source` block so the original
@@ -1391,12 +1403,14 @@ Typical inputs:
 - `schematic_path` (path to a `.qsch` file within the workspace)
 - `include_parameters` (optional, default `false`) — also return schematic-level `.param` directives
 - `include_connectivity` (optional, default `false`) — also attach the net-to-pin connectivity report
+- `max_components` (optional) — bound the returned component rows for large schematics
 
 Expected outputs:
 - `title`
 - `analyses`
-- `component_count`
+- `component_count` (always the full count, even when rows are bounded)
 - `components` or a condensed component summary
+- `components_truncated` (`true` when `max_components` cut the rows)
 - `parameters` (`.param` directives; empty unless `include_parameters=true`)
 - `connectivity` (a `read_net_connectivity` report, or `null` unless `include_connectivity=true`)
 
@@ -1483,32 +1497,6 @@ Expected outputs:
 Notes:
 Component changes cover `kind`, `value`, `position`, `rotation_degrees`, and
 `nodes`. Net differences are surfaced through the node counts.
-
-## move_component_preserving_connections
-
-Purpose:
-**Deprecated alias.** `set_component_position` now preserves connections by
-default, so prefer it. Move and/or rotate one placed component while keeping its
-attached wiring intact.
-
-Typical inputs:
-- `schematic_path`
-- `reference`
-- `position_x` / `position_y` (optional; default to the current anchor)
-- `rotation_degrees` (optional, multiple of 45)
-- `output_path` (optional)
-
-Expected outputs:
-- `position_x`, `position_y`, `rotation_degrees`
-- `rewired_endpoints` (count of wire/junction/net points moved to follow pins)
-
-Notes:
-Pin coordinates are snapshotted before the transform; any wire endpoint,
-junction, or net-label point that matched an old pin coordinate is rewritten to
-the new coordinate. Provide at least one of `position_x`, `position_y`, or
-`rotation_degrees`. Retained for backward compatibility; new callers should use
-`set_component_position` (which exposes the same behavior plus optional text
-normalization).
 
 ## add_library_component
 
@@ -1798,7 +1786,7 @@ Expected outputs:
 - `text_attributes` (per-role previous/new rotation codes and update flags)
 
 Notes:
-Symbol body rotation (`set_component_rotation`) does not update embedded text or
+Symbol body rotation on its own does not update embedded text or
 wire endpoints. With `compensate_component_rotation=true` (default), the tool
 sets text rotation codes so labels read horizontal in world space (for example,
 body at 90° targets rotation code **109**). Factory-default text codes on
@@ -2057,37 +2045,6 @@ Expected outputs:
 - `reference`
 - `value`
 
-## set_component_rotation
-
-Purpose:
-Deprecated alias for `set_component_position` (rotation only). Rotate one placed
-component in 45-degree steps; prefer `set_component_position` going forward.
-
-Typical inputs:
-- `schematic_path`
-- `reference`
-- `rotation_degrees` (multiple of 45, e.g. `0`, `90`, `180`, `270`)
-- `preserve_connections` (optional; default `true`)
-- `normalize_text` (optional; default `true`)
-- `output_path` (optional)
-
-Expected outputs:
-- `schematic_path`
-- `output_path`
-- `reference`
-- `rotation_degrees`
-- `preserve_connections`
-- `rewired_endpoints`
-- `normalize_text`
-- `normalized_text_count`
-
-Notes:
-This now delegates to the unified `set_component_position` path: attached wires,
-junctions, and net labels follow the rotated pins and refdes/value text is reset
-upright by default. Pass `preserve_connections=false` or `normalize_text=false` to
-opt out. Retained as a backward-compatible alias and slated for removal in a future
-breaking release.
-
 ## set_component_position
 
 Purpose:
@@ -2126,8 +2083,8 @@ With `preserve_connections=true` (default) you no longer need a manual
 junctions, and net labels that sat on the moved pins. Set `preserve_connections=false`
 to move the symbol only (legacy behavior) or `normalize_text=false` to leave text
 rotation untouched. When `rotation_degrees` is omitted the existing rotation is
-preserved. This tool supersedes `set_component_rotation` and
-`move_component_preserving_connections`, which remain as deprecated aliases.
+preserved. This tool replaces the removed `set_component_rotation` and
+`move_component_preserving_connections` aliases.
 
 ## suggest_component_placement
 
@@ -2890,6 +2847,8 @@ Typical inputs:
 - `raw_path`
 - `step` (optional)
 - `step_filters` (optional mapping such as `{ "vin": 12 }`)
+- `name_filter` (optional case-insensitive glob such as `V(*)`)
+- `limit` (optional bound on returned signal rows)
 
 Expected outputs:
 - `raw_path`
@@ -2899,8 +2858,9 @@ Expected outputs:
 - `resolved_step`
 - `step_count`
 - `point_count`
-- `signal_count`
+- `signal_count` (filtered total, before any `limit` cut)
 - `signals`
+- `signals_truncated` (`true` when `limit` cut the rows)
 - `warnings`
 
 Notes:
@@ -3132,6 +3092,7 @@ Typical inputs:
 - `refresh_measures` (optional)
 - `meas_path` (optional)
 - `timeout_s` (optional QPOST refresh timeout)
+- `max_measure_rows` (optional bound on rows returned per measurement block)
 
 Expected outputs:
 - `excerpt`
@@ -3139,6 +3100,7 @@ Expected outputs:
 - `step_count`
 - `step_variables`
 - `measures`
+- `measure_rows_truncated` (`true` when `max_measure_rows` cut rows)
 - `meas_path`
 - `qpost_command`
 - `warnings`
@@ -3225,6 +3187,7 @@ Typical inputs:
 - `refresh_measures` (optional)
 - `meas_path` (optional)
 - `timeout_s` (optional QPOST refresh timeout)
+- `max_measure_rows` (optional bound on rows returned per measurement block, applied after step filtering)
 
 Expected outputs:
 - `log_path`
@@ -3232,6 +3195,7 @@ Expected outputs:
 - `step_count`
 - `resolved_step`
 - `measures`
+- `measure_rows_truncated` (`true` when `max_measure_rows` cut rows)
 - `warnings`
 
 Notes:

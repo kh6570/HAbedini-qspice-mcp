@@ -47,6 +47,10 @@ def describe_mixed_signal_support(*, settings: QSpiceSettings) -> MixedSignalSup
             "Use scaffold_dll_device, scaffold_verilog_device, "
             "scaffold_socket_device, or scaffold_python_device to generate "
             "a template project for the desired custom-device workflow.",
+            "For .DLL devices prefer create_dll_device_from_spec (one call from a "
+            "PinDef-style pin spec; see describe_device_spec) or "
+            "scaffold_dll_device_from_symbol (source stub from an already placed "
+            "block).",
         ),
     )
 

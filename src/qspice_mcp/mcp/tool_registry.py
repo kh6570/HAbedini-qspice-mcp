@@ -83,24 +83,39 @@ def resolve_tool_annotations(spec: ServiceSpec) -> ToolAnnotations:
 
 _WORKSPACE_ROOT_SCHEMA_PROPERTY: dict[str, object] = {
     "type": "string",
-    "description": (
-        "Optional workspace root override for resolving relative paths in this call. "
-        "Defaults to the server-configured workspace root."
-    ),
+    "description": "Optional per-call workspace root override for relative paths.",
 }
 
+_PATH_PROPERTY_SUFFIXES = ("_path", "_dir", "_file", "_root")
+_PATH_PROPERTY_NAMES = frozenset({"path", "dir", "directory", "file"})
 
-def _with_workspace_root_property(input_schema: dict[str, object]) -> dict[str, object]:
-    """Expose an optional per-call workspace root override in tool schemas."""
+
+def _has_path_like_property(properties: dict[str, object]) -> bool:
+    """Return True when a schema declares a property that resolves against the workspace."""
+
+    return any(
+        name in _PATH_PROPERTY_NAMES or name.endswith(_PATH_PROPERTY_SUFFIXES)
+        for name in properties
+    )
+
+
+def _normalize_input_schema(input_schema: dict[str, object]) -> dict[str, object]:
+    """Ensure `required` is present and expose `workspace_root` only where paths resolve.
+
+    The server accepts a `workspace_root` argument for every tool (it is popped
+    before schema validation), but advertising it only on path-taking tools keeps
+    the tools/list payload lean.
+    """
 
     schema = dict(input_schema)
     existing_properties = schema.get("properties", {})
     properties: dict[str, object] = (
         dict(existing_properties) if isinstance(existing_properties, dict) else {}
     )
-    if "workspace_root" not in properties:
+    if _has_path_like_property(properties) and "workspace_root" not in properties:
         properties["workspace_root"] = dict(_WORKSPACE_ROOT_SCHEMA_PROPERTY)
     schema["properties"] = properties
+    schema.setdefault("required", [])
     return schema
 
 
@@ -126,7 +141,7 @@ def build_tool_registry(
                 name=spec.name,
                 title=spec.title,
                 description=spec.description or spec.summary,
-                input_schema=_with_workspace_root_property(dict(spec.input_schema)),
+                input_schema=_normalize_input_schema(dict(spec.input_schema)),
                 annotations=resolve_tool_annotations(spec),
                 service=spec,
             )

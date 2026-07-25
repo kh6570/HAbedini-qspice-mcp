@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import fnmatch
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy as np
 
+from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.services._backends.waveform import (
     get_axis_name,
     get_signal_names,
@@ -49,6 +51,7 @@ class SignalCatalog:
     signal_count: int
     signals: tuple[SignalSummary, ...]
     warnings: tuple[str, ...] = ()
+    signals_truncated: bool = False
 
 
 SERVICE_SPEC = ServiceSpec(
@@ -65,9 +68,18 @@ def list_signals(
     workspace_root: Path,
     step: int | None = None,
     step_filters: Mapping[str, object] | None = None,
+    name_filter: str | None = None,
+    limit: int | None = None,
 ) -> SignalCatalog:
-    """Enumerate the available waveform signals in one `.qraw` file."""
+    """Enumerate the available waveform signals in one `.qraw` file.
 
+    ``name_filter`` restricts rows to case-insensitive glob matches (e.g.
+    ``V(*)``); ``limit`` bounds the returned rows. ``signal_count`` reflects the
+    filtered total and ``signals_truncated`` flags limit cuts.
+    """
+
+    if limit is not None and limit < 1:
+        raise ValidationError("limit must be a positive integer.")
     normalized_workspace = workspace_root.resolve(strict=False)
     reader, resolved_path = open_raw_reader(raw_path, workspace_root=normalized_workspace)
     plot_name = reader.get_plot_name() if hasattr(reader, "get_plot_name") else None
@@ -82,6 +94,16 @@ def list_signals(
         step_filters=step_filters,
     )
     signal_names = get_signal_names(reader)
+    if name_filter is not None:
+        lowered_filter = name_filter.lower()
+        signal_names = tuple(
+            name for name in signal_names if fnmatch.fnmatch(name.lower(), lowered_filter)
+        )
+    filtered_count = len(signal_names)
+    signals_truncated = False
+    if limit is not None and filtered_count > limit:
+        signal_names = signal_names[:limit]
+        signals_truncated = True
     warnings: list[str] = []
 
     point_count = 0
@@ -121,9 +143,10 @@ def list_signals(
         resolved_step=resolved_step,
         step_count=len(step_indices),
         point_count=point_count,
-        signal_count=len(signals),
+        signal_count=filtered_count,
         signals=tuple(signals),
         warnings=tuple(warnings),
+        signals_truncated=signals_truncated,
     )
 
 

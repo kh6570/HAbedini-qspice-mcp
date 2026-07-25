@@ -4,7 +4,7 @@ description: Inspect, derive, and measure QSpice waveform results after a simula
 license: MIT
 metadata:
   author: qspice-mcp
-  version: "1.0"
+  version: "1.1"
 ---
 
 # QSpice: Waveform Analysis
@@ -38,9 +38,18 @@ exist, what a derived quantity looks like, and what the scalar metrics are.
    `2*V(fb)`. Only `+ - * / **`, parentheses, and numeric constants are allowed;
    all referenced signals must share one axis (same raw, step, window).
 4. **Quantify.** `measure_waveform` for RMS/mean/max/min/peak-to-peak on one
-   signal; `read_fourier` for `.four` THD summaries; `read_noise` for `.noise`
-   integrated/spot output.
-5. **Visualize / export.** `plot_waveforms` for a PNG preview; `export_waveform_csv`
+   signal; `read_noise` for `.noise` integrated/spot output.
+5. **Harmonics and distortion.** Stage `.four` with `prepare_four`, re-run, then
+   `read_fourier` for the harmonic table — or skip the directive entirely and use
+   `compute_thd` (post-processing FFT THD on any periodic trace) and
+   `export_fft_spectrum` for a full spectrum CSV.
+6. **Frequency response.** `measure_bode_response` extracts gain/phase versus
+   frequency from an AC or `.bode` result in one call.
+7. **Log-side measures.** `prepare_meas` stages `.meas` directives
+   (`find_at`/`avg`/`trig_targ`/`fra`/`four`); after the run, `list_measures`
+   enumerates the QPOST-derived blocks and `read_measures` returns their values
+   with optional step filtering.
+8. **Visualize / export.** `plot_waveforms` for a PNG preview; `export_waveform_csv`
    when downstream tooling needs the full series outside the MCP budget.
 
 ## Conventions

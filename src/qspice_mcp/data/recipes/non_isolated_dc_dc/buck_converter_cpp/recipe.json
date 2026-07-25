@@ -33,5 +33,13 @@
       "document": "catalog.md",
       "related_instruction_id": "buck-converter-cpp"
     }
+  ],
+  "topology_block": "buck_converter",
+  "tags": [
+    "buck",
+    "non-isolated",
+    "dc-dc",
+    "mixed-signal",
+    "cpp-dll"
   ]
 }

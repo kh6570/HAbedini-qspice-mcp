@@ -75,6 +75,28 @@ class TestBuildToolRegistry:
             assert len(tool.description) > 0
             assert len(tool.title) > 0
 
+    def test_all_tools_declare_required_list(self) -> None:
+        tools = build_tool_registry()
+        for tool in tools:
+            assert isinstance(tool.input_schema.get("required"), list), tool.name
+
+    def test_workspace_root_injected_only_for_path_taking_tools(self) -> None:
+        tools = {tool.name: tool for tool in build_tool_registry()}
+
+        def properties(name: str) -> dict[str, object]:
+            props = tools[name].input_schema["properties"]
+            assert isinstance(props, dict)
+            return props
+
+        # Path-taking tools advertise the per-call override.
+        assert "workspace_root" in properties("run_simulation")
+        assert "workspace_root" in properties("inspect_schematic")
+        assert "workspace_root" in properties("read_log")
+        # Discovery/session tools without path arguments stay lean.
+        assert "workspace_root" not in properties("describe_server_capabilities")
+        assert "workspace_root" not in properties("list_reference_circuit_recipes")
+        assert "workspace_root" not in properties("describe_device_spec")
+
 
 class TestBuildRuntimeToolRegistry:
     def test_filters_out_planned(self) -> None:

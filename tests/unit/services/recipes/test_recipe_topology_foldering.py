@@ -14,7 +14,14 @@ from qspice_mcp.services.recipes._catalog import (
 
 # Clean-room recipes authored in this repo (no external attribution).
 _CLEANROOM_RECIPE_IDS = frozenset(
-    {"buck_converter_cpp", "boost_converter_cpp", "flyback_converter_cpp"}
+    {
+        "buck_converter_cpp",
+        "boost_converter_cpp",
+        "flyback_converter_cpp",
+        "forward_converter",
+        "half_bridge_converter",
+        "full_bridge_converter",
+    }
 )
 # Recipes adapted from J. Marcos Alonso's repositories (must carry source provenance).
 _ALONSO_RECIPE_IDS = frozenset(

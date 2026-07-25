@@ -45,13 +45,17 @@ Base install is enough for MCP usage with the supported clean-room schematic sub
 4. Restart the client.
 5. Ask the AI to call `describe_server_capabilities` before edits or simulations.
 
-### VS Code / Cursor
+### Cursor — `%USERPROFILE%\.cursor\mcp.json`
+
+Root key: `mcpServers`.
 
 ```json
 {
   "mcpServers": {
     "qspice": {
-      "command": "D:\\path\\to\\qspice-mcp\\.venv\\Scripts\\qspice-mcp.exe",
+      "type": "stdio",
+      "command": "D:\\path\\to\\qspice-mcp\\.venv\\Scripts\\python.exe",
+      "args": ["-u", "-m", "qspice_mcp", "--workspace-root", "C:\\path\\to\\circuits", "--log-level", "error"],
       "env": {
         "QSPICE_EXE": "C:\\Program Files\\QSPICE\\QSPICE64.exe"
       }
@@ -60,7 +64,26 @@ Base install is enough for MCP usage with the supported clean-room schematic sub
 }
 ```
 
-Use the **full path** to the virtualenv executable on Windows.
+### VS Code — `%APPDATA%\Code\User\mcp.json`
+
+Root key: `servers` (not `mcpServers`). Command Palette: **MCP: Open User Configuration**.
+
+```json
+{
+  "servers": {
+    "qspice": {
+      "type": "stdio",
+      "command": "D:\\path\\to\\qspice-mcp\\.venv\\Scripts\\python.exe",
+      "args": ["-u", "-m", "qspice_mcp", "--workspace-root", "C:\\path\\to\\circuits", "--log-level", "error"],
+      "env": {
+        "QSPICE_EXE": "C:\\Program Files\\QSPICE\\QSPICE64.exe"
+      }
+    }
+  }
+}
+```
+
+Use **absolute paths** in user-level configs (placeholders like `${workspaceFolder}` often fail there). Prefer `python.exe -u -m qspice_mcp` over the `qspice-mcp.exe` entry point — it avoids file-lock startup failures on Windows.
 
 **First prompt:**
 
@@ -98,13 +121,18 @@ Add `-e QSPICE_EXE="C:\Program Files\QSPICE\QSPICE64.exe"` after `inspector` if 
 
 ## Quick smoke test
 
-From the repo root (PowerShell):
+From the repo root (PowerShell), materialize a bundled recipe into the workspace:
 
 ```powershell
 npx -y @modelcontextprotocol/inspector .\.venv\Scripts\qspice-mcp.exe --cli --transport stdio --method tools/call --tool-name materialize_reference_circuit --tool-arg recipe_id="buck_converter_cpp"
 ```
 
-Then run without `dry_run`, `list_signals` on the `.qraw`, and `read_waveform` with `max_points=200`.
+Then, through your MCP client (or further `tools/call` invocations):
+
+1. `run_simulation(source_path="Buck-converter.qsch", dry_run=true)` — confirms the planned command without launching QSpice.
+2. `run_simulation(source_path="Buck-converter.qsch")` — runs the simulation and reports the `.log`/`.qraw` artifact paths.
+3. `list_signals(raw_path="Buck-converter.qraw")` — enumerates the stored traces.
+4. `read_waveform(raw_path="Buck-converter.qraw", signal="V(out)", max_points=200)` — bounded waveform readback.
 
 ---
 
@@ -119,8 +147,10 @@ tools explicitly.
 | `qspice_buck_converter_from_scratch` | Author a buck converter, netlist, simulate, measure |
 | `qspice_debug_convergence` | Diagnose a failed or non-converging simulation from a log |
 | `qspice_run_and_measure` | Run a simulation and read bounded waveform measurements |
-| `qspice_author_dll_device` | Scaffold and build a mixed-signal C-block/DLL device |
+| `qspice_author_dll_device` | Author a mixed-signal C-block/DLL device (device-spec first, scaffold fallback) |
 | `qspice_sweep_design` | Plan and execute a parameter sweep on a schematic |
+| `qspice_smps_loop_gain` | Measure SMPS loop gain and stability margins (Bode/.meas fra) |
+| `qspice_tolerance_analysis` | Monte Carlo + worst-case tolerance analysis with a summary |
 
 In **Cursor** or **VS Code**, open the MCP prompts picker (when supported) or ask
 the assistant to use a prompt by name. Prompt arguments (`vin`, `log_path`,
@@ -130,19 +160,35 @@ Prompts complement bundled **workflow instructions** (`list_workflow_instruction
 `read_workflow_instruction`) and **recipe resources** (`recipe://{recipe_id}/…`).
 Prefer `list_reference_circuit_recipes` before materializing a bundled example.
 
+### MCP Resources
+
+The server also publishes read-only **MCP resources** clients can attach to chat:
+
+| Resource | Contents |
+| --- | --- |
+| `reference://directives` | QSpice directive quick reference (`.tran`, `.ac`, `.meas`, `.options`, …) |
+| `guidelines://qspice-artifacts` | How derived artifacts (`.net`, `.log`, `.qraw`) relate to the `.qsch` |
+| `guidelines://qspice-measurements` | Measurement workflow guidance (`.meas`, QPOST, bounded readback) |
+| `recipe://{recipe_id}/manifest` and `recipe://{recipe_id}/{document}` | Bundled recipe manifests and catalog documents |
+| `workspace-artifact://{path}` | Small text artifacts from the simulation workspace |
+
+`describe_server_capabilities` returns a `guidance` block listing the prompts and
+resources active on your install.
+
 ---
 
 ## Typical workflow
 
 1. **Inspect** — `inspect_schematic`, `list_components`, `read_component`, or `read_subcircuit`.
 2. **Edit** — `set_component_value`, `add_instruction`, `remove_instruction`, symbol/DLL tools as needed. Use `describe_edit_capability` before uncertain edits.
-3. **Simulate** — `run_simulation` (cached when netlist and switches match a prior success).
-4. **Sweeps / batches** — `run_value_sweep`, `run_param_sweep`, or `submit_batch` + `get_batch_status`.
-5. **Waveforms** — `list_signals`, `read_waveform` (bounded), `measure_waveform`, `plot_waveforms`.
-6. **Logs / measures** — `read_log`, `read_measures`.
-7. **Exports** — QUX CSV/ASCII/S2P, `export_derived_raw`, `merge_waveforms`.
-8. **Statistics** — `prepare_monte_carlo` / `run_monte_carlo`, worst-case tools.
-9. **Discover** — `describe_server_capabilities` when backends or degraded groups matter.
+3. **Stage analyses** — prefer the typed `prepare_*` tools over hand-written directives: `prepare_transient`, `prepare_ac`, `prepare_dc_sweep`, `prepare_bode_analysis`, `prepare_meas`, `prepare_save`, `prepare_options`, `prepare_noise`, `prepare_four`, `prepare_op`, `prepare_net`, plus statistical `prepare_monte_carlo` / `prepare_worst_case`. They validate arguments and write well-formed directives; `add_instruction` remains the raw fallback.
+4. **Simulate** — `run_simulation` (cached when netlist and switches match a prior success).
+5. **Sweeps / batches** — `run_value_sweep`, `run_param_sweep`, or `submit_batch` + `get_batch_status`.
+6. **Waveforms** — `list_signals`, `read_waveform` (bounded), `measure_waveform`, `plot_waveforms`.
+7. **Logs / measures** — `read_log`, `read_measures`.
+8. **Exports** — QUX CSV/ASCII/S2P, `export_derived_raw`, `merge_waveforms`.
+9. **Statistics** — `run_monte_carlo`, worst-case tools, `summarize_tolerance_analysis`.
+10. **Discover** — `describe_server_capabilities` when backends or degraded groups matter.
 
 Full tool list: [Tool reference](tool_reference.md).
 
@@ -256,11 +302,23 @@ server — only the server side of the contract ships here.
 
 ## DLL / C-block devices
 
-1. `scaffold_dll_device` or `scaffold_dll_device_from_symbol`
+**Fastest path — one call from a device spec:**
+
+1. `describe_device_spec` — returns the JSON device-spec schema and an example.
+2. `create_dll_device_from_spec(spec_path="my_device.json", schematic_path="top.qsch")` — places the `.DLL` block with all pins, scaffolds the C++ source (with the per-instance state idiom), and optionally builds the DLL in one call.
+
+**Step-by-step path (existing block or manual control):**
+
+1. `scaffold_dll_device`, or `scaffold_dll_device_from_symbol` when the block already exists in the schematic
 2. Build the DLL with `build_dll_device` or the [C-Block Build Guide](cblock_build_guide.md)
 3. Place `.dll` next to the `.qsch`
 4. `validate_dll_symbol_signature` before simulating
 5. `run_simulation`
+
+**Symbol interop (`.qsym`):** `export_symbol_to_qsym` writes a component's embedded
+symbol to a standalone `.qsym` library file, and `add_component_from_qsym` places a
+component from one — useful for exchanging symbols with external QSpice symbol
+libraries and PinDef-style device generators.
 
 QSpice installs a bundled Digital Mars C++ compiler at `<install>/dm/bin/dmc.exe`.
 Set `QSPICE_EXE` in your MCP server environment so `build_dll_device` and
