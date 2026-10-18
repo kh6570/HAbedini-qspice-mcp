@@ -457,6 +457,14 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Fixed
 
+- **Layout authoring and inspection** — `write_workspace_text_file` accepts `.json`
+  layout specs and advertises its extension allowlist. The schematic editor handles
+  named references such as `Vpwm` and `Bgate`. Layout batches save once after all
+  rows succeed and retain every row when writing to an alternate output path.
+  Component listing recognizes the editor's `Value` field, and clean-room checking
+  retains behavioral expressions and values containing `=` rather than reporting
+  spurious `missing_value` warnings.
+
 - **QUX waveform export of more than one trace** — current QUX treats a second
   argument as the file format, so multiple traces are now passed as one
   comma-separated expression (`V(out),I(R1)`).

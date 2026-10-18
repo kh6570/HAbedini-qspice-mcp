@@ -7,7 +7,7 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, cast
 
-from qspice_mcp.core.exceptions import ArtifactMissingError, QSpiceError
+from qspice_mcp.core.exceptions import ArtifactMissingError, QSpiceError, ValidationError
 
 from ..clean_room_schematic import write_blank_schematic
 from ..schematic_editor_backend import (
@@ -41,6 +41,7 @@ def add_net_label(
     """Add one net label to the current editor and return its normalized name."""
 
     normalized_net_name = _normalize_net_name(net_name)
+    _validate_label_wire_names(editor, position=position, net_name=normalized_net_name)
     qsch_module, _ = _load_qsch_support_modules()
     style = (
         _NET_LABEL_STYLE_GROUND
@@ -57,6 +58,42 @@ def add_net_label(
     )
     _append_schematic_tag(editor, label_tag)
     return normalized_net_name
+
+
+def _validate_label_wire_names(
+    editor: _QschEditorProtocol, *, position: tuple[int, int], net_name: str
+) -> None:
+    """Reject a label that contradicts the explicit name of a wire it touches."""
+
+    if editor.schematic is None:
+        return
+    schematic_tree = cast("Any", editor.schematic)
+    for wire in schematic_tree.get_items("wire"):
+        if len(wire.tokens) <= 3:  # noqa: PLR2004
+            continue
+        wire_name = _unquote_qsch_string(str(wire.tokens[3]))
+        if not wire_name or _net_name_key(wire_name) == _net_name_key(net_name):
+            continue
+        start = _parse_qsch_point(str(wire.tokens[1]))
+        end = _parse_qsch_point(str(wire.tokens[2]))
+        dx, dy = end[0] - start[0], end[1] - start[1]
+        px, py = position[0] - start[0], position[1] - start[1]
+        on_segment = (
+            dx * py == dy * px
+            and min(start[0], end[0]) <= position[0] <= max(start[0], end[0])
+            and min(start[1], end[1]) <= position[1] <= max(start[1], end[1])
+        )
+        if on_segment:
+            raise ValidationError(
+                f"Net label {net_name!r} conflicts with explicit wire name {wire_name!r} "
+                f"at {position}. Use rename_net to update all labels and named wires together."
+            )
+
+
+def _net_name_key(net_name: str) -> str:
+    """Compare SPICE names while treating GND and 0 as the same ground net."""
+
+    return "0" if net_name.upper() in {"GND", "0"} else net_name.casefold()
 
 
 def add_junction(

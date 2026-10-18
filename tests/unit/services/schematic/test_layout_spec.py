@@ -21,6 +21,7 @@ from qspice_mcp.services.schematic.create_schematic import create_schematic
 from qspice_mcp.services.schematic.describe_schematic_layout_spec import (
     describe_schematic_layout_spec,
 )
+from qspice_mcp.services.schematic.list_components import list_components
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -184,3 +185,62 @@ def test_apply_schematic_layout_spec_skip_existing(tmp_path: Path) -> None:
     assert second.applied_count == 0
     assert second.skipped_existing_count == 1
     assert second.components[0].skipped_existing is True
+
+
+@pytest.mark.parametrize("destination", [None, "new.qsch", "existing.qsch"])
+def test_failed_layout_leaves_source_and_destination_unchanged(
+    tmp_path: Path, destination: str | None
+) -> None:
+    schematic = create_schematic("source.qsch", workspace_root=tmp_path).output_path
+    before = schematic.read_bytes()
+    if destination == "existing.qsch":
+        (tmp_path / destination).write_bytes(b"existing destination")
+    spec_path = tmp_path / "invalid.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "components": [
+                    {"reference": "Rgood", "component_kind": "resistor", "value": "1k"},
+                    {"reference": "Xbad", "component_kind": "resistor", "value": "2k"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="references must start"):
+        apply_schematic_layout_spec(
+            schematic, spec_path, workspace_root=tmp_path, output_path=destination
+        )
+    assert schematic.read_bytes() == before
+    if destination == "existing.qsch":
+        assert (tmp_path / destination).read_bytes() == b"existing destination"
+    elif destination is not None:
+        assert not (tmp_path / destination).exists()
+
+
+def test_layout_output_contains_every_row_and_keeps_source(tmp_path: Path) -> None:
+    schematic = create_schematic("source.qsch", workspace_root=tmp_path).output_path
+    before = schematic.read_bytes()
+    spec_path = tmp_path / "layout.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "components": [
+                    {"reference": "Rone", "component_kind": "resistor", "value": "1k"},
+                    {"reference": "Rtwo", "component_kind": "resistor", "value": "2k"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    result = apply_schematic_layout_spec(
+        schematic, spec_path, workspace_root=tmp_path, output_path="result.qsch"
+    )
+    assert schematic.read_bytes() == before
+    catalog = list_components(result.output_path, workspace_root=tmp_path)
+    assert {part.reference: part.value for part in catalog.components} == {
+        "Rone": "1k",
+        "Rtwo": "2k",
+    }

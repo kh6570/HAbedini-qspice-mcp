@@ -15,6 +15,7 @@ from qspice_mcp.infra.logging import get_logger
 from qspice_mcp.infra.progress import report_progress
 from qspice_mcp.infra.telemetry import attach_trace_id, request_scope
 from qspice_mcp.infra.workspace_scope import (
+    get_pending_workspace_root,
     reset_pending_workspace_root,
     set_pending_workspace_root,
     settings_for_active_workspace,
@@ -26,7 +27,7 @@ from qspice_mcp.services._internals.remote_session_manager import RemoteSimulati
 from .handler_bindings import ToolHandler, build_raw_tool_handlers
 from .schema_handlers import expose_tool_schema
 from .shared import to_jsonable
-from .workspace import resolve_workspace_override
+from .workspace import resolve_tool_workspace_override, resolve_workspace_override
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -74,6 +75,10 @@ class QSpiceToolRuntime:
 
         def _execute(**kwargs: object) -> dict[str, object]:
             explicit_root = resolve_workspace_override(kwargs.pop("workspace_root", None))
+            if explicit_root is None and get_pending_workspace_root() is None:
+                explicit_root = resolve_tool_workspace_override(
+                    tool.name, None, schematic_path=kwargs.get("schematic_path")
+                )
             workspace_token = (
                 set_pending_workspace_root(explicit_root) if explicit_root is not None else None
             )

@@ -84,7 +84,10 @@ def resolve_tool_annotations(spec: ServiceSpec) -> ToolAnnotations:
 
 _WORKSPACE_ROOT_SCHEMA_PROPERTY: dict[str, object] = {
     "type": "string",
-    "description": "Optional per-call workspace root override for relative paths.",
+    "description": (
+        "Optional per-call workspace root. Both relative and absolute paths must stay "
+        "inside this root; pass it explicitly when accessing a different circuit folder."
+    ),
 }
 
 _PATH_PROPERTY_SUFFIXES = ("_path", "_dir", "_file", "_root")

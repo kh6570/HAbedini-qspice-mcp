@@ -23,7 +23,7 @@ Optional extras: `[backends]` (richer schematic/raw integration), `[telemetry]` 
 
 Configure your MCP client to spawn `qspice-mcp` with `QSPICE_EXE` set, then ask the AI to call `describe_server_capabilities`. Full client setup and workflows are in the [User guide](docs/user-guide.md).
 
-**AI / first-time MCP setup (Cursor or VS Code):** see **[AGENTS.md](AGENTS.md)** — run `scripts/setup_mcp.ps1` to register **user-level** MCP (`%USERPROFILE%\.cursor\mcp.json` / VS Code user `mcp.json`), restart the IDE, verify with `scripts/verify_mcp.ps1`.
+**AI / first-time MCP setup (ChatGPT desktop, Cursor, or VS Code):** see **[AGENTS.md](AGENTS.md)** — run `scripts/setup_mcp.ps1` to register **user-level** MCP, restart the client, and verify with `scripts/verify_mcp.ps1`. The default remains Cursor + VS Code; for ChatGPT desktop use `-Clients ChatGPT` on both scripts. ChatGPT desktop uses `%USERPROFILE%\.codex\config.toml` (or `%CODEX_HOME%\config.toml` when set).
 
 **Buck example:** `list_workflow_instructions` → Track A `buck-converter-cpp` or Track B `buck-converter-cpp-catalog` via `read_workflow_instruction`.
 

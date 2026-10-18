@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 from pathlib import Path
 
 DEFAULT_BUDGET_S = 30.0
@@ -31,6 +32,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=Path(sys.executable),
         help="Python interpreter that can run ``python -m qspice_mcp`` (default: sys.executable).",
+    )
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=None,
+        help="ChatGPT desktop config.toml: probe the saved qspice command and environment.",
     )
     parser.add_argument(
         "--workspace-root",
@@ -69,6 +76,7 @@ def probe_cold_start(
     python: Path,
     workspace_root: Path,
     budget_s: float,
+    config: Path | None = None,
 ) -> float:
     """Run initialize + tools/list and return elapsed seconds."""
     env = os.environ.copy()
@@ -84,6 +92,15 @@ def probe_cold_start(
         "--log-level",
         "error",
     ]
+    if config is not None:
+        data = tomllib.loads(config.read_text(encoding="utf-8-sig"))
+        entry = data.get("mcp_servers", {}).get("qspice")
+        if not isinstance(entry, dict):
+            raise ValueError(f"No mcp_servers.qspice entry in {config}")
+        if entry.get("enabled") is False:
+            raise ValueError(f"qspice is disabled in {config}")
+        command = [entry["command"], *entry.get("args", [])]
+        env.update(entry.get("env", {}))
     t0 = time.perf_counter()
     proc = subprocess.Popen(
         command,
@@ -91,6 +108,7 @@ def probe_cold_start(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         env=env,
+        cwd=entry.get("cwd") if config is not None else None,
     )
     assert proc.stdin is not None
     assert proc.stdout is not None
@@ -155,11 +173,12 @@ def main(argv: list[str] | None = None) -> int:
             python=python,
             workspace_root=workspace_root,
             budget_s=args.budget_s,
+            config=args.config,
         )
     except TimeoutError as exc:
         print(str(exc), file=sys.stderr)
         return 1
-    except OSError as exc:
+    except (OSError, ValueError, KeyError) as exc:
         print(f"MCP cold-start probe failed: {exc}", file=sys.stderr)
         return 1
     finally:

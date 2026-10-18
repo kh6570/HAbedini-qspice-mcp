@@ -70,9 +70,7 @@ def _render_ac_instruction(
         allowed = ", ".join(sorted(_AC_SWEEP_TYPES))
         raise ValueError(f"sweep_type must be one of: {allowed}")
     if normalized_sweep_type == "list":
-        values = tuple(
-            token for value in (frequencies or ()) if (token := spice_text(value))
-        )
+        values = tuple(token for value in (frequencies or ()) if (token := spice_text(value)))
         if not values:
             raise ValueError("List sweep requires at least one value in frequencies.")
         return " ".join((".ac", "list", *values))

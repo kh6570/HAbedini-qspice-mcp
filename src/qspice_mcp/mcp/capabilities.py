@@ -123,6 +123,7 @@ _SCHEMATIC_EDITING_TOOLS = frozenset(
         "remove_net_label",
         "remove_wire",
         "rename_component_reference",
+        "rename_net",
         "render_schematic_image",
         "save_schematic_as",
         "set_component_parameters",

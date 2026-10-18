@@ -116,7 +116,7 @@ _TAG_SCHEMATIC = "schematic"
 
 _COMPONENT_HEADER_PATTERN = re.compile(r"^component \((-?\d+),(-?\d+)\) (\d+) (\d+)$")
 _QUOTED_VALUE_PATTERN = re.compile(r'"([^"]*)"')
-_REFERENCE_PATTERN = re.compile(r"^([A-Za-z]+\d+)$")
+_REFERENCE_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_:.\-$]*$")
 _LONG_VOLTAGE_VALUE_CHARS = 20
 _VOLTAGE_VALUE_TEXT_POSITION = "(0,380)"
 

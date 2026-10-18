@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from qspice_mcp.core.exceptions import QSpiceError
+from qspice_mcp.core.exceptions import QSpiceError, SimulationTimeoutError
 from qspice_mcp.services.simulation.generate_netlist import GeneratedNetlist, generate_netlist
 
 generate_netlist_service = importlib.import_module(
@@ -19,6 +19,33 @@ generate_netlist_service = importlib.import_module(
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 COMPARATOR_QSCH_FIXTURE = _REPO_ROOT / "tests" / "fixtures" / "schematics" / "comparator-test.qsch"
+
+
+@pytest.fixture(autouse=True)
+def _disable_native_qux(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep unit tests independent of locally installed QSpice executables."""
+    monkeypatch.setattr(
+        generate_netlist_service, "_try_generate_netlist_with_qux", lambda *_a, **_k: None
+    )
+
+
+def _write_decimal_schematic(path: Path, value: str) -> None:
+    path.write_text(
+        "\n".join(
+            (
+                "schematic",
+                "  component (0,0) 0 0",
+                "    symbol R",
+                "    type: R",
+                '    text (0,0) 1 0 0 0x0 -1 -1 "R1"',
+                f'    text (0,100) 1 0 0 0x0 -1 -1 "{value}"',
+                '    pin (0,200) (0,200) 1 0 0 0x0 -1 -1 "1"',
+                '    pin (0,-200) (0,-200) 1 0 0 0x0 -1 -1 "2"',
+                '  text (0,500) 1 0 0 0x0 -1 -1 ".tran 10m"',
+            )
+        ),
+        encoding="utf-8",
+    )
 
 
 def _buck_schematic_bytes() -> bytes:
@@ -407,3 +434,96 @@ def test_generate_netlist_dll_schematic_without_qux_warns_about_omission(
     assert result.refreshed is True
     assert result.netlist_backend == "clean_room"
     assert any("clean-room parser omits" in warning for warning in result.warnings)
+
+
+@pytest.mark.parametrize("value", [".2", ".1u"])
+def test_generate_netlist_uses_qux_when_decimal_value_is_unsupported(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    value: str,
+) -> None:
+    schematic = tmp_path / "decimal.qsch"
+    _write_decimal_schematic(schematic, value)
+    destination = tmp_path / "artifacts" / "decimal.net"
+
+    def native_netlist(source: Path, output: Path, *, settings: object) -> GeneratedNetlist:
+        assert source == schematic.resolve()
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(f"R1 in 0 {value}\n.tran 10m\n.end\n", encoding="utf-8")
+        return GeneratedNetlist(
+            source_path=source,
+            netlist_path=output,
+            source_kind="schematic",
+            refreshed=True,
+            copied=True,
+            netlist_backend="qux",
+        )
+
+    monkeypatch.setattr(generate_netlist_service, "_try_generate_netlist_with_qux", native_netlist)
+
+    result = generate_netlist(schematic, workspace_root=tmp_path, output_path=destination)
+
+    assert result.netlist_backend == "qux"
+    assert result.refreshed is True
+    assert result.netlist_path == destination.resolve()
+    assert f"R1 in 0 {value}" in destination.read_text(encoding="utf-8")
+
+
+def test_generate_netlist_preserves_parser_diagnostic_without_qux(tmp_path: Path) -> None:
+    schematic = tmp_path / "decimal.qsch"
+    _write_decimal_schematic(schematic, ".2")
+
+    with pytest.raises(QSpiceError) as failure:
+        generate_netlist(schematic, workspace_root=tmp_path)
+
+    message = str(failure.value)
+    assert "Component R1 is missing the value or model token" in message
+    assert "QschEditor" in message
+    assert "QUX.exe" in message
+    assert "Configure" in message
+    assert not schematic.with_suffix(".net").exists()
+
+
+def test_generate_netlist_preserves_native_failure_and_error_code(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    schematic = tmp_path / "decimal.qsch"
+    _write_decimal_schematic(schematic, ".2")
+
+    def timeout(*_args: object, **_kwargs: object) -> None:
+        raise SimulationTimeoutError("QUX companion command timed out.")
+
+    monkeypatch.setattr(generate_netlist_service, "_try_generate_netlist_with_qux", timeout)
+
+    with pytest.raises(QSpiceError) as failure:
+        generate_netlist(schematic, workspace_root=tmp_path)
+
+    assert "Component R1 is missing" in str(failure.value)
+    assert "QUX companion command timed out" in str(failure.value)
+    assert failure.value.error_code == "timeout_exceeded"
+    assert isinstance(failure.value.__cause__, SimulationTimeoutError)
+
+
+def test_generate_netlist_preserves_editor_exception(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    schematic = tmp_path / "decimal.qsch"
+    _write_decimal_schematic(schematic, ".2")
+
+    class BrokenEditor:
+        def __init__(self, _path: str) -> None:
+            raise ValueError("Unsupported external controller schematic")
+
+    monkeypatch.setattr(
+        generate_netlist_service,
+        "_load_qsch_editor_factory",
+        lambda: (BrokenEditor, "test-backend"),
+    )
+
+    with pytest.raises(QSpiceError) as failure:
+        generate_netlist(schematic, workspace_root=tmp_path)
+
+    assert "Component R1 is missing" in str(failure.value)
+    assert "ValueError: Unsupported external controller schematic" in str(failure.value)

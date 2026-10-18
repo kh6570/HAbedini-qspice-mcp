@@ -4,17 +4,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from qspice_mcp.core.exceptions import ValidationError
+from qspice_mcp.services._backends.schematic_editor import add_simple_component
+from qspice_mcp.services._internals.schematic_edits import edit_schematic
 from qspice_mcp.services.schematic._layout import PlacedComponent, load_placed_components
 from qspice_mcp.services.schematic._layout_spec import (
     ResolvedLayoutPlacement,
     load_layout_spec_file,
     resolve_layout_placements,
 )
-from qspice_mcp.services.schematic.add_component import AddedComponent, add_component
 from qspice_mcp.services.service_spec import ServiceSpec
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from qspice_mcp.services._backends.schematic_editor import _QschEditorProtocol
 
 SERVICE_SPEC = ServiceSpec(
     name="apply_schematic_layout_spec",
@@ -60,51 +66,38 @@ def _existing_references(placed: tuple[PlacedComponent, ...]) -> frozenset[str]:
 
 def _apply_resolved_row(
     *,
-    schematic_path: Path,
-    workspace_root: Path,
+    editor: _QschEditorProtocol,
     row: ResolvedLayoutPlacement,
-    output_path: Path | None,
     skip_existing: bool,
     existing_refs: frozenset[str],
-) -> tuple[AppliedLayoutComponent, Path | None, bool]:
+) -> AppliedLayoutComponent:
     if skip_existing and row.reference is not None and row.reference in existing_refs:
-        return (
-            AppliedLayoutComponent(
-                reference=row.reference,
-                component_kind=row.component_kind,
-                placement=row.placement,
-                position_x=row.position_x,
-                position_y=row.position_y,
-                rotation_degrees=row.rotation_degrees,
-                skipped_existing=True,
-            ),
-            output_path,
-            True,
+        return AppliedLayoutComponent(
+            reference=row.reference,
+            component_kind=row.component_kind,
+            placement=row.placement,
+            position_x=row.position_x,
+            position_y=row.position_y,
+            rotation_degrees=row.rotation_degrees,
+            skipped_existing=True,
         )
-    added: AddedComponent = add_component(
-        schematic_path,
-        workspace_root=workspace_root,
+    normalized_kind = add_simple_component(
+        editor,
         component_kind=row.component_kind,
         reference=row.reference,
         value=row.value,
+        position=(row.position_x, row.position_y),
+        rotation_degrees=row.rotation_degrees,
+        net_name=row.net_name,
+    )
+    return AppliedLayoutComponent(
+        reference=row.reference,
+        component_kind=normalized_kind,
+        placement=row.placement,
         position_x=row.position_x,
         position_y=row.position_y,
         rotation_degrees=row.rotation_degrees,
-        net_name=row.net_name,
-        output_path=output_path,
-    )
-    return (
-        AppliedLayoutComponent(
-            reference=added.reference,
-            component_kind=added.component_kind,
-            placement=row.placement,
-            position_x=added.position_x,
-            position_y=added.position_y,
-            rotation_degrees=added.rotation_degrees,
-            skipped_existing=False,
-        ),
-        added.output_path,
-        False,
+        skipped_existing=False,
     )
 
 
@@ -135,32 +128,31 @@ def apply_schematic_layout_spec(
         schematic_path,
         workspace_root=workspace_root,
     )
-    existing_refs = _existing_references(placed)
     resolved_rows = resolve_layout_placements(spec, placed_components=placed)
 
     applied: list[AppliedLayoutComponent] = []
-    skipped = 0
-    latest_output: Path | None = None
-    current_output: Path | None = Path(output_path) if output_path is not None else None
-    for row in resolved_rows:
-        component_row, latest_output, was_skipped = _apply_resolved_row(
-            schematic_path=resolved_schematic,
-            workspace_root=workspace_root,
-            row=row,
-            output_path=current_output,
-            skip_existing=skip_existing,
-            existing_refs=existing_refs,
-        )
-        applied.append(component_row)
-        if was_skipped:
-            skipped += 1
-        else:
-            current_output = latest_output if latest_output is not None else current_output
-            if component_row.reference is not None:
+
+    def apply_rows(editor: _QschEditorProtocol) -> None:
+        existing_refs = _existing_references(placed)
+        for row in resolved_rows:
+            component_row = _apply_resolved_row(
+                editor=editor,
+                row=row,
+                skip_existing=skip_existing,
+                existing_refs=existing_refs,
+            )
+            applied.append(component_row)
+            if not component_row.skipped_existing and component_row.reference is not None:
                 existing_refs = frozenset({*existing_refs, component_row.reference})
 
-    if latest_output is None:
-        latest_output = resolved_schematic
+    # Persist once, after every row succeeds. A failed row leaves both the
+    # source and any requested destination unchanged.
+    _, latest_output = edit_schematic(
+        resolved_schematic,
+        workspace_root=workspace_root,
+        output_path=output_path,
+        apply_edit=apply_rows,
+    )
 
     applied_count = sum(1 for item in applied if not item.skipped_existing)
     return AppliedSchematicLayoutSpec(
@@ -169,7 +161,7 @@ def apply_schematic_layout_spec(
         output_path=latest_output,
         schema_version=spec.schema_version,
         applied_count=applied_count,
-        skipped_existing_count=skipped,
+        skipped_existing_count=len(applied) - applied_count,
         components=tuple(applied),
     )
 

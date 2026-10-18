@@ -20,7 +20,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-    "mcp>=1.0.0",
+    "mcp>=1.0.0,<2",
     "numpy>=1.26",
     "scipy>=1.12",
     "matplotlib>=3.8",
@@ -35,7 +35,9 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+setup = ["tomlkit>=0.13"]
 dev = [
+    "tomlkit>=0.13",
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-cov>=4.1",

@@ -5,7 +5,7 @@
 
 .SYNOPSIS
 
-  First-time QSpice MCP setup for Cursor and VS Code (Windows).
+  First-time QSpice MCP setup for ChatGPT desktop, Cursor and VS Code (Windows).
 
 
 
@@ -20,6 +20,8 @@
   Cursor: %USERPROFILE%\.cursor\mcp.json
 
   VS Code: %APPDATA%\Code\User\mcp.json
+
+  ChatGPT desktop / Codex: %CODEX_HOME%\config.toml, or %USERPROFILE%\.codex\config.toml
 
 
 
@@ -37,7 +39,7 @@ param(
 
     [string] $QspiceExe = "",
 
-    [ValidateSet("Cursor", "VSCode", "Both")]
+    [ValidateSet("ChatGPT", "Cursor", "VSCode", "Both")]
 
     [string] $Clients = "Both",
 
@@ -60,6 +62,12 @@ $RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $VenvPython = Join-Path $RepoRoot ".venv\Scripts\python.exe"
 
 $MergeScript = Join-Path $RepoRoot "scripts\merge_user_mcp_json.py"
+
+$MergeTomlScript = Join-Path $RepoRoot "scripts\merge_user_mcp_toml.py"
+
+$CodexConfigRoot = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE ".codex" }
+
+$ChatGPTConfig = Join-Path $CodexConfigRoot "config.toml"
 
 $CursorConfig = Join-Path $env:USERPROFILE ".cursor\mcp.json"
 
@@ -193,7 +201,11 @@ function Install-Package {
 
     }
 
-    & $VenvPython -m pip install -e $RepoRoot
+    $InstallTarget = if ($Clients -eq "ChatGPT") { "${RepoRoot}[setup]" } else { $RepoRoot }
+
+    & $VenvPython -m pip install -e $InstallTarget
+
+    if ($LASTEXITCODE -ne 0) { throw "Failed to install qspice-mcp" }
 
     if ($core) {
 
@@ -289,7 +301,11 @@ function Merge-UserMcpConfig(
 
     $entry | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $tempEntry -Encoding utf8
 
-    & $VenvPython $MergeScript $ConfigPath $RootKey "qspice" $tempEntry
+    if ($RootKey -eq "mcp_servers") {
+        & $VenvPython $MergeTomlScript $ConfigPath "qspice" $tempEntry
+    } else {
+        & $VenvPython $MergeScript $ConfigPath $RootKey "qspice" $tempEntry
+    }
 
     if ($LASTEXITCODE -ne 0) {
 
@@ -351,6 +367,10 @@ Write-Step "Simulation workspace: $simWorkspace"
 
 
 
+if ($Clients -eq "ChatGPT") {
+    Merge-UserMcpConfig -ConfigPath $ChatGPTConfig -RootKey "mcp_servers" -SimWorkspace $simWorkspace -QspicePath $resolvedQspice
+}
+
 if ($Clients -eq "Cursor" -or $Clients -eq "Both") {
 
     Merge-UserMcpConfig -ConfigPath $CursorConfig -RootKey "mcpServers" -SimWorkspace $simWorkspace -QspicePath $resolvedQspice
@@ -362,6 +382,8 @@ if ($Clients -eq "VSCode" -or $Clients -eq "Both") {
     Merge-UserMcpConfig -ConfigPath $VSCodeConfig -RootKey "servers" -SimWorkspace $simWorkspace -QspicePath $resolvedQspice
 
 }
+
+
 
 
 
@@ -377,6 +399,12 @@ Write-Host "  Repo / venv:        $RepoRoot"
 
 Write-Host "  Simulation workspace: $simWorkspace"
 
+if ($Clients -eq "ChatGPT") {
+    Write-Host "  ChatGPT desktop:    $ChatGPTConfig"
+    Write-Host "  Agent environment:  Windows native (Settings -> Agent environment; restart after changing)"
+    Write-Host "  Next: Restart ChatGPT desktop; Settings -> MCP servers; use /mcp to check qspice"
+}
+
 if ($Clients -eq "Cursor" -or $Clients -eq "Both") {
 
     Write-Host "  Cursor config:      $CursorConfig"
@@ -389,7 +417,13 @@ if ($Clients -eq "VSCode" -or $Clients -eq "Both") {
 
 }
 
-Write-Host "  Next: Fully restart Cursor/VS Code, then check Settings -> Tools & MCP"
+if ($Clients -ne "ChatGPT") {
+    Write-Host "  Next: Fully restart Cursor/VS Code, then check their MCP settings"
+}
 
-Write-Host "  Verify: pwsh -ExecutionPolicy Bypass -File .\scripts\verify_mcp.ps1"
+if ($Clients -eq "ChatGPT") {
+    Write-Host "  Verify: pwsh -ExecutionPolicy Bypass -File .\scripts\verify_mcp.ps1 -Clients ChatGPT"
+} else {
+    Write-Host "  Verify: pwsh -ExecutionPolicy Bypass -File .\scripts\verify_mcp.ps1"
+}
 

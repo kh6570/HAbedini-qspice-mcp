@@ -49,7 +49,7 @@ from .tools.workspace import (
     choose_effective_workspace_root,
     pick_workspace_root_from_roots,
     reset_pending_workspace_root,
-    resolve_workspace_override,
+    resolve_tool_workspace_override,
     set_pending_workspace_root,
 )
 
@@ -189,7 +189,11 @@ class _QSpiceFastMCP(FastMCP):
             raise ToolError(f"Unknown tool: {name}")
 
         effective_arguments = dict(arguments)
-        raw_override = resolve_workspace_override(effective_arguments.pop("workspace_root", None))
+        raw_override = resolve_tool_workspace_override(
+            name,
+            effective_arguments.pop("workspace_root", None),
+            schematic_path=effective_arguments.get("schematic_path"),
+        )
         configured_root = (
             self._tool_runtime.settings.workspace_root
             if self._tool_runtime is not None

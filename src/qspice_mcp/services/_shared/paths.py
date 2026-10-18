@@ -20,12 +20,26 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
+def _sandbox_message(exc: SandboxViolationError, workspace_root: Path) -> str:
+    """Add the active root and the way to select another circuit folder."""
+
+    root = workspace_root.resolve(strict=False)
+    return (
+        f"{exc}. Active workspace root: {root}. Absolute paths must also stay inside this root. "
+        "To access a different circuit folder, pass workspace_root explicitly "
+        "for that folder and use an absolute path or a path relative to it."
+    )
+
+
 def resolve_workspace_path(raw_path: str | Path, *, workspace_root: Path) -> Path:
     """Resolve a relative or absolute path inside the configured workspace root."""
 
-    return _resolve_workspace_path(
-        raw_path, workspace_root=workspace_root, sandbox_error=SandboxViolationError
-    )
+    try:
+        return _resolve_workspace_path(
+            raw_path, workspace_root=workspace_root, sandbox_error=SandboxViolationError
+        )
+    except SandboxViolationError as exc:
+        raise SandboxViolationError(_sandbox_message(exc, workspace_root)) from exc
 
 
 def validate_existing_file(
@@ -36,14 +50,17 @@ def validate_existing_file(
 ) -> Path:
     """Resolve and validate an existing file within the workspace root."""
 
-    return _validate_existing_file(
-        raw_path,
-        workspace_root=workspace_root,
-        suffixes=suffixes,
-        sandbox_error=SandboxViolationError,
-        validation_error=ValidationError,
-        missing_error=ArtifactMissingError,
-    )
+    try:
+        return _validate_existing_file(
+            raw_path,
+            workspace_root=workspace_root,
+            suffixes=suffixes,
+            sandbox_error=SandboxViolationError,
+            validation_error=ValidationError,
+            missing_error=ArtifactMissingError,
+        )
+    except SandboxViolationError as exc:
+        raise SandboxViolationError(_sandbox_message(exc, workspace_root)) from exc
 
 
 def resolve_workspace_output_path(
@@ -55,14 +72,17 @@ def resolve_workspace_output_path(
 ) -> Path:
     """Resolve one writable output path and require an explicit allowed suffix."""
 
-    return _resolve_output_path(
-        raw_path,
-        workspace_root=workspace_root,
-        default=default,
-        suffixes=suffixes,
-        sandbox_error=SandboxViolationError,
-        validation_error=ValidationError,
-    )
+    try:
+        return _resolve_output_path(
+            raw_path,
+            workspace_root=workspace_root,
+            default=default,
+            suffixes=suffixes,
+            sandbox_error=SandboxViolationError,
+            validation_error=ValidationError,
+        )
+    except SandboxViolationError as exc:
+        raise SandboxViolationError(_sandbox_message(exc, workspace_root)) from exc
 
 
 def validate_time_window(

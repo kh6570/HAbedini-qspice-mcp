@@ -13,7 +13,10 @@
 
 param(
 
-    [int] $StartupBudgetSeconds = 30
+    [int] $StartupBudgetSeconds = 30,
+
+    [ValidateSet("Both", "ChatGPT")]
+    [string] $Clients = "Both"
 
 )
 
@@ -41,6 +44,15 @@ if (-not (Test-Path -LiteralPath $VenvPython)) {
 
     throw "Missing .venv. Run scripts/setup_mcp.ps1 first."
 
+}
+
+if ($Clients -eq "ChatGPT") {
+    $CodexConfigRoot = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE ".codex" }
+    $ChatGPTConfig = Join-Path $CodexConfigRoot "config.toml"
+    & $VenvPython $VerifyPy $StartupBudgetSeconds --config $ChatGPTConfig
+    if ($LASTEXITCODE -ne 0) { throw "ChatGPT desktop MCP verification failed" }
+    Write-Host "ChatGPT desktop MCP server probe passed from Windows. Confirm /mcp in the app with the Windows native agent."
+    return
 }
 
 

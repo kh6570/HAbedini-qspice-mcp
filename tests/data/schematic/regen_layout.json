@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "components": [
+    {"reference":"B1","component_kind":"behavioral","value":"V={emf}*if(time<{temf},1,{emf_ratio})*sin(2*pi*{fe}*time)","placement":"absolute","position_x":0,"position_y":2200,"rotation_degrees":0},
+    {"reference":"R1","component_kind":"resistor","value":"{rw}","placement":"absolute","position_x":1000,"position_y":2400,"rotation_degrees":90},
+    {"reference":"L1","component_kind":"inductor","value":"{lw}","placement":"absolute","position_x":2000,"position_y":2400,"rotation_degrees":90},
+    {"reference":"D1","component_kind":"diode","value":"Dbridge","placement":"absolute","position_x":4000,"position_y":2400,"rotation_degrees":0},
+    {"reference":"M1","component_kind":"nmos","value":"Nswitch","placement":"absolute","position_x":4000,"position_y":1200,"rotation_degrees":0},
+    {"reference":"D4","component_kind":"diode","value":"Dbridge","placement":"absolute","position_x":4800,"position_y":1200,"rotation_degrees":0},
+    {"reference":"B2","component_kind":"behavioral","value":"V={emf}*if(time<{temf},1,{emf_ratio})*sin(2*pi*{fe}*time-1*2*pi/3)","placement":"absolute","position_x":0,"position_y":600,"rotation_degrees":0},
+    {"reference":"R2","component_kind":"resistor","value":"{rw}","placement":"absolute","position_x":1000,"position_y":800,"rotation_degrees":90},
+    {"reference":"L2","component_kind":"inductor","value":"{lw}","placement":"absolute","position_x":2000,"position_y":800,"rotation_degrees":90},
+    {"reference":"D2","component_kind":"diode","value":"Dbridge","placement":"absolute","position_x":6000,"position_y":2400,"rotation_degrees":0},
+    {"reference":"M2","component_kind":"nmos","value":"Nswitch","placement":"absolute","position_x":6000,"position_y":1200,"rotation_degrees":0},
+    {"reference":"D5","component_kind":"diode","value":"Dbridge","placement":"absolute","position_x":6800,"position_y":1200,"rotation_degrees":0},
+    {"reference":"B3","component_kind":"behavioral","value":"V={emf}*if(time<{temf},1,{emf_ratio})*sin(2*pi*{fe}*time-2*2*pi/3)","placement":"absolute","position_x":0,"position_y":-1000,"rotation_degrees":0},
+    {"reference":"R3","component_kind":"resistor","value":"{rw}","placement":"absolute","position_x":1000,"position_y":-800,"rotation_degrees":90},
+    {"reference":"L3","component_kind":"inductor","value":"{lw}","placement":"absolute","position_x":2000,"position_y":-800,"rotation_degrees":90},
+    {"reference":"D3","component_kind":"diode","value":"Dbridge","placement":"absolute","position_x":8000,"position_y":2400,"rotation_degrees":0},
+    {"reference":"M3","component_kind":"nmos","value":"Nswitch","placement":"absolute","position_x":8000,"position_y":1200,"rotation_degrees":0},
+    {"reference":"D6","component_kind":"diode","value":"Dbridge","placement":"absolute","position_x":8800,"position_y":1200,"rotation_degrees":0},
+    {"reference":"Vpwm","component_kind":"voltage_source","value":"PULSE(0 10 0 100n 100n {duty/fsw} {1/fsw})","placement":"absolute","position_x":0,"position_y":-2800,"rotation_degrees":0},
+    {"reference":"Bgate","component_kind":"behavioral","value":"V=if(time<{tpwm},V(pwm),0)*{pwm_enabled}","placement":"absolute","position_x":1800,"position_y":-2800,"rotation_degrees":0},
+    {"reference":"Cbus","component_kind":"capacitor","value":"{cbus} IC={vinit}","placement":"absolute","position_x":10000,"position_y":1200,"rotation_degrees":0},
+    {"reference":"Rbleed","component_kind":"resistor","value":"100k","placement":"absolute","position_x":11200,"position_y":1200,"rotation_degrees":0},
+    {"reference":"Rload","component_kind":"resistor","value":"R=if({battery_mode},1G,if(time<{tload},{rload},1G))","placement":"absolute","position_x":12400,"position_y":1200,"rotation_degrees":0},
+    {"reference":"Rdisconnect","component_kind":"resistor","value":"R=if(time<{tload},1m,1G)","placement":"absolute","position_x":14400,"position_y":2400,"rotation_degrees":90},
+    {"reference":"Rbat","component_kind":"resistor","value":"if({battery_mode},{rbat},1G)","placement":"absolute","position_x":15400,"position_y":1200,"rotation_degrees":0},
+    {"reference":"Vbat","component_kind":"voltage_source","value":"{vbat}","placement":"absolute","position_x":15400,"position_y":0,"rotation_degrees":0}
+  ]
+}

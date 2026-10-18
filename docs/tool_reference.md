@@ -22,7 +22,8 @@ For install, client setup, and workflows see the [User guide](user-guide.md). St
 - Keep read-only inspection separate from mutating or execution-oriented tools.
 - Return compact structured summaries before returning large artifacts.
 - Enforce `DataBudget` limits on waveform-like outputs.
-- Require all filesystem paths to stay within configured workspace roots.
+- Require filesystem paths to stay within the active workspace root (including
+  per-call overrides and the root inferred for absolute schematic inspection).
 - Treat `.net`, `.log`, `.qraw`, and plot files as derived artifacts.
 
 ### Per-call `workspace_root` override
@@ -32,6 +33,15 @@ server-configured workspace root for that single call (the server strips it befo
 schema validation). To keep `tools/list` compact, the property is only advertised in
 the input schemas of tools that take path-like arguments (`*_path`, `*_dir`, and
 similar); tools without path arguments still honor the override when passed.
+
+Both absolute and relative paths must stay inside the active root. For
+`inspect_schematic`, an absolute `schematic_path` with `workspace_root` omitted
+uses the file's containing folder as the root for that call, ahead of the
+configured or client-advertised root. An explicit `workspace_root` takes
+precedence and bounds the path. Relative inspection paths and other tools use
+the usual workspace rules. For another circuit folder, you can also pass its
+root explicitly, for example `workspace_root="D:\repos\otros\sim_boost_converter"`
+with `schematic_path="circuits/boost_one_phase_open_loop.qsch"`.
 
 ## Tool Set
 
@@ -100,6 +110,7 @@ similar); tools without path arguments still honor the override when passed.
 | `remove_junction` | implemented | Remove one junction node from a schematic. |
 | `add_junction` | implemented | Insert one junction node into a schematic wire graph. |
 | `add_net_label` | implemented | Insert one net label into a schematic. |
+| `rename_net` | implemented | Rename all matching labels and explicit wire names in one saved edit. |
 | `write_workspace_text_file` | implemented | Write a sandboxed UTF-8 text file; for `.c`/`.cpp`/`.cc`/`.cxx` sources, auto-invokes `build_dll_device` on the sibling `.dll` unless opted out (see detailed section). |
 | `describe_topology_authoring_support` | implemented | Report scratch topology authoring capabilities (Track A readiness map). |
 | `describe_schematic_layout_spec` | implemented | Return the v1 JSON layout-spec schema, placement modes, and bundled example. |
@@ -899,6 +910,8 @@ Expected outputs:
 
 Purpose:
 Write one UTF-8 text file under the workspace root (for example a C-block `.cpp`).
+Allowed extensions are `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.c`, `.txt`, `.cmake`, `.md`, and
+`.json`. Use `.json` to prepare a layout spec for `apply_schematic_layout_spec`.
 For C/C++ custom-device sources (`.c`, `.cpp`, `.cc`, `.cxx`), the handler can
 compile the sibling `.dll` in the same call via `build_dll_device`, and optionally
 cross-check the DLL block symbol when `schematic_path` and `dll_reference` are both
@@ -1216,6 +1229,11 @@ Notes:
 Call `describe_schematic_layout_spec` for the v1 schema and bundled
 `scratch_power_stage.v1.json` example. Layout spec v1 covers component coordinates
 only — add wires, junctions, and labels with dedicated tools afterward.
+References may use names such as `Vpwm`, `Bgate`, and `Cbus` as well as numeric
+designators. The batch is edited in memory and saved once after every row
+succeeds; a rejected row leaves the source and requested output file unchanged.
+When `output_path` is supplied, it receives the complete batch and the source
+remains unchanged.
 
 ## add_dll_block
 
@@ -1334,6 +1352,7 @@ pass `net_name` to select the intended segment.
 
 Purpose:
 Remove one net label from a schematic and persist the edited `.qsch` file.
+Explicit wire names remain. Use `rename_net` for net renames.
 
 Typical inputs:
 - `schematic_path`
@@ -1377,6 +1396,8 @@ Mirrors `add_junction`.
 
 Purpose:
 Insert one net label into a schematic and persist the edited `.qsch` file.
+Insertion fails if a named wire at the label position carries a different name.
+Use `rename_net` to update labels and wire names together.
 
 Typical inputs:
 - `schematic_path`
@@ -1396,10 +1417,39 @@ Notes:
 Use this with `add_wire` when building a new schematic from scratch. `GND` uses
 the same label style already present in the shipped example circuits.
 
+## rename_net
+
+Rename all matching net labels and explicit wire names in a single saved edit.
+Use this instead of removing and adding labels when changing an electrical net's
+name. Matching is case-insensitive; a missing source, an existing destination,
+or a rename to/from ground is rejected before saving.
+
+Typical inputs:
+
+- `schematic_path`
+- `net_name` (current name, such as `in`)
+- `new_net_name` (such as `vbus`)
+- `output_path` (optional; otherwise edits the source)
+- `workspace_root` (optional per-call override)
+
+Expected outputs:
+
+- `schematic_path`, `output_path`
+- `net_name`, `new_net_name`
+- `labels_renamed`, `wires_renamed`
+
+The tool updates schematic-level `net` and `wire` tags. It preserves geometry,
+component values, symbol pin names, and text directives. Review textual net
+references (for example `V(in)` in a behavioral expression or measurement)
+separately, then inspect connectivity before simulation.
+
 ## inspect_schematic
 
 Purpose:
 Provide a read-only summary of the source schematic before any simulation runs.
+When `schematic_path` is absolute and `workspace_root` is omitted, infer the
+root from the file's containing folder for this call. Explicit roots still
+bound the path; relative paths use the active workspace.
 
 Typical inputs:
 - `schematic_path` (path to a `.qsch` file within the workspace)

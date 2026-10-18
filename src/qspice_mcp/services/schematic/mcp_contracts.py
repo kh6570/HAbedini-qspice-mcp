@@ -346,7 +346,7 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "remove_net_label": {
         "title": "Remove Net Label",
-        "description": "Remove one net label from a schematic by position and optional net name.",
+        "description": "Remove one net label from a schematic by position and optional net name. Explicit wire names are retained. For a net rename, use rename_net to update all labels and named wires together.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "position_x", "position_y"],
@@ -389,7 +389,7 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "add_net_label": {
         "title": "Add Net Label",
-        "description": "Insert one net label into a schematic.",
+        "description": "Insert one net label into a schematic. Rejects names that conflict with an explicit wire name at the label position. Use rename_net to rename all labels and named wires together.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path", "position_x", "position_y", "net_name"],
@@ -398,6 +398,20 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "position_x": {"type": "integer"},
                 "position_y": {"type": "integer"},
                 "net_name": {"type": "string"},
+                "output_path": {"type": "string"},
+            },
+        },
+    },
+    "rename_net": {
+        "title": "Rename Net",
+        "description": "Rename all matching net labels and explicit wire names in a single saved schematic edit. Names match case-insensitively. Rejects missing source names, existing destination names, and ground renames. Does not rewrite directives, expressions, component values, or symbol pin names; review textual net references separately.",
+        "input_schema": {
+            "type": "object",
+            "required": ["schematic_path", "net_name", "new_net_name"],
+            "properties": {
+                "schematic_path": {"type": "string"},
+                "net_name": {"type": "string"},
+                "new_net_name": {"type": "string"},
                 "output_path": {"type": "string"},
             },
         },
@@ -417,7 +431,7 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "inspect_schematic": {
         "title": "Inspect Schematic",
-        "description": "Summarize a QSpice schematic before simulation. Set include_parameters=true to also return schematic-level `.param` directives, and include_connectivity=true to attach the net-to-pin connectivity report in the same call.",
+        "description": "Summarize a QSpice schematic before simulation. For an absolute schematic_path with workspace_root omitted, infer the workspace from the file's containing folder for this call. An explicit workspace_root takes precedence and bounds the path. Relative paths use the active workspace. Set include_parameters=true to also return schematic-level `.param` directives, and include_connectivity=true to attach the net-to-pin connectivity report in the same call.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path"],
@@ -877,7 +891,8 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
         "title": "Apply Schematic Layout Spec",
         "description": (
             "Place schematic components in batch from a workspace JSON layout specification "
-            "using auto, grid, or absolute placement modes."
+            "using auto, grid, or absolute placement modes. "
+            "Saves once after every row succeeds; a rejected row leaves files unchanged."
         ),
         "input_schema": {
             "type": "object",

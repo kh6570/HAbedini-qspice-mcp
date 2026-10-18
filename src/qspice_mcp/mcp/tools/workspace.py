@@ -50,6 +50,29 @@ def resolve_workspace_override(raw_workspace_root: object | None) -> Path | None
     return Path(text).expanduser().resolve(strict=False)
 
 
+def resolve_tool_workspace_override(
+    tool_name: str,
+    raw_workspace_root: object | None,
+    *,
+    schematic_path: object | None = None,
+) -> Path | None:
+    """Prefer an explicit root, else infer one for absolute schematic inspection.
+
+    Inference is limited to ``inspect_schematic`` and lasts for this call only.
+    Resolving the path before taking its parent also supports symlinked files.
+    """
+
+    explicit_root = resolve_workspace_override(raw_workspace_root)
+    if explicit_root is not None:
+        return explicit_root
+    if tool_name != "inspect_schematic" or not isinstance(schematic_path, (str, Path)):
+        return None
+    candidate = Path(schematic_path)
+    if candidate.is_absolute():
+        return candidate.resolve(strict=False).parent
+    return None
+
+
 def root_uri_to_path(uri: str) -> Path | None:
     """Convert one ``file://`` MCP root URI into a local path, else ``None``."""
 
@@ -105,6 +128,7 @@ __all__ = [
     "get_pending_workspace_root",
     "pick_workspace_root_from_roots",
     "reset_pending_workspace_root",
+    "resolve_tool_workspace_override",
     "resolve_workspace_override",
     "root_uri_to_path",
     "set_pending_workspace_root",

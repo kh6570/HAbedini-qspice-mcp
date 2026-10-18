@@ -193,9 +193,7 @@ def _looks_like_reference(text: str, *, symbol: str, kind: str) -> bool:
         return False
     uppercase = normalized.upper()
     for prefix in _reference_prefixes(symbol=symbol, kind=kind):
-        if uppercase.startswith(prefix) and any(
-            character.isdigit() for character in uppercase[len(prefix) :]
-        ):
+        if uppercase.startswith(prefix):
             return True
     return False
 
@@ -203,7 +201,7 @@ def _looks_like_reference(text: str, *, symbol: str, kind: str) -> bool:
 def _resolve_component_texts(
     current: _ComponentAccumulator,
 ) -> tuple[str | None, str | None, tuple[str, ...]]:
-    texts = [text.strip() for text in current.texts if text.strip()]
+    texts = [text.strip() for text in current.texts]
     if not texts:
         return None, None, ()
 
@@ -217,12 +215,12 @@ def _resolve_component_texts(
     )
     reference = texts.pop(reference_index)
 
-    value_index = next(
-        (index for index, text in enumerate(texts) if "=" not in text and not text.startswith(".")),
-        None,
-    )
-    value = None if value_index is None else texts.pop(value_index)
-    return reference, value, tuple(texts)
+    # The text field following the refdes is the value/model, including
+    # expressions such as V=..., R=..., and capacitor values with IC=....
+    # Preserve an empty value field rather than promoting a later parameter.
+    # Parameters preceding a reordered refdes remain attributes.
+    value = (texts.pop(reference_index) or None) if reference_index < len(texts) else None
+    return reference or None, value, tuple(text for text in texts if text)
 
 
 def _finalize_component(

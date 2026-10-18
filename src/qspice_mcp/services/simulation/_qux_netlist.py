@@ -1,5 +1,5 @@
 # In the name of God, the Most Gracious, the Most Merciful
-"""QUX companion netlist generation for DLL-bearing schematics."""
+"""QUX companion netlist generation for schematics requiring native support."""
 
 from __future__ import annotations
 

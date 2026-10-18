@@ -37,7 +37,7 @@ Base install is enough for MCP usage with the supported clean-room schematic sub
 
 ## Connect an MCP client
 
-**Easiest path (AI-assisted):** open **[AGENTS.md](../AGENTS.md)** and run `scripts/setup_mcp.ps1`. That merges `qspice` into **user-level** MCP config (Cursor: `%USERPROFILE%\.cursor\mcp.json`; VS Code: `%APPDATA%\Code\User\mcp.json`) and runs a sanity check. JSON templates are in AGENTS.md.
+**Easiest path (AI-assisted):** open **[AGENTS.md](../AGENTS.md)** and run `scripts/setup_mcp.ps1`. That merges `qspice` into **user-level** MCP config and runs a sanity check. The default remains Cursor + VS Code; use `-Clients ChatGPT` for ChatGPT desktop. JSON and TOML templates are in AGENTS.md.
 
 **First-time order:**
 
@@ -46,6 +46,23 @@ Base install is enough for MCP usage with the supported clean-room schematic sub
 3. Set `QSPICE_EXE` in the server environment.
 4. Restart the client.
 5. Ask the AI to call `describe_server_capabilities` before edits or simulations.
+
+### ChatGPT desktop — `%USERPROFILE%\.codex\config.toml`
+
+From the cloned repo root:
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File .\scripts\setup_mcp.ps1 -Clients ChatGPT -WorkspaceRoot "D:\circuits" -QspiceExe "D:\Program Files\QSPICE\QSPICE64.exe"
+pwsh -ExecutionPolicy Bypass -File .\scripts\verify_mcp.ps1 -Clients ChatGPT
+```
+
+Setup installs the `[setup]` extra for TOML editing and merges `[mcp_servers.qspice]` into the app's shared Codex configuration, preserving unrelated settings, servers, and comments. If `CODEX_HOME` is set, its `config.toml` is used instead. No separate Codex CLI installation is needed.
+
+This setup requires **Settings → Agent environment → Windows native**; restart the app after changing it. A WSL agent cannot directly launch the Windows executable path written by this script. The PowerShell verification checks the Windows server, not the app's WSL environment. See [OpenAI's Windows environment documentation](https://learn.chatgpt.com/docs/windows/windows-app#windows-subsystem-for-linux-wsl).
+
+Restart ChatGPT desktop, open **Settings → MCP servers**, and confirm `qspice` is enabled. Type `/mcp` in the composer to inspect connections, then use the smoke prompt in [AGENTS.md](../AGENTS.md). Verification starts the server using the saved command, arguments, and environment and checks the MCP handshake and tool discovery.
+
+See [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp) for desktop support and shared configuration. Hosted Chat/Work chats can have different tool availability; check the connection in the intended desktop chat.
 
 ### Cursor — `%USERPROFILE%\.cursor\mcp.json`
 
@@ -194,6 +211,13 @@ resources active on your install.
 
 Full tool list: [Tool reference](tool_reference.md).
 
+`generate_netlist` uses the clean-room parser for supported schematics and falls
+back to native `QUX.exe -Netlist` when that parser rejects a schematic. DLL/C-block
+schematics prefer QUX from the start. Configure `QSPICE_EXE` with `QUX.exe` beside
+it for examples such as the UCC3802 boost converter; if generation fails, the
+response includes the parser and backend diagnostics. An existing, current sibling
+`.cir` or `.net` may be reused instead of regenerating the schematic.
+
 ---
 
 ## Architecture (concepts)
@@ -232,6 +256,8 @@ Both must exit 0. If they fail in a normal terminal, fix the venv/`QSPICE_EXE` s
 | --- | --- |
 | `QSPICE_EXE` missing | Set to `C:\Program Files\QSPICE\QSPICE64.exe`; re-run `--describe` |
 | Tools work but simulation fails | Check `QSPICE_EXE` and the `--workspace-root` folder in MCP config |
+| Inspecting an absolute `.qsch` path in another folder | `inspect_schematic` infers the root from the file's containing folder when `workspace_root` is omitted. An explicit root still bounds the path. Relative paths and other tools require the active root or an explicit override, such as `workspace_root="D:\repos\otros\sim_boost_converter"` with `schematic_path="circuits/boost_one_phase_open_loop.qsch"`. |
+| Replacing a net label conflicts with an old named wire | Use `rename_net` with `net_name="in"` and `new_net_name="vbus"`. This updates all matching labels and explicit wire names together. Label removal retains wire names; insertion rejects a conflicting named wire at its position. Review textual net references separately and inspect connectivity afterward. |
 | Paths with spaces | Quote values: `QSPICE_EXE="C:\Program Files\QSPICE\QSPICE64.exe"` |
 | `Invalid JSON` / stdio error | You typed a shell command into a terminal running `qspice-mcp`; use Ctrl+C and let the **client** spawn the server |
 | Missing DLL / C-block errors | [C-Block Build Guide](cblock_build_guide.md) |
