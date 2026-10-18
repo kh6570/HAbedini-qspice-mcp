@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Retained-run reuse and artifact cleanup helpers for simulation batches."""
 
 from __future__ import annotations

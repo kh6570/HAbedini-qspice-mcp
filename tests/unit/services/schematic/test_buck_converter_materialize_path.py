@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Empty-workspace coverage for the bundled buck_converter_cpp recipe."""
 
 from __future__ import annotations

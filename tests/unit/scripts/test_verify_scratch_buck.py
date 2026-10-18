@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for scripts/verify_scratch_buck.py."""
 
 from __future__ import annotations

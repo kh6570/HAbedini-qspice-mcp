@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Import a user-supplied schematic bundle and sidecars into the workspace."""
 
 from __future__ import annotations

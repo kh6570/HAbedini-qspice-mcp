@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service listing bundled composable topology blocks from package data."""
 
 from __future__ import annotations

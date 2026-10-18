@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Subprocess helpers that surface QSpice log progress to MCP clients."""
 
 from __future__ import annotations

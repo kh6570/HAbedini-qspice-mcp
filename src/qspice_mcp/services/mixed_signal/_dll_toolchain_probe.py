@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Probe QSpice-bundled DMC, MSVC, and CMake availability for DLL builds."""
 
 from __future__ import annotations

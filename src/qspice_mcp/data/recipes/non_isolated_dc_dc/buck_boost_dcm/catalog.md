@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Buck-Boost Converter (DCM) -- reference recipe (Track B)
 
 Inverting buck-boost converter running in discontinuous conduction mode using a linear MOSFET model.

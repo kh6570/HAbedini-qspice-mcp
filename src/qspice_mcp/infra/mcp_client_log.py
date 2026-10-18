@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Mirror structlog events to the active MCP client when a request context is bound."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # QSpice Artifact Model
 
 Treat `.qsch` files as the source of truth. Generate `.net`, `.log`, and `.qraw`

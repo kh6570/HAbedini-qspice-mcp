@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Live GUI support discovery and scaffolding services."""
 
 from __future__ import annotations

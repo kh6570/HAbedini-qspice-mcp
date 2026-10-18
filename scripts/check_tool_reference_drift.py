@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Assert docs/tool_reference.md matches the live registered MCP tool set.
 
 Checks:

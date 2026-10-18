@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for reading one resolved subcircuit view."""
 
 from __future__ import annotations

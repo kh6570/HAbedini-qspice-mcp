@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """In-memory background batch execution manager."""
 
 from __future__ import annotations

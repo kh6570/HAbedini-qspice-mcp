@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for the package CLI entry point."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Resolve model library paths referenced by a netlist."""
 
 from __future__ import annotations

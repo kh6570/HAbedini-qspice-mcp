@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Three-Level NPC Inverter -- reference recipe (Track B)
 
 Three-level neutral-point-clamped (NPC) inverter with sinusoidal PWM (amplitude index 0.8, frequency ratio 20).

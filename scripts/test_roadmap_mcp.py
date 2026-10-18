@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Exercise roadmap fixes through the MCP server invoke_tool path."""
 
 from __future__ import annotations

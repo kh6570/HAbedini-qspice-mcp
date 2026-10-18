@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Repo-owned read-only ERC-style checks for schematics and netlists.
 
 These checks are intentionally conservative: they reuse the clean-room

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for preparing explicit Monte Carlo parameter samples."""
 
 from __future__ import annotations

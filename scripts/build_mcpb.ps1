@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 #Requires -Version 5.1
 <#
 .SYNOPSIS

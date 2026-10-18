@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # C-Block (DLL) Build Guide
 
 This guide covers how to compile a QSpice C-block custom device from the C++

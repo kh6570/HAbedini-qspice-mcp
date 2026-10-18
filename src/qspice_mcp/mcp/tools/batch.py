@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Background batch tool handlers.
 
 Batch lifecycle handlers are bound at runtime via the batch manager in

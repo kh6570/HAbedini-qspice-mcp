@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """MCP input schemas and descriptions for the topology knowledge-pack package."""
 
 from __future__ import annotations

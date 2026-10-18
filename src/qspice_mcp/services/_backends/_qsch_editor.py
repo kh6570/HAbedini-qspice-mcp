@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Repo-owned QschEditor — parses, indexes, mutates, and persists .qsch files.
 
 Provides the ``QschEditor`` class that satisfies ``_QschEditorProtocol``

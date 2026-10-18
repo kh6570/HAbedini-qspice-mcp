@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # QSpice Measurement Guidance
 
 Prefer bounded signal summaries and QPOST-backed `.meas` extraction for compact

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Resolve how a simulation should obtain a QSpice session.
 
 ``session_mode=cold`` (the default) always cold-launches a fresh CLI simulation.

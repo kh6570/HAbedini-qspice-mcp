@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Environment readiness reporting for the ``--setup`` bootstrap subcommand."""
 
 from __future__ import annotations

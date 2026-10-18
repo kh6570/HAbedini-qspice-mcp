@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for placing one standalone `.qsym` symbol file into a schematic."""
 
 from __future__ import annotations

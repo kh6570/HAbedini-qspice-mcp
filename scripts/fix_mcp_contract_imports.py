@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Fix imports and format generated services/*/mcp_contracts.py files."""
 
 from __future__ import annotations

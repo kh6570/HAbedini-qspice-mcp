@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service staging a validated clean-room topology contribution into the workspace.
 
 This does not mutate the bundled (package-data) knowledge pack. It validates a

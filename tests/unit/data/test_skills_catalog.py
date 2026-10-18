@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Validation/drift guard for the bundled agent skills catalog.
 
 Mirrors the discipline of the tool-reference and metadata-casing guards: every

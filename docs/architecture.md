@@ -1,7 +1,11 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Architecture
 
 > **Users:** see the [User guide](user-guide.md) for install, workflows, and troubleshooting.
 > **Contributors:** implementation layout and extension steps are in `.cursor/rules/qspice-development.mdc`.
+
+The catalog, workspace sandbox, 2000-point budget, and `AppError` base live in the package `mcp-app-core`. `pip install` of this server clones that package from GitHub. This repository subclasses those pieces (`QSpiceError`, `QSpiceSettings`) and keeps the QSpice editor, command line, and tools.
 
 `qspice-mcp` is a local [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that lets an AI assistant drive the **QSpice** circuit simulator through a stable, typed tool surface. The AI never touches QSpice directly — it sends tool calls, and the server turns them into safe, validated simulator operations and compact JSON results.
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Verify zero third-party imports (spicelib, qspice) in source and tests.
 
 Exits with code 0 when clean, code 1 when forbidden imports are found.

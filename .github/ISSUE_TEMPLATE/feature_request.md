@@ -6,6 +6,8 @@ labels: ''
 assignees: ''
 
 ---
+In the name of God, the Most Gracious, the Most Merciful
+
 
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]

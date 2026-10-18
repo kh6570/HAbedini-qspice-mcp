@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Shared subcircuit ``.qsch`` byte fixtures used across unit tests.
 
 Kept in a non-``test_*`` module so multiple test modules can reuse the same

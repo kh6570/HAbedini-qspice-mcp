@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Shared JSON-schema fragments for service MCP contracts."""
 
 from __future__ import annotations

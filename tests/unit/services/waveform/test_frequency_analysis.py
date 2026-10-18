@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for Phase 10 waveform analysis services."""
 
 from __future__ import annotations

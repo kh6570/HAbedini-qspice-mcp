@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """MCP clients omit optional arguments; those must not override Python defaults."""
 
 from __future__ import annotations

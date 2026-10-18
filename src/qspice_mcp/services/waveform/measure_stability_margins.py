@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for computing phase and gain margins from a loop-gain Bode trace."""
 
 from __future__ import annotations

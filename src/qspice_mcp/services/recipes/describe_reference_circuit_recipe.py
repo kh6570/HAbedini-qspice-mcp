@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service describing one bundled reference-circuit recipe."""
 
 from __future__ import annotations

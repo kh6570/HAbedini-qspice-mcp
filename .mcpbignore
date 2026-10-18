@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 # .mcpb bundle excludes (uv server type: dependencies are resolved by the host,
 # never bundle a venv or server/lib).
 .venv/

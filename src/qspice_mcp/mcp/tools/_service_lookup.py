@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Resolve MCP service callables through tool-group shim modules."""
 
 from __future__ import annotations

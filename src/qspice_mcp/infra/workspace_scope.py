@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Per-call workspace root, isolated from shared server settings."""
 
 from __future__ import annotations

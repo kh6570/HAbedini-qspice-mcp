@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Compatibility re-exports for workflow instruction catalog access."""
 
 from __future__ import annotations

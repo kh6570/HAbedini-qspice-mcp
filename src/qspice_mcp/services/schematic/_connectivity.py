@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Repo-owned schematic connectivity model built on the clean-room qsch parser.
 
 This module reuses the clean-room schematic parser to derive a non-raising

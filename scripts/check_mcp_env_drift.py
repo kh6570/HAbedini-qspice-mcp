@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Guard MCP launcher templates against phantom ``QSPICE_*`` env keys.
 
 ``.env.example`` is already checked bidirectionally against ``QSpiceSettings``

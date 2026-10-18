@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """MCP prompt metadata and workflow message builders."""
 
 from __future__ import annotations

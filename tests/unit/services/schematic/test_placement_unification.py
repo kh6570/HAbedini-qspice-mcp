@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Behavioral tests for unified placement defaults and orphan-wire cleanup."""
 
 from __future__ import annotations

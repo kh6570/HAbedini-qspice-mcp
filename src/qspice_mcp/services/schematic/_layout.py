@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Grid placement and collision helpers for schematic authoring."""
 
 from __future__ import annotations

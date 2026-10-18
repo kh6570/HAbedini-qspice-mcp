@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for enumerating simulation steps for a raw artifact."""
 
 from __future__ import annotations

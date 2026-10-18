@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for the Windows kill-on-close job object helper."""
 
 from __future__ import annotations

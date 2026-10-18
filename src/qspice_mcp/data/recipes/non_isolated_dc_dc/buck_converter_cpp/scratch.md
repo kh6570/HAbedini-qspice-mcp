@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Buck converter (C++ DLL) — scratch build (Track A)
 
 Build `Buck-converter.qsch` and `buck_controller.cpp` in an **empty workspace** using MCP authoring tools only.

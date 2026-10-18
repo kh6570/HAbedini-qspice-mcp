@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Smoke-build an RC low-pass via the MCP runtime handlers (same code path as MCP tools)."""
 
 from __future__ import annotations

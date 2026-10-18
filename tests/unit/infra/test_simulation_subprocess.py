@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for simulation log progress polling."""
 
 from __future__ import annotations

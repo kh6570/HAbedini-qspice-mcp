@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Create one `.DLL` device (block + pins + optional source scaffold) from a pin spec.
 
 Accepts a PinDef-style device specification — either inline (``device_name`` +

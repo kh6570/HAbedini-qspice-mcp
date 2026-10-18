@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for inserting one component symbol drawing item."""
 
 from __future__ import annotations

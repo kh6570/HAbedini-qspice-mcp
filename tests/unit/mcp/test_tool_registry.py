@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for the tool registry and schema derivation."""
 
 from __future__ import annotations

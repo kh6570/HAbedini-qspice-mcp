@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for netlist include discovery and cache keying."""
 
 from __future__ import annotations

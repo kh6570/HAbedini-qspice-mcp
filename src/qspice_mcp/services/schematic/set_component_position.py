@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for placing one schematic component (move and/or rotate).
 
 This is the unified placement tool. By default it preserves attached

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Static capability map for schematic topology authoring (creation intents)."""
 
 from __future__ import annotations

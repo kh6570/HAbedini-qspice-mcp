@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Facade for schematic edit operations.
 
 Implementations live in ``schematic_edits`` so this module stays an import surface.

@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # QSpice MCP User Guide
 
 One guide for installing, connecting, and using the QSpice MCP server with AI clients.
@@ -19,7 +21,7 @@ One guide for installing, connecting, and using the QSpice MCP server with AI cl
 
 ## Install
 
-Follow the [Installation steps in the README](../README.md#installation): clone the repo, create a virtualenv, `pip install -e .`, set `QSPICE_EXE`, and verify with `qspice-mcp --describe`. Requirements are Windows, Python ≥ 3.11, and QSpice (`QSPICE64.exe`).
+Follow the [Installation steps in the README](../README.md#installation): clone this repo, create a virtualenv, and `pip install -e .`. That install clones `mcp-app-core` from GitHub. Then set `QSPICE_EXE` and verify with `qspice-mcp --describe`. Requirements are Windows, Python ≥ 3.11, and QSpice (`QSPICE64.exe`). The shared catalog, sandbox, and error base come from `mcp-app-core`.
 
 ### Optional extras
 

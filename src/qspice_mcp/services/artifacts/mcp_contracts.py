@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 from qspice_mcp.services._internals.mcp_schema_common import (
     _COMPONENT,
     _STEP_FILTERS,

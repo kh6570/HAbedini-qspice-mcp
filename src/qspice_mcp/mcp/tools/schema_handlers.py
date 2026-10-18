@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Adapt generic MCP handlers to FastMCP-compatible signatures."""
 
 from __future__ import annotations

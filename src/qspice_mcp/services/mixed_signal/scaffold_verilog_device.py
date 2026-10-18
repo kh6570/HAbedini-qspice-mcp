@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Scaffold a Verilog custom-device module for QSpice."""
 
 from __future__ import annotations

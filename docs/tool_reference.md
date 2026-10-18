@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Tool Reference
 
 This document describes the current public MCP tool surface for `qspice-mcp`.

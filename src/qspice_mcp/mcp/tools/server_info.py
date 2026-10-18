@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Server-level introspection tool handlers."""
 
 from __future__ import annotations

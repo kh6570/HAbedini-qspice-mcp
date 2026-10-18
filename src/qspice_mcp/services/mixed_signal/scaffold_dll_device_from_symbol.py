@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Generate a `.DLL` source scaffold from an existing schematic symbol."""
 
 from __future__ import annotations

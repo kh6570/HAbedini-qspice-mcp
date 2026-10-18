@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Schematic edit helpers: dll block."""
 
 from __future__ import annotations

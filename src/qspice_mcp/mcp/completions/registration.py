@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Completion providers for MCP prompts and resource templates."""
 
 from __future__ import annotations

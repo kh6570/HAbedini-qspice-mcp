@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service describing the optional live GUI orchestration surface."""
 
 from __future__ import annotations

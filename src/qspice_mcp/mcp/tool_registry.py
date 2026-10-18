@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tool definition registry for the MCP layer."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # PV Buck with Perturb-and-Observe MPPT (C++ C-block) -- reference recipe (Track B)
 
 Photovoltaic buck stage with a Perturb-and-Observe maximum-power-point tracker

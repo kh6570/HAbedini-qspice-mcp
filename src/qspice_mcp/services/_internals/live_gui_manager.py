@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Persisted live GUI bridge session lifecycle management."""
 
 from __future__ import annotations

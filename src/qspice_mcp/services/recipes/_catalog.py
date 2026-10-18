@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Load bundled circuit recipes and workflow instructions from package data."""
 
 from __future__ import annotations

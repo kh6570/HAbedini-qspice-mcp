@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Two-Phase (Multiphase) Buck Converter -- reference recipe (Track B)
 
 Interleaved two-phase synchronous buck converter demonstrating multiphase current sharing and output ripple cancellation.

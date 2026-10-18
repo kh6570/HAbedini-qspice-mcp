@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for describe_topology_authoring_support."""
 
 from __future__ import annotations

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Guard MCP service contract prose against stale all-caps QSPICE tokens."""
 
 from __future__ import annotations

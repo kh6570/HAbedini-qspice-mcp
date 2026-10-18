@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for updating one component symbol pin item."""
 
 from __future__ import annotations

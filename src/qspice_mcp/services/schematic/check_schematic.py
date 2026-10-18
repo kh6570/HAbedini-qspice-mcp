@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for read-only ERC-style checks on a supported schematic."""
 
 from __future__ import annotations

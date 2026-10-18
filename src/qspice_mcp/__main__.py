@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Package entry point."""
 
 from __future__ import annotations

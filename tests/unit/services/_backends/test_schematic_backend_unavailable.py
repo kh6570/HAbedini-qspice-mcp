@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Regression tests for no-backend schematic-editor loading."""
 
 from __future__ import annotations

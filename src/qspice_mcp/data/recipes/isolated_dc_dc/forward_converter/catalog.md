@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Forward converter -- catalog recipe (Track B)
 
 Single-switch forward converter stepping 48 V down to about 9.2 V. Transformer is three

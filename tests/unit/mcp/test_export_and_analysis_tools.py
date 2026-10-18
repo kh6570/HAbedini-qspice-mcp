@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Focused MCP tests for newly added Phase 9 and Phase 10 tools."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Flyback converter (C++ DLL) — catalog recipe (Track B)
 
 Reproduce the DLL-controlled isolated flyback converter from an **empty workspace** by materializing the bundled reference recipe. Do **not** rebuild the schematic from scratch.

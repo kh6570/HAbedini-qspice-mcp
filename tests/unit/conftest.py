@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Unit-test fixtures that keep local developer env from leaking into assertions."""
 
 from __future__ import annotations

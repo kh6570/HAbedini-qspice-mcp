@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for cancelling an in-flight QSpice simulation run."""
 
 from __future__ import annotations

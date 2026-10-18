@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Topology knowledge pack — attribution
 
 The continuous-conduction-mode (CCM) design relationships and control notes in this

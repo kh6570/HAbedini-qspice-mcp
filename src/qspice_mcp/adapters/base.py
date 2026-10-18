@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Base types for QSpice adapters."""
 
 from __future__ import annotations

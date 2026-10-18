@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Persisted manifest and run-record helpers for simulation batches."""
 
 from __future__ import annotations

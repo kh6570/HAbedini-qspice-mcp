@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Generate a manifest scaffold for the optional live GUI orchestration layer."""
 
 from __future__ import annotations

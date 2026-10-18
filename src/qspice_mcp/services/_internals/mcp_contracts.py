@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """MCP contracts for services without a dedicated package module."""
 
 from __future__ import annotations

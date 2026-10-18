@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """MCP resource metadata and bundled markdown bodies."""
 
 from __future__ import annotations

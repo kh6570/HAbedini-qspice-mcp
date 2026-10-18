@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Enforce per-package coverage floors using existing coverage data."""
 
 from __future__ import annotations

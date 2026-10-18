@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Track and reap simulator child processes on shutdown."""
 
 from __future__ import annotations

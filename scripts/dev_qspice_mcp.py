@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Development MCP launcher for qspice-mcp.
 
 Proxies stdio to ``python -m qspice_mcp`` and restarts the child when

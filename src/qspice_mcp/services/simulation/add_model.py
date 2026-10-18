@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Append one SPICE model definition to a library or netlist artifact."""
 
 from __future__ import annotations

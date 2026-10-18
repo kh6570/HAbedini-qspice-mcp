@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for staging a source with `.ac` loop-gain analysis guidance."""
 
 from __future__ import annotations

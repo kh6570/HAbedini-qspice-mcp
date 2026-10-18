@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """One-shot migration: mcp/_tool_metadata -> services/*/mcp_contracts.py."""
 
 from __future__ import annotations

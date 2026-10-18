@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Apply a workspace JSON layout specification to place schematic components."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Full-bridge converter -- catalog recipe (Track B)
 
 Isolated full-bridge (H-bridge) converter stepping 48 V down to about 7.4 V. Four NMOS

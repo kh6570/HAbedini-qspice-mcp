@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Remote-style simulation lifecycle tool handlers.
 
 Remote lifecycle handlers are bound at runtime via the remote manager in

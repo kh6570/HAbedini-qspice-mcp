@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Assert MCP prompt definitions, builders, and registration stay in sync.
 
 Checks:

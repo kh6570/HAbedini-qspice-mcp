@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for reading device operating-point data from an Operating Point raw file."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Scaffold a Python socket-based custom-device server for QSpice."""
 
 from __future__ import annotations

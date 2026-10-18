@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Voltage-Fed Push-Pull Resonant Inverter -- reference recipe (Track B)
 
 Voltage-fed push-pull resonant inverter (100 kHz) driving a series-resonant tank

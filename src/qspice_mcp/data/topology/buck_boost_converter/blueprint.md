@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Buck-boost converter (inverting)
 
 Clean-room design blueprint covering continuous (CCM) and discontinuous (DCM)

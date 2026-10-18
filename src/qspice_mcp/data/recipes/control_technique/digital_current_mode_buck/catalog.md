@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Digital Current-Mode Buck (Closed Loop, C++ C-block) -- reference recipe (Track B)
 
 Synchronous buck under digital peak-current-mode control implemented as a QSpice

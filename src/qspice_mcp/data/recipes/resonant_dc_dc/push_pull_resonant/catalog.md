@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Current-Fed Push-Pull Resonant Converter -- reference recipe (Track B)
 
 Current-fed push-pull resonant DC-DC converter (100 kHz) with a resonant

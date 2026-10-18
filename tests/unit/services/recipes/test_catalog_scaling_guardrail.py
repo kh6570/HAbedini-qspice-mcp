@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Guardrail: bundled recipes scale as data, never as one-tool-per-example.
 
 Roadmap note "Catalog-scaling guardrail": keep ``list_reference_circuit_recipes``

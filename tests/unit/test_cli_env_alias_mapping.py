@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Guard: the documented CLI<->env alias mapping stays in sync with the code.
 
 Roadmap item "CLI <-> env alias mapping": every setting-bearing launcher flag

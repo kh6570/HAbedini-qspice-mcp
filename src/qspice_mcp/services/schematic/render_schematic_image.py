@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for rendering a supported schematic to a PNG preview image."""
 
 from __future__ import annotations

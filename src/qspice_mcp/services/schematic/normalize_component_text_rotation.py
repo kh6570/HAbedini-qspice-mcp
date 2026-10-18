@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for resetting embedded symbol text to upright readable orientation."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Parse and resolve schematic layout specification documents (JSON v1)."""
 
 from __future__ import annotations

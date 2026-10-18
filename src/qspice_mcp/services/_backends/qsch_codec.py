@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Latin-1 codec for QSpice `.qsch` and `.qsym` files."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 # Normalize line endings to LF in the repo; Git will convert on checkout for Windows
 * text=auto
 *.py text eol=lf

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Guards for the repo-root .mcpb bundle manifest."""
 
 from __future__ import annotations

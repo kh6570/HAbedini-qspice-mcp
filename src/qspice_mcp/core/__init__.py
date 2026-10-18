@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Domain models, error taxonomy, and shared contracts for qspice-mcp.
 
 This subpackage holds the stable types that other layers (services, MCP

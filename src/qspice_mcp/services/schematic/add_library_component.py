@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for cloning a component from a template schematic into a target."""
 
 from __future__ import annotations

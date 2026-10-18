@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Current QSpice CLI adapter bootstrap."""
 
 from __future__ import annotations

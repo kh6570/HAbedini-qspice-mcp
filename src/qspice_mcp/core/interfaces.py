@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Protocols that adapters must implement. The dependency boundary."""
 
 from __future__ import annotations

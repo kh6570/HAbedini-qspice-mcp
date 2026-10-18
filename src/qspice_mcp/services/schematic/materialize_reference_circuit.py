@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Materialize server-bundled reference circuit recipes into the workspace."""
 
 from __future__ import annotations

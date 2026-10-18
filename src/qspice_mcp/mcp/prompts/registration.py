@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Register MCP prompts with the FastMCP application."""
 
 from __future__ import annotations

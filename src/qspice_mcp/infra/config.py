@@ -1,13 +1,15 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Runtime configuration for qspice-mcp."""
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal, Self
+from typing import ClassVar, Literal, Self
 
+from mcp_app_core.settings import AppSettings
 from platformdirs import user_cache_dir
 from pydantic import BaseModel
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import SettingsConfigDict
 
 
 class QSpiceFeatures(BaseModel):
@@ -18,22 +20,14 @@ class QSpiceFeatures(BaseModel):
     simulation: bool = True
 
 
-class QSpiceSettings(BaseSettings):
+class QSpiceSettings(AppSettings):
     """Application settings loaded from environment and CLI overrides."""
 
-    exe: Path | None = None
     live_gui_bridge_command: tuple[str, ...] = ()
-    transport: Literal["stdio", "sse"] = "stdio"
-    enable_sse: bool = False
     session_mode: Literal["cold", "auto"] = "cold"
-    workspace_root: Path = Path.cwd()
-    cache_dir: Path | None = None
-    log_folder: Path | None = None
     recipe_path: Path | None = None
-    log_level: Literal["debug", "info", "warning", "error"] = "info"
-    timeout_s: float | None = 120.0
-    max_cache_bytes: int | None = None
     telemetry_enabled: bool = False
+    cache_app_name: ClassVar[str] = "qspice-mcp"
 
     model_config = SettingsConfigDict(
         env_prefix="QSPICE_",

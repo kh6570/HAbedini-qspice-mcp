@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # LLC Resonant Converter -- reference recipe (Track B)
 
 Full LLC series-resonant DC-DC converter (Lr-Cr-Lm tank plus rectifier) driven by a half-bridge with frequency control.

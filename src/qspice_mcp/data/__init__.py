@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Bundled package data for qspice-mcp.
 
 Recipes live under ``data/recipes/{recipe_id}/``:

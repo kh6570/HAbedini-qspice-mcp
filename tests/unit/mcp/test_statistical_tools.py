@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Focused MCP tests for the initial Phase 7 Monte Carlo tools."""
 
 from __future__ import annotations

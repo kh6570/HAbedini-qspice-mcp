@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """MCP tool metadata and runtime handlers for qspice-mcp."""
 
 from __future__ import annotations

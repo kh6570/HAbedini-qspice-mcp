@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Concrete QSpice-facing adapters."""
 
 from __future__ import annotations

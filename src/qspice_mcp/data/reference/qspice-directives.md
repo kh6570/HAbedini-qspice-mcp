@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # QSpice Directive Cheatsheet
 
 Agent-oriented index of QSpice netlist directives and simulator options.

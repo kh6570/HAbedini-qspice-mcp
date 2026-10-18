@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Skeleton fixture capture utility for QSpice schematic examples."""
 
 from __future__ import annotations

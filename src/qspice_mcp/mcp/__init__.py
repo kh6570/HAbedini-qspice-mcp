@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """MCP protocol layer for qspice-mcp."""
 
 from __future__ import annotations

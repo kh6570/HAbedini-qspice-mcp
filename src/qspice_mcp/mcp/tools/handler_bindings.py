@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Declarative MCP tool handler bindings derived from the service catalog."""
 
 from __future__ import annotations

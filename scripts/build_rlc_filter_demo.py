@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Rebuild the desktop RLC filter demo with wide collision-aware spacing."""
 
 from __future__ import annotations

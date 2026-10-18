@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for recipe resource template loaders."""
 
 from __future__ import annotations

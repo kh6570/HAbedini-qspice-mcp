@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service metadata for reading live GUI bridge events."""
 
 from __future__ import annotations

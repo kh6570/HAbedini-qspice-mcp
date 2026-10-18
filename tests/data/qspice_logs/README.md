@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Real QSpice log corpus
 
 These `.log` files were captured from a real local QSpice run (build version

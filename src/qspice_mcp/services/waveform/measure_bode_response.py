@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for sampling magnitude and phase from frequency-domain waveform data."""
 
 from __future__ import annotations

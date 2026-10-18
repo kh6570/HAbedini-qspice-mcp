@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for exporting one embedded component symbol to a standalone `.qsym` file."""
 
 from __future__ import annotations

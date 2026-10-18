@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Reference recipe attribution
 
 Most bundled recipes are repo-owned, clean-room circuits. The recipes listed

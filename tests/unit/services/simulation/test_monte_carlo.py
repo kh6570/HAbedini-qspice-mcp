@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for the Monte Carlo preparation, execution, and summary services."""
 
 from __future__ import annotations

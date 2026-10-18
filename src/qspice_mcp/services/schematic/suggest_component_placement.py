@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Suggest collision-free schematic coordinates for the next component."""
 
 from __future__ import annotations

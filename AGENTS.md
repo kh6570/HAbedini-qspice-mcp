@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Agent guide — first-time MCP setup (Windows)
 
 Use this file when the user asks to **install, configure, or connect** the QSpice MCP server in **Cursor** or **VS Code** after cloning this repo.
@@ -39,7 +41,7 @@ Call describe_server_capabilities on the qspice MCP server and summarize tool gr
 
 ## What the setup script does
 
-1. Creates `.venv` in the **cloned repo** and runs `pip install -e .`
+1. Creates `.venv` in the **cloned repo** and runs `pip install -e .`. That clones `mcp-app-core` from GitHub, or uses a checkout of it next to this repository when one is already there.
 2. Detects `QSPICE64.exe` (or uses `-QspiceExe`)
 3. Merges `qspice` into **user-level** MCP JSON (absolute paths; preserves other servers)
 4. Runs `python -m qspice_mcp --describe` as a sanity check
@@ -54,7 +56,7 @@ Call describe_server_capabilities on the qspice MCP server and summarize tool gr
 
 | Step | Action |
 |------|--------|
-| 1 | Confirm Windows + Python ≥ 3.11 on PATH |
+| 1 | Confirm Windows + Python ≥ 3.11 on PATH. `pip install` clones `mcp-app-core`; no separate core checkout is required |
 | 2 | Run `scripts/setup_mcp.ps1` with user's circuit folder as `-WorkspaceRoot` |
 | 3 | On failure: install QSpice, pass `-QspiceExe`, or recreate repo `.venv` |
 | 4 | Ask user to **fully restart** IDE |

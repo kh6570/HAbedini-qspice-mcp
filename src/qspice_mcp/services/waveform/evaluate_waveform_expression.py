@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for evaluating arithmetic expressions over waveform traces."""
 
 from __future__ import annotations

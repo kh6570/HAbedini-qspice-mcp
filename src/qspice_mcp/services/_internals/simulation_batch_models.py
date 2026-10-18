@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Shared models and type aliases for simulation batch helpers."""
 
 from __future__ import annotations

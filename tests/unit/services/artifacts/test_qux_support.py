@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for companion QUX export-support reporting."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 [project]
 name = "qspice-mcp"
 version = "0.0.1"
@@ -30,6 +31,7 @@ dependencies = [
     "structlog>=24.1",
     "anyio>=4.3",
     "platformdirs>=4.2",
+    "mcp-app-core @ {env:MCP_CORE_URI:git+https://github.com/kh6570/HAbedini-mcp-app-core.git}",
 ]
 
 [project.optional-dependencies]
@@ -62,6 +64,9 @@ Changelog = "https://github.com/kh6570/HAbedini-qspice-mcp/blob/main/CHANGELOG.m
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/qspice_mcp"]

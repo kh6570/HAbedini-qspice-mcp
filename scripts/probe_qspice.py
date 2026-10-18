@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Bootstrap check for the configured QSpice executable."""
 
 from __future__ import annotations

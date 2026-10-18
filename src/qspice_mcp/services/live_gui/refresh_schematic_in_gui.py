@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Refresh one schematic view in the local GUI on Windows hosts."""
 
 from __future__ import annotations

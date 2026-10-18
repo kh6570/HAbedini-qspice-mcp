@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Load the bundled composable topology knowledge pack from package data."""
 
 from __future__ import annotations

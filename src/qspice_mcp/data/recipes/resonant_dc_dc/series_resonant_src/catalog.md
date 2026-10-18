@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Series Resonant Converter (SRC) -- reference recipe (Track B)
 
 Full series-resonant DC-DC converter with an L-C resonant tank and full-bridge inverter drive.

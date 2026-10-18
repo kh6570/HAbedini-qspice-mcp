@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for the current QSpice CLI adapter command builder."""
 
 from __future__ import annotations

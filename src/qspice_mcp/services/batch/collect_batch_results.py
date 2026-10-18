@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service metadata for collecting completed batch results."""
 
 from __future__ import annotations

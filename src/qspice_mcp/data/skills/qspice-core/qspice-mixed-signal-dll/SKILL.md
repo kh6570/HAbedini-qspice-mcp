@@ -6,6 +6,8 @@ metadata:
   author: qspice-mcp
   version: "1.1"
 ---
+In the name of God, the Most Gracious, the Most Merciful
+
 
 # QSpice: Mixed-Signal `.DLL` Custom Devices
 

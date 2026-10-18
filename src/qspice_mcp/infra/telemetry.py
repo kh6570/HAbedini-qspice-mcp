@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Request trace and optional OpenTelemetry helpers."""
 
 from __future__ import annotations

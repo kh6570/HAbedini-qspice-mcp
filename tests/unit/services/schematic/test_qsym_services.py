@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for standalone `.qsym` symbol export and import services."""
 
 from __future__ import annotations

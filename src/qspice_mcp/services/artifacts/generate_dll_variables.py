@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for QUX-backed `.DLL` variable export."""
 
 from __future__ import annotations

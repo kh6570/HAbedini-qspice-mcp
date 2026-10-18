@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for logging configuration and the optional file handler."""
 
 from __future__ import annotations

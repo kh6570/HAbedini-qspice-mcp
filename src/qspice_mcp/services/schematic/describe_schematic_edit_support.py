@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service describing which schematic edit intents are supported and how to reach them."""
 
 from __future__ import annotations

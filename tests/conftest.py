@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Test configuration for local imports."""
 
 from __future__ import annotations

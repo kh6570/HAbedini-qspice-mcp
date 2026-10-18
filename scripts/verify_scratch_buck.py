@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Verify Track A scratch buck authoring tools through the MCP invoke_tool path."""
 
 from __future__ import annotations

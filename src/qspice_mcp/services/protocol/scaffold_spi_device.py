@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Scaffold an SPI bus device DLL project for QSpice co-simulation."""
 
 from __future__ import annotations

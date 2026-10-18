@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service returning one topology block manifest plus its blueprint document."""
 
 from __future__ import annotations

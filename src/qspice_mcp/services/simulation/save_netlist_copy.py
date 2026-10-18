@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Explicit service for saving one derived netlist copy."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Integration coverage for Phase 6 operating-point services."""
 
 from __future__ import annotations

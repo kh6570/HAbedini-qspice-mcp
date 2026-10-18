@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for exporting a derived FFT spectrum as CSV."""
 
 from __future__ import annotations

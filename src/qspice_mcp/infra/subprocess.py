@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Thin subprocess helpers for simulator execution."""
 
 from __future__ import annotations

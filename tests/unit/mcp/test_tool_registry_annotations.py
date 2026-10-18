@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for ServiceSpec-driven MCP tool annotation resolution."""
 
 from __future__ import annotations

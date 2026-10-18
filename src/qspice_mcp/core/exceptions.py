@@ -1,18 +1,17 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Domain exceptions. All user-facing errors derive from QSpiceError."""
 
 from __future__ import annotations
 
+from mcp_app_core.errors import AppError
+
 from qspice_mcp.core.error_taxonomy import DEFAULT_ERROR_CODE
 
 
-class QSpiceError(Exception):
+class QSpiceError(AppError):
     """Base exception for all qspice-mcp errors."""
 
     default_error_code = DEFAULT_ERROR_CODE
-
-    def __init__(self, message: str, *, error_code: str | None = None) -> None:
-        super().__init__(message)
-        self.error_code = error_code or self.default_error_code
 
 
 class AdapterNotFoundError(QSpiceError):

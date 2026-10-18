@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Mixed-signal custom-device scaffold tool handlers."""
 
 from __future__ import annotations

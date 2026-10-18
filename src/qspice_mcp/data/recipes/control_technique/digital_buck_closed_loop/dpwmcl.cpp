@@ -1,3 +1,4 @@
+// In the name of God, the Most Gracious, the Most Merciful
 // Automatically generated C++ file on Mon Feb  5 19:35:36 2024
 //
 // To build with Digital Mars C++ Compiler:

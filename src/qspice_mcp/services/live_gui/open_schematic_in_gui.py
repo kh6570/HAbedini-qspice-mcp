@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Open one schematic in the local GUI through the host OS association."""
 
 from __future__ import annotations

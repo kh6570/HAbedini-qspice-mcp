@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Half-bridge converter -- catalog recipe (Track B)
 
 Isolated half-bridge converter stepping 48 V down to about 7.9 V. A capacitive divider

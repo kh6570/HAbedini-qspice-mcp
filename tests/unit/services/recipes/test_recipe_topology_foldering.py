@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for topology-foldered recipe resolution and attribution."""
 
 from __future__ import annotations

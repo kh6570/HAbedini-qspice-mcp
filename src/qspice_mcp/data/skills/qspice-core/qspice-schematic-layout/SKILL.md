@@ -6,6 +6,8 @@ metadata:
   author: qspice-mcp
   version: "1.6"
 ---
+In the name of God, the Most Gracious, the Most Merciful
+
 
 # QSpice: Schematic Layout
 

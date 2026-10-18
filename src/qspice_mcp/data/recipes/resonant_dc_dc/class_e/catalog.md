@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Class-E ZVS DC-DC Converter -- reference recipe (Track B)
 
 Zero-voltage-switching Class-E resonant DC-DC converter (single-switch resonant inverter plus rectifier).

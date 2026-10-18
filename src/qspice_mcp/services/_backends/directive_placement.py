@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Placement helpers for top-level schematic analysis directive text."""
 
 from __future__ import annotations

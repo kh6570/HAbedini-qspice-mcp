@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Unit tests for the topology contribution ingestion service."""
 
 from __future__ import annotations

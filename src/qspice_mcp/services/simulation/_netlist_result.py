@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Shared result types for netlist generation.
 
 Kept dependency-free so both ``generate_netlist`` and the QUX companion

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Shared guidance for discovering bundled reference-circuit recipes."""
 
 from __future__ import annotations

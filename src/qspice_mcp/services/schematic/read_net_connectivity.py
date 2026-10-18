@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for reporting net-level connectivity of a supported schematic."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service validating a candidate topology-block manifest against the pack schema."""
 
 from __future__ import annotations

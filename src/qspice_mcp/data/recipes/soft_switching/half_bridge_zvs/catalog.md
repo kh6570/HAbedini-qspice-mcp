@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Half-Bridge ZVS Leg -- reference recipe (Track B)
 
 Half-bridge MOSFET leg with an L-R load illustrating zero-voltage switching and the role of dead-time.

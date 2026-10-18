@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Parallel Resonant Converter (PRC) -- reference recipe (Track B)
 
 Full parallel-resonant DC-DC converter with the load reflected across the resonant capacitor.

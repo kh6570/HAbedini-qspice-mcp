@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Error Codes
 
 This document defines the stable error codes that MCP clients can branch on.

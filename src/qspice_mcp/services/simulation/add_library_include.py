@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Append one include or library directive to a netlist artifact."""
 
 from __future__ import annotations

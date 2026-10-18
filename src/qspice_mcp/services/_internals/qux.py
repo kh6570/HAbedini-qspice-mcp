@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Helpers for QUX companion-executable discovery and invocation."""
 
 from __future__ import annotations

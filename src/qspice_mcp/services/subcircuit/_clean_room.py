@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Clean-room helpers for backend-free subcircuit resolution."""
 
 from __future__ import annotations

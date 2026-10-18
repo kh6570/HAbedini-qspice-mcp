@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Shared helpers for MCP tool handlers."""
 
 from __future__ import annotations

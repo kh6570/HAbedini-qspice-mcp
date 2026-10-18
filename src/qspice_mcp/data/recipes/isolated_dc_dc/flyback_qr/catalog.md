@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Quasi-Resonant Flyback Converter -- reference recipe (Track B)
 
 Quasi-resonant (valley-switching) flyback converter with a behavioral ideal-diode rectifier and constant-on-time control. Steps 350 V down to roughly 5.7 V (turns ratio n=0.05).

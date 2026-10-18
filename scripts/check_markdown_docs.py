@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Lightweight markdown doc lint for the public doc set.
 
 Targets the two failure classes seen in the field without pulling in a Node

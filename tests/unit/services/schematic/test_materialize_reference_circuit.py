@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for materialize_reference_circuit service."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for merging multiple waveform selections into one derived raw artifact."""
 
 from __future__ import annotations

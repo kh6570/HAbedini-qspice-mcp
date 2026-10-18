@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for QSpice log inspection and measure extraction."""
 
 from __future__ import annotations

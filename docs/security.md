@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Security
 
 This document records the current threat model, the security properties the

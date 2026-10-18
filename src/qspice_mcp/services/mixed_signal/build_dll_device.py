@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Compile a workspace C-block source file into a QSpice custom-device DLL."""
 
 from __future__ import annotations

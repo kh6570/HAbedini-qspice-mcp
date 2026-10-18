@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """QSpice MCP package.
 
 Public re-exports are intentionally narrow: the base error type plus the

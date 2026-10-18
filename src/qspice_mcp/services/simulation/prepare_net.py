@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for staging a source with a documented `.net` directive."""
 
 from __future__ import annotations

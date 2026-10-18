@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Live GUI support and session scaffold tool handlers."""
 
 from __future__ import annotations

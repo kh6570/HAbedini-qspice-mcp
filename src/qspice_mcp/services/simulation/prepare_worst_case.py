@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for preparing explicit worst-case parameter and component cases."""
 
 from __future__ import annotations

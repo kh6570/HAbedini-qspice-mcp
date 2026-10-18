@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Lazy matplotlib import so service-module import stays cheap."""
 
 from __future__ import annotations

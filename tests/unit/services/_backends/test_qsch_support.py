@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for repo-owned QschTag and QSCH format constants."""
 
 from __future__ import annotations

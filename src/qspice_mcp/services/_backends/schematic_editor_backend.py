@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Backend loader and shared normalization helpers for schematic editing."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # UC1846 Current-Mode Push-Pull Converter (Open Loop) -- reference recipe (Track B)
 
 Push-pull isolated converter driven by a behavioral UC1846 current-mode PWM

@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Digital Voltage-Mode Buck (Closed Loop, C++ C-block) -- reference recipe (Track B)
 
 Synchronous buck regulated by a digital voltage-mode controller implemented as a

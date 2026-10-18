@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for set_component_position service and backend."""
 
 from __future__ import annotations

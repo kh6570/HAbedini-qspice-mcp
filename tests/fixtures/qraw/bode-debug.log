@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 D:\Projects\2026_04_25_MCP_QSPICE\tmp\bode_probe_debug\closed_loop_regulator-bode-debug.net
 .tran 0 0.342156070836529 0.002
 CHIRP 0.005 0.002 61.7026856093911 0.342156070836529 110250 log xtrap

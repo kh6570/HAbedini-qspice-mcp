@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Pure-stdlib lexical (TF-IDF) retrieval index over the bundled topology corpus.
 
 This module builds a small TF-IDF index whose corpus, per topology block, is the

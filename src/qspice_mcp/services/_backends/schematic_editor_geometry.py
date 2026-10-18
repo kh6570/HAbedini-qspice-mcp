@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Geometry helpers for schematic editing operations."""
 
 from __future__ import annotations

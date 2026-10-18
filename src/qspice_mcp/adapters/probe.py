@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Capability probing for the QSpice executable."""
 
 from __future__ import annotations

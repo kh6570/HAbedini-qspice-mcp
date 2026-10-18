@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Validate one schematic `.DLL` symbol against a C or C++ source file."""
 
 from __future__ import annotations

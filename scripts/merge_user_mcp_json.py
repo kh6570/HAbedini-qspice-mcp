@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Merge one MCP server entry into a user-level mcp.json file."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Repo-owned QSCH tag parser and constants.
 
 Provides the minimal QschTag implementation and QSCH format constants that

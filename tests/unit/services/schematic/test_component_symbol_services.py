@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for component symbol metadata services."""
 
 from __future__ import annotations

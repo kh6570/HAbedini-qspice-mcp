@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for average power-transfer efficiency over a transient window."""
 
 from __future__ import annotations

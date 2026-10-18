@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service metadata for queueing one live GUI bridge command."""
 
 from __future__ import annotations

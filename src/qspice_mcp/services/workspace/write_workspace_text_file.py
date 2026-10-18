@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Write a sandboxed UTF-8 text file inside the workspace root."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Shared schema-version helpers for persisted JSON artifacts."""
 
 from __future__ import annotations

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Guardrails for tests that pass locally but fail on clean CI checkouts.
 
 Checks ``tests/`` for:

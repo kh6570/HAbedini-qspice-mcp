@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Describe the schematic layout specification JSON format (v1)."""
 
 from __future__ import annotations

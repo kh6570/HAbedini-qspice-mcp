@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Digital PWM Generator (C++ C-block) -- reference recipe (Track B)
 
 Minimal digital PWM generator implemented as a QSpice C++ C-block (DPWM): a

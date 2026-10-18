@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for subcircuit inspection and edit services."""
 
 from __future__ import annotations

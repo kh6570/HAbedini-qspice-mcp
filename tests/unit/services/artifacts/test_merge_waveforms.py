@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for waveform merge export."""
 
 from __future__ import annotations

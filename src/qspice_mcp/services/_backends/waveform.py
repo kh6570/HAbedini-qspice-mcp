@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Shared helpers for RawRead-backed waveform services."""
 
 from __future__ import annotations

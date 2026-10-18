@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Assert enriched ServiceSpec rows expose MCP contracts and annotation hints."""
 
 from __future__ import annotations

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Hash-addressed simulation artifact cache."""
 
 from __future__ import annotations

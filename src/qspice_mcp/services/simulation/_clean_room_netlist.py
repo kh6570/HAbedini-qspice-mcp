@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Conservative clean-room qsch-to-netlist regeneration."""
 
 from __future__ import annotations

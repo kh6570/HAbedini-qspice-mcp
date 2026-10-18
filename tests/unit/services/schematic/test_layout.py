@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Tests for schematic layout helpers and suggest_component_placement."""
 
 from __future__ import annotations

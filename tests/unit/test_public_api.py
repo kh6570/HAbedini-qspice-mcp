@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Pin the curated public API surface for the top-level package and core."""
 
 from __future__ import annotations

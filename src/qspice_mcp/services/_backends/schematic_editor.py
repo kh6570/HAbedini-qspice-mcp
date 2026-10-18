@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Compatibility imports for optional QschEditor-backed schematic services."""
 
 from __future__ import annotations

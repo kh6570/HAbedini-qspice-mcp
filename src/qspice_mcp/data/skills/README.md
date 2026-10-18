@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # QSpice Agent Skills Catalog
 
 Curated **agent skills** that teach an AI coding agent how to drive the QSpice MCP

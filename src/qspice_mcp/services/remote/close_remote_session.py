@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service metadata for closing a remote-style simulation session."""
 
 from __future__ import annotations

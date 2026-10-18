@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """FastMCP-backed server bootstrap and runtime wiring."""
 
 from __future__ import annotations

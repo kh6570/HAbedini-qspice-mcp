@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for inserting one pin into an existing `.DLL` block symbol."""
 
 from __future__ import annotations

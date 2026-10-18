@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Minimal clean-room writers for fixed-format QSpice schematic artifacts."""
 
 from __future__ import annotations

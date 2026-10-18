@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Domain models. Frozen dataclasses, no I/O dependencies."""
 
 from __future__ import annotations

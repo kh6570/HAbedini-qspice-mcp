@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 #Requires -Version 5.1
 
 <#
@@ -140,6 +141,38 @@ function Ensure-Venv {
 
 
 
+function Find-LocalCore {
+
+    if ($env:MCP_CORE_PATH -and (Test-Path (Join-Path $env:MCP_CORE_PATH "src\mcp_app_core\__init__.py"))) {
+
+        return $env:MCP_CORE_PATH
+
+    }
+
+    $parent = Split-Path -Parent $RepoRoot
+
+    $found = @()
+
+    foreach ($dir in Get-ChildItem -Path $parent -Directory -ErrorAction SilentlyContinue) {
+
+        $marker = Join-Path $dir.FullName "src\mcp_app_core\__init__.py"
+
+        if ((Test-Path -LiteralPath $marker) -and ($dir.FullName -ne $RepoRoot)) {
+
+            $found += $dir.FullName
+
+        }
+
+    }
+
+    if ($found.Count -eq 1) { return $found[0] }
+
+    return $null
+
+}
+
+
+
 function Install-Package {
 
     if ($SkipInstall) { return }
@@ -148,7 +181,25 @@ function Install-Package {
 
     & $VenvPython -m pip install --upgrade pip | Out-Null
 
+    $core = Find-LocalCore
+
+    if ($core) {
+
+        $env:MCP_CORE_PATH = $core
+
+        $env:MCP_CORE_URI = ([Uri](Resolve-Path -LiteralPath $core).Path).AbsoluteUri
+
+        Write-Step "Using local mcp-app-core checkout"
+
+    }
+
     & $VenvPython -m pip install -e $RepoRoot
+
+    if ($core) {
+
+        & $VenvPython -m pip install -e $core --no-deps
+
+    }
 
 }
 

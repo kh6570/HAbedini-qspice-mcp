@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# In the name of God, the Most Gracious, the Most Merciful
 """Probe MCP cold start: stdio ``initialize`` + ``tools/list`` within a time budget."""
 
 from __future__ import annotations

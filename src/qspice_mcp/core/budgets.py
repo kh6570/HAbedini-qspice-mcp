@@ -1,40 +1,25 @@
-"""Token and size budgets for data-returning operations."""
+# In the name of God, the Most Gracious, the Most Merciful
+"""Size budgets. The limits are implemented in mcp-app-core."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Literal
+from mcp_app_core.budgets import DataBudget as _CoreBudget
+from mcp_app_core.budgets import DownsampleStrategy
+from mcp_app_core.errors import ValidationError as _CoreValidationError
 
 from qspice_mcp.core.exceptions import ValidationError
 
-DownsampleStrategy = Literal["lttb", "decimate", "minmax"]
-_MIN_POINTS = 3
-_MIN_BYTES = 1024
+__all__ = ["DEFAULT_BUDGET", "DataBudget", "DownsampleStrategy"]
 
 
-@dataclass(frozen=True, slots=True)
-class DataBudget:
-    """Limits how much data a tool may return."""
-
-    max_points: int = 2000
-    max_bytes: int = 64_000
-    strategy: DownsampleStrategy = "lttb"
+class DataBudget(_CoreBudget):
+    """Budget that raises QSpice validation errors."""
 
     def __post_init__(self) -> None:
-        if self.max_points < _MIN_POINTS:
-            raise ValidationError(f"max_points must be >= {_MIN_POINTS}")
-        if self.max_bytes < _MIN_BYTES:
-            raise ValidationError(f"max_bytes must be >= {_MIN_BYTES}")
-
-    def fits(self, n_points: int, dtype_size: int = 8) -> bool:
-        """Return True if n_points samples fit within both caps."""
-        return n_points <= self.max_points and n_points * dtype_size <= self.max_bytes
-
-    def target_points(self, n_points: int, dtype_size: int = 8) -> int:
-        """Compute the largest sample count that fits within both caps."""
-        by_points = min(n_points, self.max_points)
-        by_bytes = self.max_bytes // dtype_size
-        return min(by_points, by_bytes)
+        try:
+            super().__post_init__()
+        except _CoreValidationError as exc:
+            raise ValidationError(str(exc)) from exc
 
 
 DEFAULT_BUDGET = DataBudget()

@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Runtime-backed MCP tool handlers for implemented services."""
 
 from __future__ import annotations

@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # QSpice MCP Server
 
 A [Model Context Protocol](https://modelcontextprotocol.io) server for the [QSpice](https://www.qorvo.com/design-hub/design-tools/interactive/qspice) circuit simulator. AI assistants use it to inspect and edit `.qsch` schematics, run simulations, read waveforms, and export results through stable JSON tools.
@@ -14,6 +16,8 @@ pip install -e .
 cp .env.example .env   # set QSPICE_EXE to QSPICE64.exe
 qspice-mcp --describe   # sanity check
 ```
+
+`pip install` clones [mcp-app-core](https://github.com/kh6570/HAbedini-mcp-app-core). You do not clone that repository yourself.
 
 Optional extras: `[backends]` (richer schematic/raw integration), `[telemetry]` (OpenTelemetry spans), `[dev]` (lint/test tooling).
 

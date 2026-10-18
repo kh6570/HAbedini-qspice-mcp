@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service performing lexical (TF-IDF) retrieval across bundled topology blocks."""
 
 from __future__ import annotations

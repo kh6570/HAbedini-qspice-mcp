@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """MCP progress notification bridge for sync tool bodies running off-thread."""
 
 from __future__ import annotations

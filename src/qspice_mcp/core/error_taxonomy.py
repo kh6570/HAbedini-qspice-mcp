@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Published stable error-code taxonomy for MCP clients."""
 
 from __future__ import annotations

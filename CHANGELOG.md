@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Changelog
 
 All notable changes to `qspice-mcp` are recorded in this file.
@@ -13,6 +15,7 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Added
 
+- **Shared framework** — catalog discovery, workspace sandbox, data budget, and the `AppError` base now come from `mcp-app-core` (https://github.com/kh6570/HAbedini-mcp-app-core). `pip install` clones it. `QSpiceError` remains the error type raised by QSpice tools.
 - **`.meas` `find_when` staging** — `prepare_meas(kind="find_when")` writes
   `.meas NAME find EXPR when EXPR=EXPR` with optional `td` and `cross`/`rise`/`fall`.
 - **More `.options` keys** — `prepare_options` now accepts the cheatsheet options

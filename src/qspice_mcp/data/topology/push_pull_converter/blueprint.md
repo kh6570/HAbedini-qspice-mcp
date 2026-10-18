@@ -1,3 +1,5 @@
+In the name of God, the Most Gracious, the Most Merciful
+
 # Push-pull converter (isolated)
 
 Clean-room design blueprint covering continuous (CCM) and discontinuous (DCM)

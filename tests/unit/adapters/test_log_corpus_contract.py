@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Adapter contract tests pinned to a real local QSpice log corpus.
 
 These read committed `.log` fixtures captured from QSpice build ``20260604`` and

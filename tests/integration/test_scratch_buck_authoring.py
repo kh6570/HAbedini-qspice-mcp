@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Track A end-to-end: author the buck from scratch via MCP tools, then simulate.
 
 Unlike ``test_buck_converter.py`` (which copies the shipped recipe schematic),

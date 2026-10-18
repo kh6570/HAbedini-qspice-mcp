@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for time-domain step-response metrics on transient waveforms."""
 
 from __future__ import annotations

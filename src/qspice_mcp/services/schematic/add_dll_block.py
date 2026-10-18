@@ -1,3 +1,4 @@
+# In the name of God, the Most Gracious, the Most Merciful
 """Service for inserting one `.DLL` custom-device block into a schematic."""
 
 from __future__ import annotations
