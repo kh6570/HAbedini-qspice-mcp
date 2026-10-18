@@ -19,6 +19,7 @@ from qspice_mcp.core.exceptions import (
     ParseError,
     QSpiceError,
     SimulationError,
+    ValidationError,
 )
 from qspice_mcp.infra.child_processes import install_shutdown_hooks
 from qspice_mcp.infra.config import QSpiceSettings, build_settings
@@ -222,6 +223,8 @@ class _QSpiceFastMCP(FastMCP):
             raise
         except QSpiceError as exc:
             raise McpError(_to_mcp_error_data(exc)) from exc
+        except ValueError as exc:
+            raise McpError(_to_mcp_error_data(ValidationError(str(exc)))) from exc
         except Exception as exc:
             trace_id = get_exception_trace_id(exc)
             if trace_id is None:
@@ -254,8 +257,11 @@ def _build_app(
             title=tool.title,
             description=tool.description,
             annotations=_to_mcp_annotations(tool.annotations),
-            structured_output=True,
+            structured_output=False,
         )(runtime.get_handler(tool.name))
+        registered = app._tool_manager.get_tool(tool.name)
+        if registered is not None:
+            registered.parameters = dict(tool.input_schema)
     _register_resources(app, resources)
     register_resource_templates(app, workspace_root=settings.workspace_root)
     register_prompts(app, get_prompt_definitions())

@@ -51,6 +51,24 @@ def test_prepare_meas_find_at_statement(tmp_path) -> None:
     assert prepared.instruction == ".meas POWER find V(x)*I(V1) at 100u"
 
 
+def test_prepare_meas_find_when_statement(tmp_path) -> None:
+    netlist = _write_netlist(tmp_path)
+
+    prepared = prepare_meas(
+        netlist,
+        workspace_root=tmp_path,
+        kind="find_when",
+        name="RISE",
+        expression="V(out)",
+        when_condition="V(out)=2.5",
+        edge="rise",
+        edge_count="1",
+        output_path=tmp_path / "smps-meas.net",
+    )
+
+    assert prepared.instruction == ".meas RISE find V(out) when V(out)=2.5 rise=1"
+
+
 def test_prepare_meas_avg_with_window(tmp_path) -> None:
     netlist = _write_netlist(tmp_path)
 

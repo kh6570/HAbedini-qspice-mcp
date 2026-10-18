@@ -78,6 +78,18 @@ def prepare_options(
     savepowers: bool | None = None,
     keepopinfo: bool | None = None,
     fastmath2: bool | None = None,
+    chgtol: str | None = None,
+    bodeperiods: str | None = None,
+    bodetol: str | None = None,
+    bodeinput: str | None = None,
+    bodeoutput: str | None = None,
+    saveparam: str | None = None,
+    listparam: str | None = None,
+    numdgt: str | None = None,
+    measdgt: str | None = None,
+    forcestepdatasize: str | None = None,
+    seed: str | None = None,
+    seedclock: bool | None = None,
     output_path: str | Path | None = None,
 ) -> PreparedSimulatorOptions:
     """Stage a source with one documented `.options` directive."""
@@ -113,6 +125,18 @@ def prepare_options(
     _append_flag_option(tokens, "savepowers", savepowers)
     _append_flag_option(tokens, "keepopinfo", keepopinfo)
     _append_flag_option(tokens, "fastmath2", fastmath2)
+    _append_value_option(tokens, "chgtol", chgtol)
+    _append_value_option(tokens, "bodeperiods", bodeperiods)
+    _append_value_option(tokens, "bodetol", bodetol)
+    _append_value_option(tokens, "bodeinput", bodeinput)
+    _append_value_option(tokens, "bodeoutput", bodeoutput)
+    _append_value_option(tokens, "saveparam", saveparam)
+    _append_value_option(tokens, "listparam", listparam)
+    _append_value_option(tokens, "numdgt", numdgt)
+    _append_value_option(tokens, "measdgt", measdgt)
+    _append_value_option(tokens, "forcestepdatasize", forcestepdatasize)
+    _append_value_option(tokens, "seed", seed)
+    _append_flag_option(tokens, "seedclock", seedclock)
     if not tokens:
         raise ValueError("At least one simulator option must be provided.")
 

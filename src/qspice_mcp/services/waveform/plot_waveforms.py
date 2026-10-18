@@ -3,15 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-import matplotlib
-
-matplotlib.use("Agg")
-
 from typing import TYPE_CHECKING
 
-from matplotlib import pyplot as plt
-
+from qspice_mcp.services._backends.matplotlib_agg import pyplot
 from qspice_mcp.services._backends.waveform import (
     WaveformComponent,
     apply_budget,
@@ -52,6 +46,7 @@ SERVICE_SPEC = ServiceSpec(
     read_only=False,
     phase="implemented",
     idempotent=True,
+    long_running=True,
 )
 
 
@@ -125,6 +120,7 @@ def plot_waveforms(
     if len(y_units) > 1:
         warnings.append("Signals use different inferred units; the shared y-axis label is generic.")
 
+    plt = pyplot()
     figure, axes = plt.subplots(figsize=(10.0, 5.5), constrained_layout=True)
     downsampled_any = False
     point_count = 0

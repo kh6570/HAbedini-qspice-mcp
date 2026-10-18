@@ -50,6 +50,7 @@ SERVICE_SPEC = ServiceSpec(
     phase="implemented",
     read_only=False,
     idempotent=True,
+    long_running=True,
 )
 
 
@@ -106,12 +107,7 @@ def _effective_settings(
     normalized = settings.normalized()
     if normalized.workspace_root.resolve(strict=False) == workspace_root.resolve(strict=False):
         return normalized
-    return QSpiceSettings(
-        workspace_root=workspace_root,
-        exe=normalized.exe,
-        log_level=normalized.log_level,
-        telemetry_enabled=normalized.telemetry_enabled,
-    ).normalized()
+    return normalized.model_copy(update={"workspace_root": workspace_root}).normalized()
 
 
 def _needs_netlist_refresh(
@@ -157,7 +153,6 @@ def _generate_netlist_with_editor_backend(
     if editor_factory is None or backend_name is None:
         raise BackendUnavailableError(
             "No derived .net or .cir exists for this schematic, and no compatible local "
-            "QschEditor backend "
             "QschEditor backend is installed for editor-driven generation."
         )
 
@@ -264,11 +259,15 @@ def _regenerate_schematic_netlist(
     except QSpiceError as exc:
         clean_room_error = exc
 
+    _factory, backend_name = _load_qsch_editor_factory()
+    # The repo editor's save_netlist calls this same renderer, so it cannot recover.
+    if backend_name in {None, *_EDITOR_MODULE_CANDIDATES}:
+        assert clean_room_error is not None
+        raise clean_room_error
+
     try:
         return _generate_netlist_with_editor_backend(schematic_path, destination)
     except BackendUnavailableError as exc:
-        if clean_room_error is None:
-            raise
         raise QSpiceError(
             "The supported clean-room parser could not regenerate the schematic "
             f"({clean_room_error}), and no compatible local QschEditor backend is installed "

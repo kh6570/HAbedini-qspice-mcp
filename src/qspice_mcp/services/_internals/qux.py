@@ -94,7 +94,14 @@ def build_qux_export_command(
     if point_count is not None and point_count < _MIN_EXPORT_POINT_COUNT:
         raise ValidationError("point_count must be at least 2 when provided.")
 
-    command: list[str] = [str(qux_path), "-Export", str(raw_path), *normalized_expressions]
+    # This QUX build treats a second trace argument as the file-format token.
+    # Multiple traces belong in one comma-separated argument: V(out),I(R1).
+    command: list[str] = [
+        str(qux_path),
+        "-Export",
+        str(raw_path),
+        ",".join(normalized_expressions),
+    ]
     if point_count is not None:
         command.append(str(point_count))
     command.append(export_format.upper())

@@ -16,6 +16,7 @@ from uuid import uuid4
 
 from qspice_mcp.core.exceptions import BackendUnavailableError, ValidationError
 from qspice_mcp.infra.logging import get_logger
+from qspice_mcp.infra.workspace_scope import settings_for_active_workspace
 from qspice_mcp.services._internals.persistence_schema import (
     stamp_schema_version,
     validate_schema_version,
@@ -206,8 +207,12 @@ class LiveGuiSessionManager:
     """Manage launched live GUI bridge sessions and persisted status snapshots."""
 
     def __init__(self, settings: QSpiceSettings) -> None:
-        self.settings = settings.normalized()
+        self._settings = settings.normalized()
         self._sessions: dict[str, _ManagedLiveGuiSession] = {}
+
+    @property
+    def settings(self) -> QSpiceSettings:
+        return settings_for_active_workspace(self._settings)
 
     def _persist_session(self, session: _ManagedLiveGuiSession) -> None:
         payload = _serialize_session(session)

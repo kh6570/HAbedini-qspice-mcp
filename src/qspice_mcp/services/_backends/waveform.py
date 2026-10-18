@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import OrderedDict
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
@@ -89,11 +90,13 @@ class _CleanRoomRawRead:
         dialect: str | None = None,
         verbose: bool = True,
         require_repo_title: bool = True,
+        raw_bytes: bytes | None = None,
     ) -> None:
         del dialect, verbose
-        artifact = _parse_clean_room_raw(
+        artifact = _cached_clean_room_artifact(
             Path(raw_filename),
             require_repo_title=require_repo_title,
+            raw_bytes=raw_bytes,
         )
         selected_traces = _normalize_requested_traces(traces_to_read)
         if selected_traces is not None:
@@ -584,12 +587,18 @@ def _supports_raw_flags(flag_set: set[str]) -> bool:
     return "real" in flag_set or "complex" in flag_set
 
 
+_RAW_PARSE_CACHE: OrderedDict[tuple[str, int, int, bool], _CleanRoomRawArtifact] = OrderedDict()
+_RAW_PARSE_CACHE_LIMIT = 4
+
+
 def _parse_clean_room_raw(
     raw_path: Path,
     *,
     require_repo_title: bool = True,
+    raw_bytes: bytes | None = None,
 ) -> _CleanRoomRawArtifact:
-    raw_bytes = raw_path.read_bytes()
+    if raw_bytes is None:
+        raw_bytes = raw_path.read_bytes()
     decoded_header = _decode_supported_raw_header(raw_bytes)
     if decoded_header is None:
         artifact_kind = (
@@ -663,16 +672,42 @@ def _parse_clean_room_raw(
     )
 
 
+def _cached_clean_room_artifact(
+    raw_path: Path,
+    *,
+    require_repo_title: bool,
+    raw_bytes: bytes | None = None,
+) -> _CleanRoomRawArtifact:
+    """Parse one raw file once and reuse the artifact for later reads."""
+
+    stat = raw_path.stat()
+    key = (str(raw_path.resolve(strict=False)), stat.st_mtime_ns, stat.st_size, require_repo_title)
+    cached = _RAW_PARSE_CACHE.get(key)
+    if cached is not None:
+        _RAW_PARSE_CACHE.move_to_end(key)
+        return cached
+    artifact = _parse_clean_room_raw(
+        raw_path,
+        require_repo_title=require_repo_title,
+        raw_bytes=raw_bytes,
+    )
+    _RAW_PARSE_CACHE[key] = artifact
+    while len(_RAW_PARSE_CACHE) > _RAW_PARSE_CACHE_LIMIT:
+        _RAW_PARSE_CACHE.popitem(last=False)
+    return artifact
+
+
 def _try_open_clean_room_reader(
     raw_path: Path,
     *,
     traces_to_read: None | str | list[str] | tuple[str, ...] = None,
+    raw_bytes: bytes | None = None,
 ) -> _RawReadProtocol | None:
     try:
-        raw_bytes = raw_path.read_bytes()
+        payload = raw_path.read_bytes() if raw_bytes is None else raw_bytes
     except OSError:
         return None
-    decoded_header = _decode_supported_raw_header(raw_bytes)
+    decoded_header = _decode_supported_raw_header(payload)
     if decoded_header is None:
         return None
     header_text = decoded_header.header_text
@@ -684,6 +719,7 @@ def _try_open_clean_room_reader(
             traces_to_read=traces_to_read,
             verbose=False,
             require_repo_title=True,
+            raw_bytes=payload,
         )
     except ParseError:
         return None
@@ -693,9 +729,11 @@ def _try_open_compatible_supported_reader(
     raw_path: Path,
     *,
     traces_to_read: None | str | list[str] | tuple[str, ...] = None,
+    raw_bytes: bytes | None = None,
 ) -> _RawReadProtocol | None:
     try:
-        decoded_header = _decode_supported_raw_header(raw_path.read_bytes())
+        payload = raw_path.read_bytes() if raw_bytes is None else raw_bytes
+        decoded_header = _decode_supported_raw_header(payload)
     except OSError:
         decoded_header = None
     if decoded_header is None:
@@ -714,6 +752,7 @@ def _try_open_compatible_supported_reader(
             traces_to_read=traces_to_read,
             verbose=False,
             require_repo_title=False,
+            raw_bytes=payload,
         )
     except ParseError:
         return None
@@ -803,9 +842,11 @@ def open_raw_reader(
     resolved_path = validate_existing_file(
         raw_path, workspace_root=workspace_root, suffixes=(".qraw",)
     )
+    raw_bytes = resolved_path.read_bytes()
     clean_room_reader = _try_open_clean_room_reader(
         resolved_path,
         traces_to_read=traces_to_read,
+        raw_bytes=raw_bytes,
     )
     if clean_room_reader is not None:
         return clean_room_reader, resolved_path
@@ -814,12 +855,12 @@ def open_raw_reader(
         compatible_reader = _try_open_compatible_supported_reader(
             resolved_path,
             traces_to_read=traces_to_read,
+            raw_bytes=raw_bytes,
         )
         if compatible_reader is not None:
             return compatible_reader, resolved_path
         raise BackendUnavailableError(
-            "No compatible local RawRead backend "
-            "QschEditor backend is installed for waveform access."
+            "No compatible local RawRead backend is installed for waveform access."
         )
     try:
         reader = raw_read_factory(str(resolved_path), traces_to_read=traces_to_read, verbose=False)
@@ -1137,10 +1178,19 @@ def apply_budget(
     values: NDArray[np.float64],
     *,
     budget: DataBudget,
+    sample_bytes: int | None = None,
 ) -> tuple[NDArray[np.float64], NDArray[np.float64], bool]:
-    """Downsample one waveform pair to fit the configured response budget."""
+    """Downsample one waveform pair to fit the configured response budget.
 
-    dtype_size = int(axis.dtype.itemsize) + int(values.dtype.itemsize)
+    ``sample_bytes`` is the serialized size of one sample. Waveform JSON carries
+    two decimal arrays, which is larger than the binary dtype width.
+    """
+
+    dtype_size = (
+        sample_bytes
+        if sample_bytes is not None
+        else int(axis.dtype.itemsize) + int(values.dtype.itemsize)
+    )
     if budget.fits(axis.shape[0], dtype_size=dtype_size):
         return axis, values, False
 

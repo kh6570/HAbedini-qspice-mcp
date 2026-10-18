@@ -10,6 +10,7 @@ from qspice_mcp.core.exceptions import BackendUnavailableError, QSpiceError
 from qspice_mcp.services._shared.paths import resolve_workspace_path, validate_existing_file
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
     from pathlib import Path
 
 _EDITOR_MODULE_CANDIDATES: tuple[str, ...] = ("qspice_mcp.services._backends._qsch_editor",)
@@ -275,8 +276,7 @@ def open_schematic_editor(
     editor_factory, backend_name = load_qsch_editor_factory()
     if editor_factory is None or backend_name is None:
         raise BackendUnavailableError(
-            "No compatible local QschEditor backend "
-            "QschEditor backend is installed for schematic access."
+            "No compatible local QschEditor backend is installed for schematic access."
         )
     try:
         editor = editor_factory(
@@ -516,6 +516,16 @@ def resolve_schematic_output_path(
     if resolved.suffix.lower() != ".qsch":
         raise ValueError("Schematic output path must end in .qsch")
     return resolved
+
+
+def component_attribute_text(attributes: Mapping[str, object], *names: str) -> str | None:
+    """Return the first present attribute, accepting editor and legacy key casings."""
+
+    for name in names:
+        raw = attributes.get(name)
+        if raw is not None:
+            return str(raw)
+    return None
 
 
 def normalize_component_parameters(

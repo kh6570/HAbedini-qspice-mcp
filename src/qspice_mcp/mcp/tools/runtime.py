@@ -13,6 +13,11 @@ import anyio
 from qspice_mcp.infra.logging import get_logger
 from qspice_mcp.infra.progress import report_progress
 from qspice_mcp.infra.telemetry import attach_trace_id, request_scope
+from qspice_mcp.infra.workspace_scope import (
+    reset_pending_workspace_root,
+    set_pending_workspace_root,
+    settings_for_active_workspace,
+)
 from qspice_mcp.services._internals.batch_manager import SimulationBatchManager
 from qspice_mcp.services._internals.live_gui_manager import LiveGuiSessionManager
 from qspice_mcp.services._internals.remote_session_manager import RemoteSimulationManager
@@ -20,11 +25,7 @@ from qspice_mcp.services._internals.remote_session_manager import RemoteSimulati
 from .handler_bindings import ToolHandler, build_raw_tool_handlers
 from .schema_handlers import expose_tool_schema
 from .shared import to_jsonable
-from .workspace import (
-    _WorkspaceSettingsProxy,
-    get_pending_workspace_root,
-    resolve_workspace_override,
-)
+from .workspace import resolve_workspace_override
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -38,11 +39,11 @@ class QSpiceToolRuntime:
     """Thin orchestration layer used by MCP tool handlers."""
 
     def __init__(self, settings: QSpiceSettings, tools: tuple[ToolDefinition, ...]) -> None:
-        self.settings = settings.normalized()
+        self._settings = settings.normalized()
         self.tools = tools
-        self._batch_manager = SimulationBatchManager(self.settings)
-        self._live_gui_manager = LiveGuiSessionManager(self.settings)
-        self._remote_manager = RemoteSimulationManager(self.settings)
+        self._batch_manager = SimulationBatchManager(self._settings)
+        self._live_gui_manager = LiveGuiSessionManager(self._settings)
+        self._remote_manager = RemoteSimulationManager(self._settings)
         self._tool_definitions = {tool.name: tool for tool in tools}
         raw_handlers = build_raw_tool_handlers(self, tools)
         self._handlers: dict[str, ToolHandler] = {
@@ -53,6 +54,16 @@ class QSpiceToolRuntime:
             for name, handler in raw_handlers.items()
         }
 
+    @property
+    def settings(self) -> QSpiceSettings:
+        """Settings for the active call, including a per-call workspace root."""
+
+        return settings_for_active_workspace(self._settings)
+
+    @settings.setter
+    def settings(self, value: QSpiceSettings) -> None:
+        self._settings = value
+
     def _wrap_handler(
         self,
         tool: ToolDefinition,
@@ -61,15 +72,17 @@ class QSpiceToolRuntime:
         logger = get_logger(component="mcp.tool", tool=tool.name)
 
         def _execute(**kwargs: object) -> dict[str, object]:
-            workspace_override = resolve_workspace_override(kwargs.pop("workspace_root", None))
-            if workspace_override is None:
-                workspace_override = get_pending_workspace_root()
-            original_settings = self.settings
-            if workspace_override is not None:
-                self.settings = cast(
-                    "QSpiceSettings",
-                    _WorkspaceSettingsProxy(original_settings, workspace_override),
-                )
+            explicit_root = resolve_workspace_override(kwargs.pop("workspace_root", None))
+            workspace_token = (
+                set_pending_workspace_root(explicit_root) if explicit_root is not None else None
+            )
+            try:
+                return _execute_in_scope(kwargs)
+            finally:
+                if workspace_token is not None:
+                    reset_pending_workspace_root(workspace_token)
+
+        def _execute_in_scope(call_kwargs: dict[str, object]) -> dict[str, object]:
             with request_scope(
                 tool_name=tool.name,
                 telemetry_enabled=self.settings.telemetry_enabled,
@@ -84,7 +97,7 @@ class QSpiceToolRuntime:
                 if tool.service.long_running:
                     report_progress(0, total=1, message=f"{tool.name} started")
                 try:
-                    result = handler(**kwargs)
+                    result = handler(**call_kwargs)
                 except Exception as exc:
                     attach_trace_id(exc, trace_id)
                     logger.exception(
@@ -93,9 +106,6 @@ class QSpiceToolRuntime:
                         long_running=tool.service.long_running,
                     )
                     raise
-                finally:
-                    if workspace_override is not None:
-                        self.settings = original_settings
 
                 logger.info(
                     "tool_request_completed",

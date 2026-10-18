@@ -14,6 +14,7 @@ from uuid import uuid4
 from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.infra.logging import get_logger
 from qspice_mcp.infra.telemetry import operation_span
+from qspice_mcp.infra.workspace_scope import settings_for_active_workspace
 from qspice_mcp.services._internals.persistence_schema import (
     stamp_schema_version,
     validate_schema_version,
@@ -299,8 +300,12 @@ class SimulationBatchManager:
     """Manage background sweep execution for one MCP server instance."""
 
     def __init__(self, settings: QSpiceSettings) -> None:
-        self.settings = settings.normalized()
+        self._settings = settings.normalized()
         self._jobs: dict[str, _ManagedBatch] = {}
+
+    @property
+    def settings(self) -> QSpiceSettings:
+        return settings_for_active_workspace(self._settings)
 
     def _start_job_thread(self, job: _ManagedBatch, *, force_resume: bool | None = None) -> None:
         request = job.request

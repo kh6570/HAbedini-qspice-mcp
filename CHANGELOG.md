@@ -13,6 +13,12 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Added
 
+- **`.meas` `find_when` staging** — `prepare_meas(kind="find_when")` writes
+  `.meas NAME find EXPR when EXPR=EXPR` with optional `td` and `cross`/`rise`/`fall`.
+- **More `.options` keys** — `prepare_options` now accepts the cheatsheet options
+  `chgtol`, `bodeperiods`, `bodetol`, `bodeinput`, `bodeoutput`, `saveparam`,
+  `listparam`, `numdgt`, `measdgt`, `forcestepdatasize`, `seed`, and `seedclock`.
+
 - **MCP server** — FastMCP stdio server (`qspice-mcp`) with runtime capability
   discovery (`describe_server_capabilities`), a stable error taxonomy
   ([docs/errors.md](docs/errors.md)), a `trace_id` on every response, and
@@ -447,6 +453,39 @@ drive the QSpice circuit simulator through stable JSON tools.
   the boost `catalog.md` was upgraded to the full Track-B structure instead.
 
 ### Fixed
+
+- **QUX waveform export of more than one trace** — current QUX treats a second
+  argument as the file format, so multiple traces are now passed as one
+  comma-separated expression (`V(out),I(R1)`).
+- **DLL scaffold `output_dir`** — a relative directory such as `devices` is
+  resolved inside the workspace instead of the process working directory.
+- **Long-running progress reporting** — a missing MCP progress token no longer
+  fails the tool.
+- **Parenthesized `.meas` rows** — QPOST lines such as `( nan, nan)` parse as
+  numeric values instead of leftover punctuation.
+- **Numeric directive tokens** — `.ac` loop-gain staging accepts JSON numbers
+  for points and frequency limits.
+- **Unquoted symbol descriptions** — multi-word values such as
+  `Resistor(USA Style Symbol)` stay intact after a schematic is saved and
+  reopened.
+
+- **Omitted MCP arguments no longer override defaults** — optional tool arguments
+  that clients leave out were forwarded as `None`, which crashed
+  `poll_live_gui_session_events` and disabled batch parallelism and DLL build timeouts.
+- **Component lists report values** — `list_components`, `list_subcircuits`, and
+  `read_subcircuit` read the editor's `Value` attribute.
+- **Subfolder DLL builds and cache freshness** — writing `devices/ctrl.cpp` builds
+  that file, `.cc`/`.cxx` sources are allowed, and a rebuilt sibling `.dll` changes
+  the simulation cache key.
+- **Per-call workspace root** — batch, remote, and live-GUI tools honor
+  `workspace_root` without swapping shared settings across concurrent calls.
+- **Clean-room schematic decode is Latin-1** — the netlist line scanner uses the
+  same codec as the editor and keeps characters such as `°` instead of turning
+  them into `u`.
+- **Waveform JSON budget** — `read_waveform` sizes the 64,000-byte cap from the
+  serialized x/y payload, not from binary sample width.
+- **Advertised tool schemas** — `tools/list` publishes the contract JSON schemas
+  instead of untyped `object` properties.
 
 - **`read_log` broken over MCP** — the service parameter was renamed `raw_path` →
   `log_path` (it takes a `.log` path, matching `list_measures`/`read_measures`), fixing

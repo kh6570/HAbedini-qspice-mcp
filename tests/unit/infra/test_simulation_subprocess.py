@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import queue
 import sys
 import threading
 import time
@@ -11,6 +12,7 @@ import pytest
 
 from qspice_mcp.infra import simulation_subprocess
 from qspice_mcp.infra.simulation_subprocess import (
+    _drain_progress,
     _poll_log_progress,
     run_subprocess_with_log_progress,
 )
@@ -43,9 +45,10 @@ def test_poll_log_progress_reports_percent_updates(
     monkeypatch.setattr(simulation_subprocess, "report_info", capture_info)
 
     stop_event = threading.Event()
+    events: queue.Queue[tuple[float, str]] = queue.Queue()
     poller = threading.Thread(
         target=_poll_log_progress,
-        args=(log_path, stop_event),
+        args=(log_path, stop_event, events),
         name="test-log-progress",
         daemon=True,
     )
@@ -53,10 +56,12 @@ def test_poll_log_progress_reports_percent_updates(
     try:
         deadline = time.monotonic() + 2.0
         while time.monotonic() < deadline and not recorded_progress:
+            _drain_progress(events)
             time.sleep(0.05)
     finally:
         stop_event.set()
         poller.join(timeout=2.0)
+        _drain_progress(events)
 
     assert recorded_progress
     assert recorded_progress[-1][0] == pytest.approx(25.0)
@@ -85,9 +90,10 @@ def test_poll_log_progress_skips_duplicate_percentages(
     monkeypatch.setattr(simulation_subprocess, "report_info", noop_info)
 
     stop_event = threading.Event()
+    events: queue.Queue[tuple[float, str]] = queue.Queue()
     poller = threading.Thread(
         target=_poll_log_progress,
-        args=(log_path, stop_event),
+        args=(log_path, stop_event, events),
         name="test-log-progress-dedupe",
         daemon=True,
     )
@@ -95,10 +101,12 @@ def test_poll_log_progress_skips_duplicate_percentages(
     try:
         deadline = time.monotonic() + 2.0
         while time.monotonic() < deadline and len(recorded_progress) < 2:
+            _drain_progress(events)
             time.sleep(0.05)
     finally:
         stop_event.set()
         poller.join(timeout=2.0)
+        _drain_progress(events)
 
     assert recorded_progress == [pytest.approx(50.0), pytest.approx(100.0)]
 

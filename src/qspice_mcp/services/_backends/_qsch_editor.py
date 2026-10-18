@@ -25,6 +25,7 @@ from qspice_mcp.services._backends._qsch_support import (
     QschTag,
 )
 from qspice_mcp.services._backends.directive_placement import compute_directive_position
+from qspice_mcp.services._backends.qsch_codec import decode_qsch_bytes
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -43,18 +44,9 @@ _logger = structlog.get_logger(__name__)
 
 
 def _decode_qsch_bytes(raw_bytes: bytes) -> str:
-    """Decode .qsch file bytes using QSPICE's Latin-1 wire format.
+    """Decode .qsch file bytes using QSPICE's Latin-1 wire format."""
 
-    QSPICE .qsch files are Latin-1, with guillemets as single bytes
-    ``\\xab``/``\\xbb``.  Inline UTF-8 BOM byte sequences may appear
-    before analysis directives; strip those qualifiers before decoding.
-    Do not attempt whole-file UTF-8 decoding: valid UTF-8 byte runs can
-    mis-decode Latin-1 guillemets into non-cp1252 characters.
-    """
-    # Strip UTF-8 BOM bytes if present (they appear before directives)
-    raw_bytes = raw_bytes.replace(b"\xef\xbb\xbf", b"")
-    # Latin-1 preserves the \xab/\xbb guillemet bytes as «/»
-    return raw_bytes.decode("latin-1")
+    return decode_qsch_bytes(raw_bytes)
 
 
 def _split_qsch_tokens(line: str) -> list[str]:

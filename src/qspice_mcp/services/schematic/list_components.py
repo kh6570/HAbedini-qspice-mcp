@@ -9,7 +9,10 @@ from qspice_mcp.core.exceptions import BackendUnavailableError
 from qspice_mcp.services._backends.clean_room_schematic import (
     inspect_supported_schematic_components,
 )
-from qspice_mcp.services._backends.schematic_editor import open_schematic_editor
+from qspice_mcp.services._backends.schematic_editor import (
+    component_attribute_text,
+    open_schematic_editor,
+)
 from qspice_mcp.services._shared.paths import validate_existing_file
 from qspice_mcp.services.service_spec import ServiceSpec
 
@@ -93,14 +96,12 @@ def list_components(
         for reference in references:
             editor_component = editor.get_component(reference)
             attributes = dict(editor_component.attributes)
-            value = attributes.get("value")
-            description = attributes.get("description")
             components.append(
                 ComponentSummary(
                     reference=reference,
-                    kind=str(attributes.get("type") or reference[:1]),
-                    value=str(value) if value is not None else None,
-                    description=str(description) if description is not None else None,
+                    kind=component_attribute_text(attributes, "type", "Type") or reference[:1],
+                    value=component_attribute_text(attributes, "Value", "value"),
+                    description=component_attribute_text(attributes, "description", "Description"),
                     node_count=len(tuple(str(node) for node in editor_component.ports)),
                     has_subcircuit="_SUBCKT" in attributes,
                 )

@@ -40,6 +40,9 @@ class WaveformRead:
     y_values: tuple[float, ...]
 
 
+# Two JSON numbers plus separators; measured responses were ~40 bytes per point.
+_JSON_BYTES_PER_POINT = 40
+
 SERVICE_SPEC = ServiceSpec(
     name="read_waveform",
     title="Read Waveform",
@@ -99,6 +102,7 @@ def read_waveform(
         waveform.x,
         waveform.y,
         budget=build_budget(max_points=max_points, max_bytes=max_bytes),
+        sample_bytes=_JSON_BYTES_PER_POINT,
     )
     return WaveformRead(
         raw_path=waveform.raw_path,

@@ -5,15 +5,17 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 from qspice_mcp.services._shared.paths import resolve_workspace_path, validate_existing_file
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-    from pathlib import Path
 
 _NETLIST_SUFFIXES = (".net", ".cir", ".inc")
+_DLL_PATH_PATTERN = re.compile(r"""(?i)(?:"([^"]+\.dll)"|'([^']+\.dll)'|(\S+\.dll))""")
+_TOKEN_PATTERN = re.compile(r"[A-Za-z_][\w.-]*")
 _INCLUDE_LINE = re.compile(
     r"^\s*\.(?P<kind>include|inc|lib)\s+(?P<path>.+?)\s*(?:;.*)?$",
     re.IGNORECASE,
@@ -134,6 +136,58 @@ def collect_netlist_includes(
     return tuple(discovered)
 
 
+def collect_netlist_dlls(
+    netlist_path: str | Path,
+    *,
+    workspace_root: Path,
+) -> tuple[NetlistInclude, ...]:
+    """Collect DLL files a netlist can load even when the deck text does not change.
+
+    QSpice resolves C-block devices to ``<name>.dll`` beside the netlist. Rebuilding
+    that DLL leaves the netlist bytes unchanged, so the simulation cache must hash
+    the DLL itself.
+    """
+
+    normalized_workspace = workspace_root.resolve(strict=False)
+    root = validate_existing_file(
+        netlist_path,
+        workspace_root=normalized_workspace,
+        suffixes=_NETLIST_SUFFIXES,
+    )
+    text = root.read_text(encoding="utf-8", errors="replace")
+    tokens = {token.lower() for token in _TOKEN_PATTERN.findall(text)}
+    discovered: dict[Path, NetlistInclude] = {}
+
+    def _add(raw_path: str, resolved: Path | None) -> None:
+        exists = resolved is not None and resolved.is_file()
+        key = resolved.resolve(strict=False) if resolved is not None else Path(raw_path)
+        if key in discovered:
+            return
+        discovered[key] = NetlistInclude(
+            kind="dll",
+            directive=".dll",
+            raw_path=raw_path,
+            resolved_path=resolved,
+            exists=exists,
+            source_netlist=root,
+        )
+
+    for match in _DLL_PATH_PATTERN.finditer(text):
+        raw_path = next(group for group in match.groups() if group)
+        resolved = _resolve_include_path(
+            raw_path,
+            base_dir=root.parent,
+            workspace_root=normalized_workspace,
+        )
+        _add(raw_path, resolved)
+
+    for dll_path in sorted(root.parent.glob("*.dll")):
+        if dll_path.stem.lower() in tokens or f"{dll_path.stem.lower()}.dll" in tokens:
+            _add(dll_path.name, dll_path)
+
+    return tuple(discovered.values())
+
+
 def hash_include_dependencies(
     includes: Iterable[NetlistInclude],
 ) -> tuple[tuple[str, str, float], ...]:
@@ -151,6 +205,7 @@ def hash_include_dependencies(
 
 __all__ = [
     "NetlistInclude",
+    "collect_netlist_dlls",
     "collect_netlist_includes",
     "hash_include_dependencies",
     "parse_netlist_directives",

@@ -6,7 +6,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 from qspice_mcp.core.exceptions import BackendUnavailableError
-from qspice_mcp.services._backends.schematic_editor import open_schematic_editor
+from qspice_mcp.services._backends.schematic_editor import (
+    component_attribute_text,
+    open_schematic_editor,
+)
 from qspice_mcp.services._shared.paths import validate_existing_file
 from qspice_mcp.services.service_spec import ServiceSpec
 from qspice_mcp.services.subcircuit._clean_room import resolve_supported_subcircuit_target
@@ -121,22 +124,23 @@ def read_subcircuit(
     )
     component = parent_editor.get_component(normalized_reference)
     attributes = dict(component.attributes)
-    value = attributes.get("value")
-    description = attributes.get("description")
+    value = component_attribute_text(attributes, "Value", "value")
+    description = component_attribute_text(attributes, "description", "Description")
 
     references = tuple(str(name) for name in subeditor.get_components(prefixes="*"))
     components: list[SubcircuitComponentSummary] = []
     for child_reference in references:
         child = subeditor.get_component(child_reference)
         child_attributes = dict(child.attributes)
-        child_value = child_attributes.get("value")
-        child_description = child_attributes.get("description")
         components.append(
             SubcircuitComponentSummary(
                 reference=child_reference,
-                kind=str(child_attributes.get("type") or child_reference[:1]),
-                value=str(child_value) if child_value is not None else None,
-                description=str(child_description) if child_description is not None else None,
+                kind=component_attribute_text(child_attributes, "type", "Type")
+                or child_reference[:1],
+                value=component_attribute_text(child_attributes, "Value", "value"),
+                description=component_attribute_text(
+                    child_attributes, "description", "Description"
+                ),
                 node_count=len(tuple(str(node) for node in child.ports)),
             )
         )

@@ -73,6 +73,7 @@ SERVICE_SPEC = ServiceSpec(
     phase="implemented",
     # Not read-only: refresh_measures (default) materializes a `.meas` sidecar via QPOST.
     read_only=False,
+    long_running=True,
 )
 
 
@@ -125,6 +126,13 @@ def _default_columns(name: str, row_width: int, *, stepped: bool) -> tuple[str, 
     return (name, *[f"{name}_{index}" for index in range(1, row_width)])
 
 
+def _meas_row_tokens(line: str) -> tuple[str, ...]:
+    """Split one QPOST measure row, including parenthesized comma-separated values."""
+
+    cleaned = line.replace("(", " ").replace(")", " ").replace(",", " ")
+    return tuple(token for token in cleaned.split() if token)
+
+
 def _parse_meas_file(meas_path: Path, *, stepped: bool) -> tuple[LogMeasurement, ...]:
     """Parse a QPOST-generated `.meas` file into structured measurement blocks."""
 
@@ -173,7 +181,7 @@ def _parse_meas_file(meas_path: Path, *, stepped: bool) -> tuple[LogMeasurement,
             current_expression = expression
             continue
         if current_name is not None:
-            current_rows.append(tuple(_convert_value(token) for token in line.split()))
+            current_rows.append(tuple(_convert_value(token) for token in _meas_row_tokens(line)))
     flush()
     return tuple(measures)
 

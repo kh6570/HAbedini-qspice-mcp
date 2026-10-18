@@ -21,6 +21,7 @@ SERVICE_SPEC = ServiceSpec(
     summary="Export one or more waveform expressions through the documented QUX CSV export path.",
     phase="implemented",
     read_only=False,
+    long_running=True,
 )
 
 

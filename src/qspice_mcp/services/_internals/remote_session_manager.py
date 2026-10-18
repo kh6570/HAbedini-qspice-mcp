@@ -18,6 +18,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.infra.logging import get_logger
 from qspice_mcp.infra.telemetry import operation_span
+from qspice_mcp.infra.workspace_scope import settings_for_active_workspace
 from qspice_mcp.services._internals.persistence_schema import (
     stamp_schema_version,
     validate_schema_version,
@@ -241,10 +242,14 @@ class RemoteSimulationManager:
     """Manage remote-style single-run execution and zipped artifact transport."""
 
     def __init__(self, settings: QSpiceSettings) -> None:
-        self.settings = settings.normalized()
+        self._settings = settings.normalized()
         self._sessions: dict[str, _ManagedRemoteSession] = {}
         self._manager_host_id = _current_host_id()
         self._manager_instance_id = f"remote-manager-{uuid4().hex[:12]}"
+
+    @property
+    def settings(self) -> QSpiceSettings:
+        return settings_for_active_workspace(self._settings)
 
     def _touch_session_lease(self, session: _ManagedRemoteSession) -> None:
         session.owner_host_id = self._manager_host_id

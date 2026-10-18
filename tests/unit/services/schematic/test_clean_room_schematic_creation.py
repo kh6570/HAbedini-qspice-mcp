@@ -17,7 +17,7 @@ from qspice_mcp.services.schematic.create_starter_schematic import create_starte
 if TYPE_CHECKING:
     from pathlib import Path
 
-schematic_edits = importlib.import_module("qspice_mcp.services._backends.schematic_editor_edits")
+schematic_edits = importlib.import_module("qspice_mcp.services._backends.schematic_edits.wiring")
 starter_service = importlib.import_module("qspice_mcp.services.schematic.create_starter_schematic")
 
 

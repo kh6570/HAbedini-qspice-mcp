@@ -338,7 +338,7 @@ def test_generate_netlist_raises_when_schematic_has_no_sidecar_or_editor_backend
 
     monkeypatch.setattr(generate_netlist_service, "_load_qsch_editor_factory", lambda: (None, None))
 
-    with pytest.raises(QSpiceError, match=r"QschEditor backend is installed"):
+    with pytest.raises(QSpiceError, match="No qsch components were found"):
         generate_netlist(schematic, workspace_root=tmp_path)
 
 

@@ -105,3 +105,15 @@ Output / bookkeeping:
 - `Meg` is 1e6 — a bare `M`/`m` is always milli.
 - Hex (`0xff`) and binary (`0b111`) integers are understood; comments via `;`, `//`, `*` or `#` at line start.
 - Extended-ASCII device letters (`¥`, `£`, `Ø`, `×`, `Ã`, `€`) denote mixed-signal blocks; `.qsch` files are Latin-1 on the wire.
+
+## Install notes (QSpice revision history through 2026-10-13)
+
+Checked against the local `QSPICE64.exe` dated 2026-10-18. These are documentation
+notes, not new tools:
+
+- PIN diodes shipped as `D` models (`level=5` in `PINdiode.txt`), not a new instance letter.
+- `.meas` results may be listed as ordinary cardinal numbers. `read_measures` still parses QPOST `.meas` text; confirm a fresh file if a new install changes the columns.
+- `.plot` accepts `LIN`, `LOG`, and `dB` as the window's vertical style. Stage that with `add_instruction`.
+- A voltage or current source `PWL` can read a previous `.qraw`. Stage the source value with `set_component_value` or `add_instruction`.
+- Voltage- and current-controlled switches can report power. There is no dedicated switch component tool; clone one with `add_library_component`.
+- `.tf` and `.sens` have staging tools. They are absent from the July 2026 help index, so this server does not parse their results until a run on the installed QSpice shows the directives are accepted.

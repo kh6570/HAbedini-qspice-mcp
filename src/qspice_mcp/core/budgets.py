@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal
 
+from qspice_mcp.core.exceptions import ValidationError
+
 DownsampleStrategy = Literal["lttb", "decimate", "minmax"]
 _MIN_POINTS = 3
 _MIN_BYTES = 1024
@@ -20,9 +22,9 @@ class DataBudget:
 
     def __post_init__(self) -> None:
         if self.max_points < _MIN_POINTS:
-            raise ValueError(f"max_points must be >= {_MIN_POINTS}")
+            raise ValidationError(f"max_points must be >= {_MIN_POINTS}")
         if self.max_bytes < _MIN_BYTES:
-            raise ValueError(f"max_bytes must be >= {_MIN_BYTES}")
+            raise ValidationError(f"max_bytes must be >= {_MIN_BYTES}")
 
     def fits(self, n_points: int, dtype_size: int = 8) -> bool:
         """Return True if n_points samples fit within both caps."""

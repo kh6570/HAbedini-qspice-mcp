@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import queue
 import re
 import subprocess
 import threading
@@ -27,7 +28,11 @@ _PROGRESS_LINE = re.compile(
 _POLL_INTERVAL_S = 0.5
 
 
-def _poll_log_progress(log_path: Path, stop_event: threading.Event) -> None:
+def _poll_log_progress(
+    log_path: Path,
+    stop_event: threading.Event,
+    events: queue.Queue[tuple[float, str]],
+) -> None:
     last_percent: float | None = None
     last_size = 0
     while not stop_event.is_set():
@@ -56,10 +61,24 @@ def _poll_log_progress(log_path: Path, stop_event: threading.Event) -> None:
             if last_percent is not None and percent <= last_percent:
                 continue
             last_percent = percent
-            message = line.strip()
-            report_progress(percent, total=100.0, message=message)
-            report_info(message)
+            events.put((percent, line.strip()))
         time.sleep(_POLL_INTERVAL_S)
+
+
+def _drain_progress(events: queue.Queue[tuple[float, str]]) -> None:
+    """Report queued log progress on the calling thread.
+
+    The caller is the AnyIO worker for long-running tools, where
+    ``report_progress`` can reach the client. A plain poller thread cannot.
+    """
+
+    while True:
+        try:
+            percent, message = events.get_nowait()
+        except queue.Empty:
+            return
+        report_progress(percent, total=100.0, message=message)
+        report_info(message)
 
 
 def run_subprocess_with_log_progress(
@@ -87,17 +106,33 @@ def run_subprocess_with_log_progress(
     if run_id is not None:
         register_run(run_id, process)
     stop_event = threading.Event()
+    progress_events: queue.Queue[tuple[float, str]] = queue.Queue()
     poller: threading.Thread | None = None
     if log_path is not None:
         poller = threading.Thread(
             target=_poll_log_progress,
-            args=(log_path, stop_event),
+            args=(log_path, stop_event, progress_events),
             name="qspice-log-progress",
             daemon=True,
         )
         poller.start()
+
+    def _wait_for_process() -> tuple[str, str]:
+        deadline = None if timeout_s is None else time.perf_counter() + timeout_s
+        while True:
+            remaining = None if deadline is None else deadline - time.perf_counter()
+            if remaining is not None and remaining <= 0:
+                raise subprocess.TimeoutExpired(command, timeout_s or 0)
+            slice_timeout = (
+                _POLL_INTERVAL_S if remaining is None else min(_POLL_INTERVAL_S, remaining)
+            )
+            try:
+                return process.communicate(timeout=slice_timeout)
+            except subprocess.TimeoutExpired:
+                _drain_progress(progress_events)
+
     try:
-        stdout, stderr = process.communicate(timeout=timeout_s)
+        stdout, stderr = _wait_for_process()
     except subprocess.TimeoutExpired as exc:
         process.kill()
         captured_stdout, captured_stderr = process.communicate()
@@ -108,6 +143,7 @@ def run_subprocess_with_log_progress(
         stop_event.set()
         if poller is not None:
             poller.join(timeout=1.0)
+        _drain_progress(progress_events)
         unregister_process(process.pid)
         if run_id is not None:
             unregister_run(run_id)

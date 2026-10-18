@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from qspice_mcp.services._backends.schematic_editor import (
@@ -15,10 +14,15 @@ from qspice_mcp.services._internals.dll_contracts import (
     build_dll_symbol_contract,
     normalize_dll_identifier,
 )
-from qspice_mcp.services._shared.paths import resolve_workspace_output_path
+from qspice_mcp.services._shared.paths import (
+    resolve_workspace_output_path,
+    resolve_workspace_path,
+)
 from qspice_mcp.services.service_spec import ServiceSpec
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from qspice_mcp.infra.config import QSpiceSettings  # noqa: F401
 
 _DLL_FROM_SYMBOL_TEMPLATE = r"""// QSpice custom device DLL scaffold
@@ -192,7 +196,7 @@ def scaffold_dll_device_from_symbol(
     safe_name = normalize_dll_identifier(symbol_contract.device_name)
     export_name = safe_name
     dir_path = (
-        Path(output_dir).resolve(strict=False)
+        resolve_workspace_path(output_dir, workspace_root=workspace_root)
         if output_dir is not None
         else resolved_schematic_path.parent
     )

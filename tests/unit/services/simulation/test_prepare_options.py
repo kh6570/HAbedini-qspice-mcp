@@ -50,6 +50,23 @@ def test_prepare_options_requires_at_least_one_option(tmp_path) -> None:
         prepare_options(netlist, workspace_root=tmp_path)
 
 
+def test_prepare_options_renders_cheatsheet_options(tmp_path) -> None:
+    netlist = tmp_path / "tank.net"
+    netlist.write_text("* base\n.end\n", encoding="utf-8")
+
+    prepared = prepare_options(
+        netlist,
+        workspace_root=tmp_path,
+        chgtol="1e-14",
+        bodeperiods="8",
+        seed="1",
+        seedclock=True,
+        output_path=tmp_path / "tank-extra.net",
+    )
+
+    assert prepared.instruction == ".options chgtol=1e-14 bodeperiods=8 seed=1 seedclock=1"
+
+
 def test_prepare_options_rejects_unknown_method(tmp_path) -> None:
     netlist = tmp_path / "tank.net"
     netlist.write_text("* base\n.end\n", encoding="utf-8")

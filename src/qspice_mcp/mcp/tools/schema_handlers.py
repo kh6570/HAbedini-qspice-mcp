@@ -44,7 +44,11 @@ def expose_tool_schema(handler: ToolHandler, tool: ToolDefinition) -> ToolHandle
     signature = inspect.Signature(parameters)
 
     def schema_handler(**kwargs: object) -> dict[str, object]:
-        return handler(**kwargs)
+        # FastMCP fills omitted optional arguments with the signature default,
+        # which is None. Passing those through overrides real Python defaults
+        # such as parallelism=1 and after_sequence=0.
+        provided = {name: value for name, value in kwargs.items() if value is not None}
+        return handler(**provided)
 
     schema_handler.__name__ = tool.name
     schema_handler.__doc__ = tool.description
