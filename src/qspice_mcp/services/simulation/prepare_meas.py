@@ -11,9 +11,10 @@ from qspice_mcp.services.simulation._analysis_directive import stage_analysis_di
 if TYPE_CHECKING:
     from pathlib import Path
 
-MeasKind = Literal["find_at", "avg", "trig_targ", "fra", "four", "raw"]
+MeasKind = Literal["find_at", "find_when", "avg", "trig_targ", "fra", "four", "raw"]
 
-_MEAS_KINDS = frozenset({"find_at", "avg", "trig_targ", "fra", "four", "raw"})
+_MEAS_KINDS = frozenset({"find_at", "find_when", "avg", "trig_targ", "fra", "four", "raw"})
+_MEAS_EDGES = frozenset({"cross", "rise", "fall"})
 _AVG_STATISTICS = frozenset({"avg", "max", "min", "pp", "rms", "integ"})
 
 
@@ -54,7 +55,7 @@ def _validate_name(name: str | None, *, kind: str) -> str:
     return normalized
 
 
-def _render_meas_instruction(
+def _render_meas_instruction(  # noqa: PLR0911, PLR0912
     kind: MeasKind,
     *,
     name: str | None,
@@ -69,6 +70,10 @@ def _render_meas_instruction(
     input_expression: str | None,
     output_expression: str | None,
     instruction: str | None,
+    when_condition: str | None = None,
+    td: str | None = None,
+    edge: str | None = None,
+    edge_count: str | None = None,
 ) -> str:
     if kind == "raw":
         normalized = _require(instruction, field="instruction", kind=kind)
@@ -81,6 +86,24 @@ def _render_meas_instruction(
         rendered_expression = _require(expression, field="expression", kind=kind)
         rendered_at = _require(at, field="at", kind=kind)
         return f".meas {measure_name} find {rendered_expression} at {rendered_at}"
+    if kind == "find_when":
+        rendered_expression = _require(expression, field="expression", kind=kind)
+        rendered_when = _require(when_condition, field="when_condition", kind=kind)
+        if "=" not in rendered_when:
+            raise ValueError(
+                "when_condition must be EXPRESSION=EXPRESSION (for example V(out)=2.5)."
+            )
+        tokens = [".meas", measure_name, "find", rendered_expression, "when", rendered_when]
+        if td is not None and td.strip():
+            tokens.extend(("td", td.strip()))
+        if edge is not None and edge.strip():
+            normalized_edge = edge.strip().lower()
+            if normalized_edge not in _MEAS_EDGES:
+                allowed = ", ".join(sorted(_MEAS_EDGES))
+                raise ValueError(f"edge must be one of: {allowed}")
+            count = (edge_count or "1").strip()
+            tokens.append(f"{normalized_edge}={count}")
+        return " ".join(tokens)
     if kind == "avg":
         rendered_statistic = (statistic or "avg").strip().lower()
         if rendered_statistic not in _AVG_STATISTICS:
@@ -129,6 +152,10 @@ def prepare_meas(
     input_expression: str | None = None,
     output_expression: str | None = None,
     instruction: str | None = None,
+    when_condition: str | None = None,
+    td: str | None = None,
+    edge: str | None = None,
+    edge_count: str | None = None,
     output_path: str | Path | None = None,
 ) -> PreparedMeasStatement:
     """Stage a source with one documented `.meas` statement.
@@ -158,6 +185,10 @@ def prepare_meas(
         input_expression=input_expression,
         output_expression=output_expression,
         instruction=instruction,
+        when_condition=when_condition,
+        td=td,
+        edge=edge,
+        edge_count=edge_count,
     )
     source, destination, source_kind, warning = stage_analysis_directive(
         source_path,

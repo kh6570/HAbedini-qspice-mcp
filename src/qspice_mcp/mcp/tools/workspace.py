@@ -3,20 +3,20 @@
 from __future__ import annotations
 
 import re
-from contextvars import ContextVar, Token
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from urllib.parse import unquote, urlparse
+
+from qspice_mcp.infra.workspace_scope import (
+    get_pending_workspace_root,
+    reset_pending_workspace_root,
+    set_pending_workspace_root,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from qspice_mcp.infra.config import QSpiceSettings
-
-_pending_workspace_root: ContextVar[Path | None] = ContextVar(
-    "pending_workspace_root",
-    default=None,
-)
 
 _WINDOWS_DRIVE_PREFIX = re.compile(r"^/[A-Za-z]:")
 
@@ -119,24 +119,6 @@ def choose_effective_workspace_root(
     if advertised_root is not None:
         return advertised_root
     return configured
-
-
-def set_pending_workspace_root(workspace_root: Path | None) -> Token[Path | None]:
-    """Stash one workspace-root override for the active MCP tool call."""
-
-    return _pending_workspace_root.set(workspace_root)
-
-
-def get_pending_workspace_root() -> Path | None:
-    """Return the workspace-root override stashed for the active MCP tool call."""
-
-    return _pending_workspace_root.get()
-
-
-def reset_pending_workspace_root(token: Token[Path | None]) -> None:
-    """Clear one stashed workspace-root override."""
-
-    _pending_workspace_root.reset(token)
 
 
 __all__ = [

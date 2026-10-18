@@ -66,6 +66,16 @@ _SPECIAL_TOOL_NAMES = frozenset(
 )
 
 
+def _workspace_relative_source(path: Path, *, workspace_root: Path) -> str:
+    """Return a workspace-relative source path so subfolder DLL builds stay in place."""
+
+    try:
+        relative = path.resolve(strict=False).relative_to(workspace_root.resolve(strict=False))
+    except ValueError:
+        return path.name
+    return relative.as_posix()
+
+
 def _normalize_tool_kwargs(name: str, kwargs: dict[str, object]) -> dict[str, object]:
     normalized = dict(kwargs)
     if "extra_switches" in normalized and normalized["extra_switches"] is not None:
@@ -359,13 +369,17 @@ def _write_workspace_text_file_handler(runtime: QSpiceToolRuntime) -> ToolHandle
                 entry["note"] = note
             payload["dll_build"] = entry
 
+        source_argument = _workspace_relative_source(
+            result.output_path,
+            workspace_root=runtime.settings.workspace_root,
+        )
         if dll_path.is_file():
             _record_existing_dll()
         else:
             try:
                 build_dll_device_service = resolve_mcp_service_callable("build_dll_device")
                 build = build_dll_device_service(
-                    result.output_path.name,
+                    source_argument,
                     workspace_root=runtime.settings.workspace_root,
                     toolchain=cast("Toolchain", dll_toolchain),
                     timeout_s=dll_timeout_s,
@@ -394,7 +408,7 @@ def _write_workspace_text_file_handler(runtime: QSpiceToolRuntime) -> ToolHandle
                     schematic_path,
                     workspace_root=runtime.settings.workspace_root,
                     reference=dll_reference,
-                    source_path=result.output_path.name,
+                    source_path=source_argument,
                 ),
             )
             payload["dll_validation"] = to_json_object(validation)
@@ -408,6 +422,26 @@ def _write_workspace_text_file_handler(runtime: QSpiceToolRuntime) -> ToolHandle
 
     handler.__name__ = "write_workspace_text_file"
     return handler
+
+
+def _omit_defaulted_nones(
+    method: Callable[..., object],
+    kwargs: dict[str, object],
+) -> dict[str, object]:
+    """Drop omitted optional arguments without discarding ``**kwargs`` fakes."""
+
+    parameters = inspect.signature(method).parameters
+    if any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters.values()):
+        return {name: value for name, value in kwargs.items() if value is not None}
+    call_kwargs: dict[str, object] = {}
+    for name, value in kwargs.items():
+        parameter = parameters.get(name)
+        if parameter is None:
+            continue
+        if value is None and parameter.default is not inspect.Parameter.empty:
+            continue
+        call_kwargs[name] = value
+    return call_kwargs
 
 
 def _make_manager_handler(runtime: QSpiceToolRuntime, tool_name: str) -> ToolHandler:
@@ -424,7 +458,8 @@ def _make_manager_handler(runtime: QSpiceToolRuntime, tool_name: str) -> ToolHan
 
     def handler(**kwargs: object) -> dict[str, object]:
         normalized = _normalize_tool_kwargs(tool_name, dict(kwargs))
-        return to_json_object(method(**normalized))
+        call_kwargs = _omit_defaulted_nones(method, normalized)
+        return to_json_object(method(**call_kwargs))
 
     handler.__name__ = tool_name
     return handler

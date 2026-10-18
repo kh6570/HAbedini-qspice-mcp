@@ -26,7 +26,7 @@ class FakeEditor:
         self._components = {
             "R1": FakeComponent(
                 reference="R1",
-                attributes={"type": "R", "value": "1k", "description": "Resistor"},
+                attributes={"type": "R", "Value": "1k", "description": "Resistor"},
                 ports=("N001", "N002"),
             ),
             "X1": FakeComponent(

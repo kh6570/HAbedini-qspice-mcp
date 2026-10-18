@@ -231,6 +231,20 @@ def test_generate_dll_variables_rejects_non_text_output_paths(monkeypatch, tmp_p
         )
 
 
+def test_build_qux_export_command_joins_traces_for_current_qux(tmp_path) -> None:
+    command = qux_exports.build_qux_export_command(
+        tmp_path / "QUX.exe",
+        tmp_path / "demo.qraw",
+        expressions=("V(out)", "I(V1)"),
+        export_format="csv",
+        point_count=10,
+        stdout=True,
+    )
+
+    assert command[3] == "V(out),I(V1)"
+    assert command[4:] == ("10", "CSV", "-stdout")
+
+
 def test_build_qux_export_command_rejects_switch_like_expressions(tmp_path) -> None:
     qux_path = tmp_path / "QUX.exe"
     raw_path = tmp_path / "demo.qraw"

@@ -522,6 +522,27 @@ def test_read_component_symbol_metadata_reports_embedded_symbol_details(tmp_path
     assert metadata.pins[1].name == "2"
 
 
+def test_read_component_symbol_metadata_rejoins_unquoted_description_after_reload(
+    tmp_path: Path,
+) -> None:
+    output_path, _ = create_blank_schematic_file(tmp_path / "blank.qsch", workspace_root=tmp_path)
+    editor, _, _ = open_schematic_editor(output_path, workspace_root=tmp_path)
+    add_simple_component(
+        editor,
+        component_kind="resistor",
+        reference="R1",
+        value="1k",
+        position=(0, 0),
+    )
+    editor.save_as(output_path)
+    reopened, _, _ = open_schematic_editor(output_path, workspace_root=tmp_path)
+
+    metadata = read_component_symbol_metadata(reopened, reference="R1")
+
+    assert metadata.description == "Resistor(USA Style Symbol)"
+    assert metadata.type_name == "R"
+
+
 def test_read_component_symbol_metadata_handles_multi_text_multi_pin_symbols(
     tmp_path: Path,
 ) -> None:

@@ -198,7 +198,7 @@ def test_read_log_handler_accepts_contract_log_path_argument(tmp_path: Path) -> 
     log_file = tmp_path / "demo.log"
     log_file.write_text("QSPICE analysis log\nTotal elapsed time: 1s\n", encoding="utf-8")
 
-    payload = runtime.get_handler("read_log")(log_path="demo.log", include_measures=False)
+    payload = runtime.invoke("read_log", log_path="demo.log", include_measures=False)
 
     assert payload["line_count"] == 2
     assert str(payload["log_path"]).endswith("demo.log")

@@ -17,6 +17,12 @@ _NETLIST_SUFFIXES = (".net", ".cir")
 SourceKind = Literal["schematic", "netlist"]
 
 
+def spice_text(value: object) -> str:
+    """Render one directive token. JSON numbers arrive as int/float over MCP."""
+
+    return str(value).strip()
+
+
 def resolve_staged_output_path(
     output_path: str | Path | None,
     *,

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
 from typing import TYPE_CHECKING
 
 import pytest
@@ -151,3 +153,35 @@ async def test_mcp_call_infers_root_but_respects_explicit_root(
         )
     assert error.value.error.data["error_code"] == "sandbox_violation"
     assert roots[-1] == (tmp_path / "explicit").resolve()
+
+
+def test_concurrent_inferred_inspection_roots_are_isolated(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server_root = tmp_path / "server"
+    roots = [tmp_path / "first", tmp_path / "second"]
+    for root in roots:
+        create_starter_schematic(root / "input.qsch", workspace_root=root)
+    runtime = QSpiceToolRuntime(
+        QSpiceSettings(workspace_root=server_root), build_runtime_tool_registry()
+    )
+    barrier = Barrier(2)
+
+    def capture_inspection(raw_path: str, *, workspace_root: Path, **kwargs: object):
+        barrier.wait(timeout=10)
+        assert runtime.settings.workspace_root == workspace_root
+        return inspect_schematic(raw_path, workspace_root=workspace_root, **kwargs)
+
+    monkeypatch.setattr(schematic_tools, "inspect_schematic_service", capture_inspection)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [
+            executor.submit(
+                runtime.invoke, "inspect_schematic", schematic_path=str(root / "input.qsch")
+            )
+            for root in roots
+        ]
+        results = [future.result(timeout=20) for future in futures]
+    assert [result["schematic_path"] for result in results] == [
+        str((root / "input.qsch").resolve()) for root in roots
+    ]
+    assert runtime.settings.workspace_root == server_root.resolve()

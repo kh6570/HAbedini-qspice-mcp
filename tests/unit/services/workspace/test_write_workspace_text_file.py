@@ -13,15 +13,16 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 
-def test_write_workspace_text_file_writes_cpp(tmp_path: Path) -> None:
+@pytest.mark.parametrize("suffix", [".cpp", ".cc", ".cxx"])
+def test_write_workspace_text_file_writes_cpp(tmp_path: Path, suffix: str) -> None:
     result = write_workspace_text_file(
-        "buck_controller.cpp",
+        f"buck_controller{suffix}",
         workspace_root=tmp_path,
         content="// test\n",
         overwrite=False,
     )
 
-    assert result.output_path == tmp_path / "buck_controller.cpp"
+    assert result.output_path == tmp_path / f"buck_controller{suffix}"
     assert result.output_path.read_text(encoding="utf-8") == "// test\n"
     assert result.line_count == 2
 

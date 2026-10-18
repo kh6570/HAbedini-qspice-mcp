@@ -11,6 +11,7 @@ from qspice_mcp.services.schematic.add_instruction import (
     add_instruction as add_instruction_service,
 )
 from qspice_mcp.services.service_spec import ServiceSpec
+from qspice_mcp.services.simulation._analysis_directive import spice_text
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -109,9 +110,9 @@ def _render_ac_instruction(
         (
             ".ac",
             normalized_sweep_type,
-            points.strip(),
-            start.strip(),
-            stop.strip(),
+            spice_text(points),
+            spice_text(start),
+            spice_text(stop),
         )
     )
 

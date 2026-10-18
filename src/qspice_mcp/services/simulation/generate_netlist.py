@@ -50,6 +50,7 @@ SERVICE_SPEC = ServiceSpec(
     phase="implemented",
     read_only=False,
     idempotent=True,
+    long_running=True,
 )
 
 
@@ -106,12 +107,7 @@ def _effective_settings(
     normalized = settings.normalized()
     if normalized.workspace_root.resolve(strict=False) == workspace_root.resolve(strict=False):
         return normalized
-    return QSpiceSettings(
-        workspace_root=workspace_root,
-        exe=normalized.exe,
-        log_level=normalized.log_level,
-        telemetry_enabled=normalized.telemetry_enabled,
-    ).normalized()
+    return normalized.model_copy(update={"workspace_root": workspace_root}).normalized()
 
 
 def _needs_netlist_refresh(
@@ -282,6 +278,17 @@ def _regenerate_schematic_netlist(
             ) from exc
         if qux_generated is not None:
             return qux_generated
+
+    _factory, backend_name = _load_qsch_editor_factory()
+    # The repo editor uses the same renderer and cannot recover from its failure.
+    if backend_name in {None, *_EDITOR_MODULE_CANDIDATES}:
+        raise QSpiceError(
+            f"The clean-room parser could not regenerate {schematic_path.name} "
+            f"({clean_room_error}); QUX.exe is unavailable; the local QschEditor "
+            "uses the same parser. Configure QSpice with companion QUX.exe for native "
+            "netlist generation, or supply a derived .cir or .net artifact.",
+            error_code=clean_room_error.error_code,
+        ) from clean_room_error
 
     try:
         return _generate_netlist_with_editor_backend(schematic_path, destination)

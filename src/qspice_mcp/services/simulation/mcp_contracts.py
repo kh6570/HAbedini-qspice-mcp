@@ -344,6 +344,18 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "savepowers": {"type": "boolean"},
                 "keepopinfo": {"type": "boolean"},
                 "fastmath2": {"type": "boolean"},
+                "chgtol": {"type": "string"},
+                "bodeperiods": {"type": "string"},
+                "bodetol": {"type": "string"},
+                "bodeinput": {"type": "string"},
+                "bodeoutput": {"type": "string"},
+                "saveparam": {"type": "string"},
+                "listparam": {"type": "string"},
+                "numdgt": {"type": "string"},
+                "measdgt": {"type": "string"},
+                "forcestepdatasize": {"type": "string"},
+                "seed": {"type": "string"},
+                "seedclock": {"type": "boolean"},
                 "output_path": {"type": "string"},
             },
         },
@@ -361,10 +373,11 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 },
                 "kind": {
                     "type": "string",
-                    "enum": ["find_at", "avg", "trig_targ", "fra", "four", "raw"],
+                    "enum": ["find_at", "find_when", "avg", "trig_targ", "fra", "four", "raw"],
                     "description": (
                         "Measurement family: find_at (value at time), avg (avg/max/min/pp/rms/integ "
-                        "over an interval), trig_targ (interval between events), fra (frequency-"
+                        "over an interval), find_when (value when a condition is met), trig_targ "
+                        "(interval between events), fra (frequency-"
                         "response check), four (Fourier component), raw (verbatim instruction)."
                     ),
                 },
@@ -389,6 +402,10 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
                 "input_expression": {"type": "string"},
                 "output_expression": {"type": "string"},
                 "instruction": {"type": "string"},
+                "when_condition": {"type": "string"},
+                "td": {"type": "string"},
+                "edge": {"type": "string", "enum": ["cross", "rise", "fall"]},
+                "edge_count": {"type": "string"},
                 "output_path": {"type": "string"},
             },
         },

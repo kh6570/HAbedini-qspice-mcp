@@ -39,7 +39,12 @@ class CachedSimulationArtifacts:
 def _artifact_integrity_hash(*paths: Path) -> str:
     digest = hashlib.sha256()
     for path in paths:
-        digest.update(path.read_bytes())
+        with path.open("rb") as handle:
+            while True:
+                chunk = handle.read(1024 * 1024)
+                if not chunk:
+                    break
+                digest.update(chunk)
     return digest.hexdigest()
 
 
@@ -154,12 +159,15 @@ class SimulationArtifactCache:
                 "created_at": created_at.isoformat(),
                 "duration_s": duration_s,
                 "exit_code": exit_code,
+                "byte_size": cached_log.stat().st_size + cached_raw.stat().st_size,
                 "integrity_hash": integrity_hash,
                 "stdout": stdout,
                 "stderr": stderr,
             }
         )
         metadata_path = (staging_root / "metadata.json").resolve(strict=False)
+        metadata_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        payload["byte_size"] = _entry_byte_size(staging_root)
         metadata_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
         entry_root = self._entry_root(key)
@@ -196,7 +204,11 @@ class SimulationArtifactCache:
                 continue
             payload = json.loads(metadata_path.read_text(encoding="utf-8"))
             created_at = str(payload.get("created_at", ""))
-            entries.append((created_at, child, _entry_byte_size(child)))
+            stored_size = payload.get("byte_size")
+            entry_size = (
+                int(stored_size) if isinstance(stored_size, int) else _entry_byte_size(child)
+            )
+            entries.append((created_at, child, entry_size))
         entries.sort(key=lambda item: item[0])
         total_bytes = sum(size for _, _, size in entries)
         while entries and total_bytes > self.max_cache_bytes:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import math
 import subprocess
 from pathlib import Path
 
@@ -118,6 +119,21 @@ def test_read_log_maps_qpost_timeout_and_cleans_staged_output(
     assert staged_paths
     assert staged_paths[0].exists() is False
     assert meas_path.read_text(encoding="utf-8") == "stale\n"
+
+
+def test_read_log_parses_parenthesized_measure_rows(tmp_path: Path) -> None:
+    log_path = tmp_path / "demo.log"
+    log_path.write_text("ok\n", encoding="utf-8")
+    log_path.with_suffix(".meas").write_text(
+        ".meas rise find v(vin) when v(vin)=2.5 rise=1:\n     (       nan,       nan)\n",
+        encoding="utf-8",
+    )
+
+    result = read_log(log_path, workspace_root=tmp_path, refresh_measures=False)
+
+    row = result.measures[0].rows[0]
+    assert len(row) == 2
+    assert all(isinstance(value, float) and math.isnan(value) for value in row)
 
 
 def test_read_log_bounds_measure_rows_when_requested(tmp_path: Path) -> None:

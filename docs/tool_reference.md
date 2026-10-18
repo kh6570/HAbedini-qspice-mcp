@@ -908,7 +908,7 @@ Expected outputs:
 
 Purpose:
 Write one UTF-8 text file under the workspace root (for example a C-block `.cpp`).
-Allowed extensions are `.cpp`, `.h`, `.hpp`, `.c`, `.txt`, `.cmake`, `.md`, and
+Allowed extensions are `.cpp`, `.cc`, `.cxx`, `.h`, `.hpp`, `.c`, `.txt`, `.cmake`, `.md`, and
 `.json`. Use `.json` to prepare a layout spec for `apply_schematic_layout_spec`.
 For C/C++ custom-device sources (`.c`, `.cpp`, `.cc`, `.cxx`), the handler can
 compile the sibling `.dll` in the same call via `build_dll_device`, and optionally

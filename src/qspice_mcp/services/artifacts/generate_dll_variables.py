@@ -21,6 +21,7 @@ SERVICE_SPEC = ServiceSpec(
     summary=("Generate `.DLL` variable declarations through the documented QUX companion command."),
     phase="implemented",
     read_only=False,
+    long_running=True,
 )
 
 

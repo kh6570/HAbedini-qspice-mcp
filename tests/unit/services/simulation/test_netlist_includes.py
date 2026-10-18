@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from qspice_mcp.services._internals.simulation_cache import SimulationArtifactCache
 from qspice_mcp.services.simulation._netlist_includes import (
+    collect_netlist_dlls,
     collect_netlist_includes,
     hash_include_dependencies,
 )
@@ -90,3 +91,17 @@ def test_list_includes_and_resolve_model_libraries(tmp_path: Path) -> None:
     assert catalog.missing_count == 0
     assert resolution.library_count == 1
     assert resolution.missing_count == 0
+
+
+def test_collect_netlist_dlls_changes_when_sibling_dll_changes(tmp_path: Path) -> None:
+    netlist = tmp_path / "buck.net"
+    netlist.write_text("* buck\nX1 out clk 0 0 0 y Buck_controller\n.end\n", encoding="utf-8")
+    dll = tmp_path / "Buck_controller.dll"
+    dll.write_bytes(b"v1")
+
+    before = hash_include_dependencies(collect_netlist_dlls(netlist, workspace_root=tmp_path))
+    dll.write_bytes(b"v2")
+    after = hash_include_dependencies(collect_netlist_dlls(netlist, workspace_root=tmp_path))
+
+    assert before != after
+    assert any(item[0].endswith("Buck_controller.dll") for item in after)

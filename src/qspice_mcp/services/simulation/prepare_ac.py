@@ -11,6 +11,7 @@ from qspice_mcp.services.schematic.add_instruction import (
     add_instruction as add_instruction_service,
 )
 from qspice_mcp.services.service_spec import ServiceSpec
+from qspice_mcp.services.simulation._analysis_directive import spice_text
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -68,7 +69,7 @@ def _render_ac_instruction(
         allowed = ", ".join(sorted(_AC_SWEEP_TYPES))
         raise ValueError(f"sweep_type must be one of: {allowed}")
     if normalized_sweep_type == "list":
-        values = tuple(value.strip() for value in (frequencies or ()) if value.strip())
+        values = tuple(token for value in (frequencies or ()) if (token := spice_text(value)))
         if not values:
             raise ValueError("List sweep requires at least one value in frequencies.")
         return " ".join((".ac", "list", *values))
@@ -78,9 +79,9 @@ def _render_ac_instruction(
         (
             ".ac",
             normalized_sweep_type,
-            points.strip(),
-            start.strip(),
-            stop.strip(),
+            spice_text(points),
+            spice_text(start),
+            spice_text(stop),
         )
     )
 

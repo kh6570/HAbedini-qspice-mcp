@@ -9,7 +9,7 @@ from qspice_mcp.core.exceptions import ValidationError
 from qspice_mcp.services._shared.paths import resolve_workspace_output_path
 from qspice_mcp.services.service_spec import ServiceSpec
 
-_ALLOWED_SUFFIXES = (".cpp", ".h", ".hpp", ".c", ".txt", ".cmake", ".md", ".json")
+_ALLOWED_SUFFIXES = (".cpp", ".cc", ".cxx", ".h", ".hpp", ".c", ".txt", ".cmake", ".md", ".json")
 
 
 @dataclass(frozen=True, slots=True)

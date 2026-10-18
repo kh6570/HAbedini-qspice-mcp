@@ -22,6 +22,7 @@ SERVICE_SPEC = ServiceSpec(
         "Export one or more waveform expressions through the documented QUX ASCII export path."
     ),
     phase="implemented",
+    long_running=True,
     read_only=False,
 )
 

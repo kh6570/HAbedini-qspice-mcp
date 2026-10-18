@@ -6,7 +6,10 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from qspice_mcp.core.exceptions import BackendUnavailableError
-from qspice_mcp.services._backends.schematic_editor import open_schematic_editor
+from qspice_mcp.services._backends.schematic_editor import (
+    component_attribute_text,
+    open_schematic_editor,
+)
 from qspice_mcp.services._shared.paths import validate_existing_file
 from qspice_mcp.services.service_spec import ServiceSpec
 from qspice_mcp.services.subcircuit._clean_room import (
@@ -122,8 +125,8 @@ def list_subcircuits(
     for reference in references:
         component = scope_editor.get_component(reference)
         attributes = dict(component.attributes)
-        value = attributes.get("value")
-        description = attributes.get("description")
+        value = component_attribute_text(attributes, "Value", "value")
+        description = component_attribute_text(attributes, "description", "Description")
         try:
             subeditor = scope_editor.get_subcircuit(reference)
             component_count = len(

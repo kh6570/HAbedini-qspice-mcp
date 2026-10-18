@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal
 
 from qspice_mcp.services.service_spec import ServiceSpec
-from qspice_mcp.services.simulation._analysis_directive import stage_analysis_directive
+from qspice_mcp.services.simulation._analysis_directive import spice_text, stage_analysis_directive
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -55,7 +55,7 @@ def prepare_noise(
         allowed = ", ".join(sorted(_NOISE_SWEEP_TYPES))
         raise ValueError(f"sweep_type must be one of: {allowed}")
     if normalized_sweep_type == "list":
-        values = tuple(value.strip() for value in (frequencies or ()) if value.strip())
+        values = tuple(token for value in (frequencies or ()) if (token := spice_text(value)))
         if not values:
             raise ValueError("List sweep requires at least one value in frequencies.")
         instruction = " ".join(
@@ -70,9 +70,9 @@ def prepare_noise(
                 output_node.strip(),
                 input_source.strip(),
                 normalized_sweep_type,
-                points.strip(),
-                start.strip(),
-                stop.strip(),
+                spice_text(points),
+                spice_text(start),
+                spice_text(stop),
             )
         )
     source, destination, source_kind, warning = stage_analysis_directive(

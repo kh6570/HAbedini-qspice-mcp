@@ -22,6 +22,7 @@ from qspice_mcp.services._internals.simulation_cache import SimulationArtifactCa
 from qspice_mcp.services._shared.paths import resolve_workspace_path, validate_existing_file
 from qspice_mcp.services.service_spec import ServiceSpec
 from qspice_mcp.services.simulation._netlist_includes import (
+    collect_netlist_dlls,
     collect_netlist_includes,
     hash_include_dependencies,
 )
@@ -225,7 +226,10 @@ def run_simulation(
         extra_switches=extra_switches,
         ascii_raw=ascii_raw,
         include_hashes=hash_include_dependencies(
-            collect_netlist_includes(resolved_netlist, workspace_root=normalized_workspace)
+            (
+                *collect_netlist_includes(resolved_netlist, workspace_root=normalized_workspace),
+                *collect_netlist_dlls(resolved_netlist, workspace_root=normalized_workspace),
+            )
         ),
     )
     cached_entry = cache.get(cache_key)

@@ -57,7 +57,7 @@ class ProgressBridge:
             return
         try:
             anyio.from_thread.run(self._report_async, progress, total, message)
-        except RuntimeError:
+        except Exception:
             return
 
     def info(self, message: str) -> None:
@@ -67,7 +67,7 @@ class ProgressBridge:
             return
         try:
             anyio.from_thread.run(self._info_async, message)
-        except RuntimeError:
+        except Exception:
             return
 
 

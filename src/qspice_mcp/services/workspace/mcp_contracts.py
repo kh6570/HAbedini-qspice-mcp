@@ -7,7 +7,7 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
         "title": "Write Workspace Text File",
         "description": (
             "Write or overwrite one UTF-8 text file inside the workspace root. "
-            "Allowed extensions: .cpp, .h, .hpp, .c, .txt, .cmake, .md, .json "
+            "Allowed extensions: .cpp, .cc, .cxx, .h, .hpp, .c, .txt, .cmake, .md, .json "
             "(including schematic layout specifications). "
             "For `.c`/`.cpp` C-block sources, compiles the sibling `.dll` automatically "
             "unless build_dll_after_write=false. Pass schematic_path and dll_reference "

@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 from qspice_mcp.core.exceptions import QSpiceError
+from qspice_mcp.services._backends.qsch_codec import decode_qsch_bytes
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -123,18 +124,16 @@ class _UnionFind:
 
 
 def _decode_qsch_text(raw_bytes: bytes) -> str:
-    for encoding in ("utf-8-sig", "utf-16", "utf-16-le"):
-        try:
-            text = raw_bytes.decode(encoding)
-        except UnicodeError:
-            continue
-        if "schematic" in text.lower():
-            return text
-    return raw_bytes.decode("utf-8", errors="replace")
+    """Decode a schematic with the same Latin-1 wire format as the editor."""
+
+    if raw_bytes.startswith((b"\xff\xfe", b"\xfe\xff")):
+        return raw_bytes.decode("utf-16")
+    return decode_qsch_bytes(raw_bytes)
 
 
 def _normalize_line(raw_line: str) -> tuple[int, str]:
     cleaned = raw_line.replace("\ufeff", "").replace("\x00", "")
+    cleaned = cleaned.replace("«", "").replace("»", "")
     cleaned = re.sub(r"(^\s*)\ufffd", r"\1", cleaned)
     cleaned = re.sub(r"\ufffd\s*$", "", cleaned)
     indent = len(cleaned) - len(cleaned.lstrip())
@@ -145,7 +144,7 @@ def _extract_quoted_text(line: str) -> str | None:
     match = _QUOTED_TEXT_PATTERN.search(line)
     if match is None:
         return None
-    return match.group(1).replace("\ufffd", "u").replace("µ", "u").replace("μ", "u")
+    return match.group(1).replace("µ", "u").replace("μ", "u")
 
 
 def _transform_point(

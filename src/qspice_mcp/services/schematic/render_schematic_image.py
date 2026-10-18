@@ -3,15 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-import matplotlib
-
-matplotlib.use("Agg")
-
 from typing import TYPE_CHECKING
 
-from matplotlib import pyplot as plt
-
+from qspice_mcp.services._backends.matplotlib_agg import pyplot
 from qspice_mcp.services._shared.paths import (
     resolve_workspace_output_path,
     validate_existing_file,
@@ -47,6 +41,7 @@ SERVICE_SPEC = ServiceSpec(
     phase="implemented",
     read_only=False,
     idempotent=True,
+    long_running=True,
 )
 
 
@@ -76,6 +71,7 @@ def render_schematic_image(
 
     components, wires, nets, _ = _parse_qsch_schematic(resolved_path, allow_empty=True)
 
+    plt = pyplot()
     figure, axes = plt.subplots(figsize=(11.0, 8.5), constrained_layout=True)
 
     for wire in wires:

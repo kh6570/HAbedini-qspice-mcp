@@ -10,6 +10,7 @@ from qspice_mcp.services._backends.clean_room_schematic import (
     inspect_supported_schematic_components,
 )
 from qspice_mcp.services._backends.schematic_editor import (
+    component_attribute_text,
     normalize_component_parameters,
     normalize_component_position,
     normalize_component_rotation,
@@ -122,19 +123,16 @@ def read_component(
     position, rotation = editor.get_component_position(reference)
     position_x, position_y = normalize_component_position(position)
     rotation_degrees = normalize_component_rotation(rotation)
-    raw_value = attributes.get("value")
-    if raw_value is None:
-        raw_value = attributes.get("Value")
-    if raw_value is None:
-        raw_value = parameters.get("Value")
-    value = str(raw_value) if raw_value is not None else None
-    description = attributes.get("description")
+    value = component_attribute_text(attributes, "Value", "value")
+    if value is None:
+        value = parameters.get("Value")
+    description = component_attribute_text(attributes, "description", "Description")
     return ComponentRead(
         schematic_path=resolved_path,
         reference=reference,
         kind=str(attributes.get("type") or reference[:1]),
         value=value,
-        description=str(description) if description is not None else None,
+        description=description,
         nodes=nodes,
         parameters=parameters,
         raw_parameter_lines=raw_parameter_lines,
