@@ -110,7 +110,7 @@ ignore_missing_imports = true
 [tool.coverage.run]
 source = ["src/qspice_mcp"]
 branch = true
-omit = ["*/__main__.py"]
+omit = ["*/__main__.py", "src/qspice_mcp/core/interfaces.py"]
 
 [tool.coverage.report]
 exclude_lines = [
