@@ -195,8 +195,6 @@ function Install-Package {
 
         $env:MCP_CORE_PATH = $core
 
-        $env:MCP_CORE_URI = ([Uri](Resolve-Path -LiteralPath $core).Path).AbsoluteUri
-
         Write-Step "Using local mcp-app-core checkout"
 
     }
