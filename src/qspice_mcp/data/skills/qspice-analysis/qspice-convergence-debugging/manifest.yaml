@@ -20,3 +20,7 @@ requires-skills:
   - qspice-getting-started
 requires-products: []
 toolkit: qspice-mcp
+when-not-to-use: Do not use this for a missing QSPICE_EXE, connected=false, or a backend-unavailable error. Those are setup problems; call describe_server_capabilities.
+reference-files:
+  - workflow.md
+  - options.md

@@ -32,6 +32,24 @@ class ArtifactMissingError(QSpiceError):
     default_error_code = "artifact_missing"
 
 
+class ContentConflictError(QSpiceError):
+    """A schematic changed since the content hash from the last read."""
+
+    default_error_code = "content_conflict"
+
+    def __init__(
+        self,
+        message: str = "Refusing to write the file because its content hash does not match.",
+        *,
+        expected_hash: str,
+        actual_hash: str,
+        error_code: str | None = None,
+    ) -> None:
+        super().__init__(message, error_code=error_code)
+        self.expected_hash = expected_hash
+        self.actual_hash = actual_hash
+
+
 class BatchConflictError(QSpiceError):
     """The requested retained-batch action conflicts with persisted state."""
 

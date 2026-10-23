@@ -14,8 +14,10 @@ from qspice_mcp.mcp.definition import build_server_definition
 from qspice_mcp.mcp.prompts import get_prompt_definitions
 from qspice_mcp.mcp.resources import get_resource_definitions
 from qspice_mcp.mcp.resources.registration import reference_document_names
+from qspice_mcp.mcp.tool_registry import build_tool_registry
 from qspice_mcp.services._backends.schematic_editor import load_qsch_editor_factory
 from qspice_mcp.services._backends.waveform import _load_rawread_factory
+from qspice_mcp.services._internals.service_catalog import area_for_tool
 from qspice_mcp.services.artifacts._raw_write import load_rawwrite_api
 from qspice_mcp.services.artifacts.describe_qux_export_support import (
     describe_qux_export_support,
@@ -188,12 +190,21 @@ def _guidance_summary() -> dict[str, object]:
         "skills": {
             "description": (
                 "Bundled agent skills (client-side guidance, not MCP tools) ship in "
-                "the qspice_mcp package under data/skills/."
+                "the qspice_mcp package under data/skills/. The default install group "
+                "is qspice-core (qspice-getting-started only). Other groups are optional."
             ),
-            "groups": ["qspice-core"],
+            "groups": [
+                "qspice-analysis",
+                "qspice-core",
+                "qspice-dll",
+                "qspice-layout",
+                "qspice-power",
+            ],
             "install_hint": (
                 "pwsh -File scripts/install_skills.ps1 "
-                "(copies skills into ~/.agents/skills/ by default)"
+                "(default group qspice-core installs only qspice-getting-started; "
+                "pass -Groups to add qspice-analysis, qspice-dll, qspice-layout, "
+                "or qspice-power)"
             ),
         },
     }
@@ -445,6 +456,47 @@ def _feature_flags(tools: tuple[ToolDefinition, ...]) -> dict[str, object]:
     return flags
 
 
+_EXTENDED_GROUP_ORDER = (
+    ("batch", "Batch Runs"),
+    ("remote", "Remote Simulation"),
+    ("live_gui", "Live GUI"),
+    ("topology_ingest", "Topology Ingest"),
+)
+_PROFILE_ENABLE_HINT = (
+    "These tools stay unloaded in a normal session. Restart the server with "
+    "--tool-profiles default,extended or set QSPICE_TOOL_PROFILES=default,extended."
+)
+
+
+def _hidden_tool_groups(tools: tuple[ToolDefinition, ...]) -> tuple[dict[str, object], ...]:
+    """List extended groups that this session did not load, plus how to enable them."""
+
+    loaded = {tool.name for tool in tools}
+    hidden: dict[str, list[str]] = {name: [] for name, _title in _EXTENDED_GROUP_ORDER}
+    for tool in build_tool_registry():
+        if tool.name in loaded or tool.service.profile != "extended":
+            continue
+        area = area_for_tool(tool.name)
+        if area in hidden:
+            hidden[area].append(tool.name)
+    groups: list[dict[str, object]] = []
+    for name, title in _EXTENDED_GROUP_ORDER:
+        names = tuple(sorted(hidden[name]))
+        if not names:
+            continue
+        groups.append(
+            {
+                "name": name,
+                "title": title,
+                "profile": "extended",
+                "tool_count": len(names),
+                "tools": list(names),
+                "enable": _PROFILE_ENABLE_HINT,
+            }
+        )
+    return tuple(groups)
+
+
 def describe_server_capabilities(
     *,
     settings: QSpiceSettings,
@@ -565,6 +617,7 @@ def describe_server_capabilities(
         "feature_flags": _feature_flags(tools),
         "guidance": _guidance_summary(),
         "tool_groups": list(tool_groups),
+        "hidden_tool_groups": list(_hidden_tool_groups(tools)),
         "degraded_groups": [group for group in tool_groups if group["state"] != "healthy"],
         "workflow_hints": {
             "scratch_buck_authoring": {

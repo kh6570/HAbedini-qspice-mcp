@@ -289,9 +289,20 @@ from your shell, the MCP launcher `env` block, or a local `.env`).
 | `--log-level` | `QSPICE_LOG_LEVEL` | `debug`, `info`, `warning`, or `error` |
 | `--log-folder` | `QSPICE_LOG_FOLDER` | Optional folder for rotating server log files |
 | `--recipe-path` | `QSPICE_RECIPE_PATH` | Optional override for the recipe catalog directory |
+| `--tool-profiles` | `QSPICE_TOOL_PROFILES` | Comma-separated profiles to load. `default` is the normal session. Add `extended` to also load remote, batch, live GUI, and topology ingest tools |
 
 The experimental `sse` transport is gated: `--transport sse` exits with an error
 unless `QSPICE_ENABLE_SSE=true` is also set.
+
+A normal session does not load remote simulation, batch runs, the live GUI, or
+topology ingest. `describe_server_capabilities` lists those hidden groups under
+`hidden_tool_groups`. Set `QSPICE_TOOL_PROFILES=default,extended` and restart
+the server to load them.
+
+Schematic reads return `content_sha256`. A later save of that file uses the hash
+from the last read. If the file changed, the save writes nothing. Pass the same
+hash as `expected_hash` when you want the save tied to a specific read. The save
+reply lists `prior_findings` separately from `introduced_findings`.
 
 ---
 
@@ -390,24 +401,21 @@ Every tool response includes `trace_id`. OpenTelemetry spans need `[telemetry]`,
 
 ## Agent skills (optional)
 
-The package bundles a small catalog of **agent skills** — client-side `SKILL.md`
-guides that teach an AI agent how to drive QSpice well (the core workflow, and
-convergence debugging). Skills are loaded by your *agent*, not the MCP server, so
-they add no per-request cost to the server and only enter context when a relevant
-task triggers them.
+The package bundles **agent skills** — client-side `SKILL.md` routers. A router
+says when the skill applies and names `reference/*.md` files. The agent opens a
+reference only when the task needs that procedure.
 
-They ship inside the package (`qspice_mcp/data/skills/`) and install into your
-agent's skills directory:
+They ship inside the package (`qspice_mcp/data/skills/`). Install them with:
 
 ```powershell
 pwsh -File scripts/install_skills.ps1
 ```
 
-By default this copies each skill into `~/.agents/skills/` (discovered by most
-MCP-aware agents). Use `-SkillsRoot <path>` for a different location, `-Groups`
-to pick groups (default `qspice-core`), and `-Force` to overwrite. Restart the
-agent afterward. Install only the groups you need — agents trigger the right
-skill more reliably when fewer are loaded.
+The default group `qspice-core` installs only `qspice-getting-started` into
+`~/.agents/skills/`. Optional groups are `qspice-layout`, `qspice-power`,
+`qspice-dll`, and `qspice-analysis`. Pass `-Groups` to install those,
+`-SkillsRoot` for a different directory, and `-Force` to overwrite. Restart the
+agent afterward.
 
 ---
 

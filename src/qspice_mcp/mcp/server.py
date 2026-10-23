@@ -17,6 +17,7 @@ from qspice_mcp.adapters import describe_adapters, select_adapter
 from qspice_mcp.adapters.probe import ProbeResult, probe_qspice
 from qspice_mcp.core.exceptions import (
     AdapterNotFoundError,
+    ContentConflictError,
     ParseError,
     QSpiceError,
     SimulationError,
@@ -28,6 +29,10 @@ from qspice_mcp.infra.logging import get_logger
 from qspice_mcp.infra.mcp_client_log import (
     bind_mcp_client_log_context,
     reset_mcp_client_log_context,
+)
+from qspice_mcp.infra.mcp_client_name import (
+    install_initialize_client_hook,
+    record_client_name_from_session,
 )
 from qspice_mcp.infra.progress import bind_context, reset_context
 from qspice_mcp.infra.telemetry import get_exception_trace_id
@@ -137,6 +142,9 @@ def _to_mcp_error_data(error: QSpiceError) -> ErrorData:
             data["line"] = error.line
         if error.column is not None:
             data["column"] = error.column
+    if isinstance(error, ContentConflictError):
+        data["expected_hash"] = error.expected_hash
+        data["actual_hash"] = error.actual_hash
     return ErrorData(code=_QSPICE_TOOL_ERROR_CODE, message=str(error), data=data)
 
 
@@ -184,6 +192,11 @@ class _QSpiceFastMCP(FastMCP):
         arguments: dict[str, Any],
     ) -> list[ContentBlock] | dict[str, Any]:
         context = self.get_context()
+        try:
+            mcp_session = context.session
+        except (LookupError, ValueError):
+            mcp_session = None
+        record_client_name_from_session(mcp_session)
         tool = self._tool_manager.get_tool(name)
         if tool is None:
             raise ToolError(f"Unknown tool: {name}")
@@ -305,6 +318,7 @@ class QSpiceMCPServer:
                 "timeout_s": self.settings.timeout_s,
                 "max_cache_bytes": self.settings.max_cache_bytes,
                 "telemetry_enabled": self.settings.telemetry_enabled,
+                "tool_profiles": list(self.settings.active_tool_profiles()),
             },
             "probe": {
                 "configured": self.probe.configured,
@@ -347,10 +361,11 @@ def create_server(settings: QSpiceSettings | None = None) -> QSpiceMCPServer:
     """Create the FastMCP-backed server object from current settings."""
 
     effective_settings = settings.normalized() if settings is not None else build_settings()
+    install_initialize_client_hook()
     probe = probe_qspice(effective_settings)
     adapters = describe_adapters(probe)
     definition = build_server_definition()
-    tools = build_tool_registry()
+    tools = build_tool_registry(active_profiles=effective_settings.active_tool_profiles())
     registered_tools = build_runtime_tool_registry(tools)
     resources = get_resource_definitions()
     runtime = QSpiceToolRuntime(effective_settings, registered_tools)

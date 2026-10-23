@@ -9,6 +9,8 @@ from enum import Enum
 from pathlib import Path
 from typing import TypeAlias, cast
 
+from mcp_app_core.images import ImageResult
+
 JsonScalar: TypeAlias = str | int | float | bool | None
 JsonValue: TypeAlias = JsonScalar | list["JsonValue"] | dict[str, "JsonValue"]
 
@@ -16,10 +18,11 @@ JsonValue: TypeAlias = JsonScalar | list["JsonValue"] | dict[str, "JsonValue"]
 def to_jsonable(value: object) -> JsonValue:
     """Convert service-layer return values into MCP-friendly JSON data."""
 
-    if is_dataclass(value) and not isinstance(value, type):
-        converted: JsonValue = {
-            field.name: to_jsonable(getattr(value, field.name)) for field in fields(value)
-        }
+    converted: JsonValue
+    if isinstance(value, ImageResult):
+        converted = cast("JsonValue", value.as_dict())
+    elif is_dataclass(value) and not isinstance(value, type):
+        converted = {field.name: to_jsonable(getattr(value, field.name)) for field in fields(value)}
     elif isinstance(value, Path):
         converted = str(value)
     elif isinstance(value, Enum):

@@ -12,6 +12,7 @@ import pytest
 
 from qspice_mcp.core.exceptions import BackendUnavailableError
 from qspice_mcp.infra.config import QSpiceSettings
+from qspice_mcp.infra.spawned_processes import clear_spawned_pids, remember_spawned_pid
 from qspice_mcp.services.live_gui.describe_live_gui_support import describe_live_gui_support
 from qspice_mcp.services.live_gui.open_schematic_in_gui import open_schematic_in_gui
 from qspice_mcp.services.live_gui.refresh_schematic_in_gui import refresh_schematic_in_gui
@@ -178,7 +179,7 @@ def test_refresh_schematic_in_gui_restart_requires_force_confirmation(
         )
 
 
-def test_refresh_schematic_in_gui_restart_runs_taskkill_then_reopens(
+def test_refresh_schematic_in_gui_restart_stops_only_spawned_pids(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
@@ -186,9 +187,11 @@ def test_refresh_schematic_in_gui_restart_runs_taskkill_then_reopens(
     schematic.write_text("schematic", encoding="utf-8")
     executable = tmp_path / "QSPICE64.exe"
     executable.write_text("", encoding="utf-8")
+    clear_spawned_pids()
+    remember_spawned_pid(4242)
 
     started_paths: list[str] = []
-    taskkill_calls: list[list[str]] = []
+    killed: list[int] = []
 
     monkeypatch.setattr(refresh_schematic_module.sys, "platform", "win32")
     monkeypatch.setattr(
@@ -197,12 +200,17 @@ def test_refresh_schematic_in_gui_restart_runs_taskkill_then_reopens(
         lambda path: started_paths.append(path),  # noqa: PLW0108
         raising=False,
     )
-
-    def fake_run(args: list[str], **_: object) -> object:
-        taskkill_calls.append(args)
-        return __import__("subprocess").CompletedProcess(args=args, returncode=0)
-
-    monkeypatch.setattr(refresh_schematic_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(refresh_schematic_module, "image_pids", lambda _name: set())
+    monkeypatch.setattr(
+        refresh_schematic_module,
+        "terminate_spawned_processes",
+        lambda: (killed.append(4242) or (4242,), 0),
+    )
+    monkeypatch.setattr(
+        refresh_schematic_module,
+        "remember_new_image_pids",
+        lambda _name, _before: (),
+    )
 
     result = refresh_schematic_in_gui(
         schematic,
@@ -215,5 +223,6 @@ def test_refresh_schematic_in_gui_restart_runs_taskkill_then_reopens(
     assert result.strategy == "restart_qspice_and_reopen"
     assert result.qspice_process_restart_requested is True
     assert result.qspice_process_restart_exit_code == 0
-    assert taskkill_calls == [["taskkill", "/F", "/IM", "QSPICE64.exe"]]
+    assert killed == [4242]
     assert started_paths == [str(schematic.resolve(strict=False))]
+    clear_spawned_pids()

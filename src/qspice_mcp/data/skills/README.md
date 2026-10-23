@@ -15,8 +15,9 @@ agent's skills directory with:
 pwsh -File scripts/install_skills.ps1
 ```
 
-By default this copies each skill into `~/.agents/skills/`, which most MCP-aware
-agents discover automatically. Pass `-SkillsRoot` to target a different location.
+By default this copies `qspice-getting-started` into `~/.agents/skills/`, which
+most MCP-aware agents discover automatically. Pass `-SkillsRoot` for a different
+directory and `-Groups` for the optional groups listed below.
 
 ## Layout
 
@@ -25,25 +26,35 @@ skills/
   <group>/
     plugin.yaml                 # group description + keywords
     <skill>/
-      SKILL.md                  # YAML frontmatter (name, description) + body
-      manifest.yaml             # tooling metadata (version, requires-tools, ...)
-      reference/*.md            # optional, loaded on demand
+      SKILL.md                  # short router: when to use, when not to, reference names
+      manifest.yaml             # when-not-to-use, reference-files, requires-tools
+      reference/*.md            # procedures, loaded only when named
 ```
 
-Install only the groups you need — agents trigger the right skill more reliably
-when fewer are loaded. You can also invoke a skill by name when you know which
-one you want.
+The default install is the orientation skill only. Install optional groups when
+the task needs them. Agents trigger the right skill more reliably when fewer
+are loaded.
 
 ## Groups
 
-| Group | Description |
-| --- | --- |
-| `qspice-core` | Core QSpice workflow: discover/author circuits, simulate, read waveforms, debug convergence. Every user needs these. |
+| Group | Install | Skills |
+| --- | --- | --- |
+| `qspice-core` | default | `qspice-getting-started` |
+| `qspice-layout` | optional | `qspice-schematic-layout` |
+| `qspice-power` | optional | `qspice-power-electronics` |
+| `qspice-dll` | optional | `qspice-mixed-signal-dll` |
+| `qspice-analysis` | optional | `qspice-waveform-analysis`, `qspice-convergence-debugging` |
+
+```powershell
+pwsh -File scripts/install_skills.ps1 -Groups qspice-core,qspice-layout,qspice-power,qspice-dll,qspice-analysis
+```
 
 ## Conventions
 
 - `SKILL.md` frontmatter must declare `name` and a trigger-oriented `description`.
+  The body is a router. It does not repeat the numbered procedure.
 - `manifest.yaml` must declare `schema_version`, `version`, `human-description`,
-  and `requires-tools` (every entry must be a real registered MCP tool — enforced
-  by `tests/unit/data/test_skills_catalog.py`).
-- Keep the main `SKILL.md` lean; push depth into `reference/*.md` loaded on demand.
+  `when-not-to-use`, `reference-files`, and `requires-tools` (every tool must be
+  a real registered MCP tool — enforced by `tests/unit/data/test_skills_catalog.py`).
+- Reference filenames are loaded only when named. They live in `reference/`
+  beside the skill.

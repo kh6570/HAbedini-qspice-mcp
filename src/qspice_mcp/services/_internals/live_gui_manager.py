@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from re import fullmatch
+from secrets import token_hex
 from shutil import which
 from time import monotonic, sleep
 from typing import TYPE_CHECKING, Literal, cast
@@ -17,6 +18,8 @@ from uuid import uuid4
 
 from qspice_mcp.core.exceptions import BackendUnavailableError, ValidationError
 from qspice_mcp.infra.logging import get_logger
+from qspice_mcp.infra.mcp_client_name import clear_mcp_client_name, show_mcp_client_name
+from qspice_mcp.infra.session_acl import restrict_session_directory
 from qspice_mcp.infra.workspace_scope import settings_for_active_workspace
 from qspice_mcp.services._internals.persistence_schema import (
     stamp_schema_version,
@@ -86,6 +89,8 @@ class _ManagedLiveGuiSession:
     bridge_exit_code: int | None = None
     error: str | None = None
     process: subprocess.Popen[bytes] | None = None
+    session_secret: str = ""
+    mcp_client_name: str | None = None
 
 
 def _validate_session_id(session_id: str) -> str:
@@ -139,6 +144,31 @@ def _append_jsonl_record(path: Path, payload: dict[str, object]) -> None:
         handle.write(json.dumps(payload) + "\n")
 
 
+def _load_session_secret(output_root: Path) -> str:
+    summary_path = _live_gui_summary_path(output_root)
+    if not summary_path.is_file():
+        return ""
+    try:
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ""
+    secret = payload.get("session_secret") if isinstance(payload, dict) else None
+    return secret if isinstance(secret, str) else ""
+
+
+def _stamp_manifest_secret(manifest_path: Path, secret: str) -> None:
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValidationError("Live GUI manifest must be a JSON object.")
+    protocol = payload.get("bridge_protocol")
+    if isinstance(protocol, dict):
+        queue = protocol.get("command_queue")
+        if isinstance(queue, dict):
+            queue["session_secret_field"] = "session_secret"  # noqa: S105
+    payload["session_secret"] = secret
+    manifest_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
 def _read_jsonl_records(path: Path) -> list[dict[str, object]]:
     if not path.is_file():
         return []
@@ -152,6 +182,14 @@ def _read_jsonl_records(path: Path) -> list[dict[str, object]]:
             raise ValidationError("Live GUI bridge event files must contain JSON object lines.")
         records.append({str(key): value for key, value in payload.items()})
     return records
+
+
+def _authorized_command_records(path: Path, secret: str) -> list[dict[str, object]]:
+    if not secret:
+        return []
+    return [
+        record for record in _read_jsonl_records(path) if record.get("session_secret") == secret
+    ]
 
 
 def _serialize_session(session: _ManagedLiveGuiSession) -> dict[str, object]:
@@ -172,6 +210,8 @@ def _serialize_session(session: _ManagedLiveGuiSession) -> dict[str, object]:
             "bridge_pid": session.bridge_pid,
             "bridge_exit_code": session.bridge_exit_code,
             "error": session.error,
+            "session_secret": session.session_secret,
+            "mcp_client_name": session.mcp_client_name,
         }
     )
 
@@ -224,9 +264,10 @@ class LiveGuiSessionManager:
         )
         summary_path.parent.mkdir(parents=True, exist_ok=True)
         registry_path.parent.mkdir(parents=True, exist_ok=True)
-        summary_text = json.dumps(payload, indent=2)
-        summary_path.write_text(summary_text, encoding="utf-8")
-        registry_path.write_text(summary_text, encoding="utf-8")
+        summary_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        registry_payload = dict(payload)
+        registry_payload.pop("session_secret", None)
+        registry_path.write_text(json.dumps(registry_payload, indent=2), encoding="utf-8")
 
     def _load_persisted_session(self, session_id: str) -> _ManagedLiveGuiSession:
         validated_id = _validate_session_id(session_id)
@@ -241,6 +282,10 @@ class LiveGuiSessionManager:
             artifact_name="Live GUI session summary",
             allow_legacy_unversioned=False,
         )
+        output_root = resolve_workspace_path(
+            str(payload["output_root"]),
+            workspace_root=self.settings.workspace_root,
+        )
         return _ManagedLiveGuiSession(
             session_id=str(payload["session_id"]),
             session_name=str(payload.get("session_name") or validated_id),
@@ -248,10 +293,7 @@ class LiveGuiSessionManager:
                 str(payload["manifest_path"]),
                 workspace_root=self.settings.workspace_root,
             ),
-            output_root=resolve_workspace_path(
-                str(payload["output_root"]),
-                workspace_root=self.settings.workspace_root,
-            ),
+            output_root=output_root,
             bridge_command=tuple(str(item) for item in payload.get("bridge_command", ())),
             submitted_at=_parse_datetime(payload.get("submitted_at"))
             or datetime.now().astimezone(),
@@ -272,6 +314,10 @@ class LiveGuiSessionManager:
                 else int(payload["bridge_exit_code"])
             ),
             error=None if payload.get("error") is None else str(payload["error"]),
+            session_secret=_load_session_secret(output_root),
+            mcp_client_name=(
+                None if payload.get("mcp_client_name") is None else str(payload["mcp_client_name"])
+            ),
         )
 
     def _require_session(self, session_id: str) -> _ManagedLiveGuiSession:
@@ -336,6 +382,8 @@ class LiveGuiSessionManager:
             _ensure_new_live_gui_output_root(manifest_path.parent.resolve(strict=False))
             manifest_path.parent.mkdir(parents=True, exist_ok=True)
             output_root = manifest_path.parent.resolve(strict=False)
+        restrict_session_directory(output_root)
+        session_secret = token_hex(32)
 
         scaffold = scaffold_live_gui_session(
             session_name,
@@ -346,6 +394,7 @@ class LiveGuiSessionManager:
             cross_probe_signals=cross_probe_signals,
             output_path=manifest_path,
         )
+        _stamp_manifest_secret(scaffold.manifest_path, session_secret)
         submitted_at = datetime.now().astimezone()
         stdout_path = (output_root / "bridge.stdout.log").resolve(strict=False)
         stderr_path = (output_root / "bridge.stderr.log").resolve(strict=False)
@@ -377,10 +426,17 @@ class LiveGuiSessionManager:
             status="running",
             bridge_pid=process.pid,
             process=process,
+            session_secret=session_secret,
+            mcp_client_name=show_mcp_client_name(),
         )
         self._sessions[session_id] = session
         self._persist_session(session)
         logger.info("live_gui_session_launched", bridge_pid=process.pid)
+        notes = [*scaffold.notes, "The configured live GUI bridge command was launched."]
+        if session.mcp_client_name:
+            notes.append(
+                f"Showing MCP client {session.mcp_client_name} while this session is open."
+            )
         return LiveGuiSessionLaunch(
             session_id=session.session_id,
             session_name=session.session_name,
@@ -390,7 +446,8 @@ class LiveGuiSessionManager:
             bridge_command=session.bridge_command,
             submitted_at=session.submitted_at,
             bridge_pid=session.bridge_pid,
-            notes=(*scaffold.notes, "The configured live GUI bridge command was launched."),
+            mcp_client_name=session.mcp_client_name,
+            notes=tuple(notes),
         )
 
     def poll_live_gui_session(self, session_id: str) -> LiveGuiSessionStatus:
@@ -424,6 +481,7 @@ class LiveGuiSessionManager:
             stdout_path=session.stdout_path,
             stderr_path=session.stderr_path,
             error=session.error,
+            mcp_client_name=session.mcp_client_name,
             notes=tuple(notes),
         )
 
@@ -588,8 +646,12 @@ class LiveGuiSessionManager:
         normalized_signal = None if signal is None else signal.strip()
         if signal is not None and not normalized_signal:
             raise ValidationError("signal must not be empty when provided.")
+        if not session.session_secret:
+            raise ValidationError(
+                "This live GUI session has no command secret. Launch a new session."
+            )
         command_path = _live_gui_command_queue_path(session.output_root)
-        command_id = len(_read_jsonl_records(command_path)) + 1
+        command_id = len(_authorized_command_records(command_path, session.session_secret)) + 1
         queued_at = datetime.now().astimezone()
         normalized_payload = {} if payload is None else dict(payload)
         _append_jsonl_record(
@@ -597,6 +659,7 @@ class LiveGuiSessionManager:
             {
                 "command_id": command_id,
                 "session_id": session.session_id,
+                "session_secret": session.session_secret,
                 "command": normalized_command,
                 "signal": normalized_signal,
                 "payload": normalized_payload,
@@ -693,7 +756,10 @@ class LiveGuiSessionManager:
             session.manifest_path.unlink()
             manifest_deleted = True
         session.status = "closed"
+        session.mcp_client_name = None
         self._persist_session(session)
+        if not any(item.mcp_client_name for item in self._sessions.values()):
+            clear_mcp_client_name()
         return LiveGuiSessionClosure(
             session_id=session.session_id,
             status=session.status,

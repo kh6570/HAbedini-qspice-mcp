@@ -1,0 +1,10 @@
+# In the name of God, the Most Gracious, the Most Merciful
+description: >
+  Optional switching-converter skill. Install for buck, boost, and other SMPS
+  work: transient, efficiency, step response, and loop-gain stability.
+keywords:
+  - qspice
+  - smps
+  - buck
+  - boost
+  - loop-gain

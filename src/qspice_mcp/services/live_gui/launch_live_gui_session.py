@@ -27,6 +27,7 @@ class LiveGuiSessionLaunch:
     bridge_command: tuple[str, ...]
     submitted_at: datetime
     bridge_pid: int | None
+    mcp_client_name: str | None = None
     notes: tuple[str, ...] = ()
 
 

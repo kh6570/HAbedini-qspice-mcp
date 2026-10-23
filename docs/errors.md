@@ -17,6 +17,7 @@ first emitting tool lands. Until a more specific code is available,
 | `qspice_error` | implemented | Generic fallback for domain failures without a more specific stable code. | `QSpiceError` |
 | `backend_unavailable` | implemented | A required local adapter, editor backend, raw backend, or companion executable is unavailable. | `AdapterNotFoundError`, `BackendUnavailableError` |
 | `artifact_missing` | implemented | A requested or expected derived artifact was not created or could not be found. | `ArtifactMissingError` |
+| `content_conflict` | implemented | A schematic changed since the content hash from the last read, so the save wrote nothing. | `ContentConflictError` |
 | `schematic_invalid` | reserved | The schematic structure is invalid or incomplete for the requested operation. | `SchematicInvalidError` |
 | `batch_conflict` | reserved | A retained-batch or resume request conflicts with persisted batch state. | `BatchConflictError` |
 | `timeout_exceeded` | implemented | A simulation or companion operation exceeded its configured timeout. | `SimulationTimeoutError` |

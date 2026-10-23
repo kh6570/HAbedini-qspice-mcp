@@ -25,6 +25,9 @@ def test_render_schematic_image_writes_png(tmp_path: Path) -> None:
     assert result.format == "png"
     assert result.component_count == 2
     assert result.wire_count >= 1
+    assert result.image is not None
+    assert result.image.png == result.image_path.read_bytes()
+    assert result.image.png.startswith(b"\x89PNG\r\n\x1a\n")
 
 
 def test_render_schematic_image_refuses_overwrite(tmp_path: Path) -> None:

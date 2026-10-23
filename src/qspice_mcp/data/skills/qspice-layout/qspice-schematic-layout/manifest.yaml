@@ -26,3 +26,8 @@ requires-skills:
   - qspice-getting-started
 requires-products: []
 toolkit: qspice-mcp
+when-not-to-use: Do not use this to run a simulation, interpret a waveform, author a DLL, or debug convergence. Use qspice-getting-started, qspice-waveform-analysis, qspice-mixed-signal-dll, or qspice-convergence-debugging for those.
+reference-files:
+  - placement.md
+  - wired-edits.md
+  - staged-schematics.md

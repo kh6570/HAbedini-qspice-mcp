@@ -8,6 +8,33 @@ from qspice_mcp.services._internals.mcp_schema_common import (
     _STEP_FILTER_VALUE,
 )
 
+_CHECK_OUTPUT_SCHEMA: dict[str, object] = {
+    "type": "object",
+    "properties": {
+        "ok": {"type": "boolean"},
+        "findings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["severity", "code", "message", "fixable"],
+                "properties": {
+                    "severity": {"type": "string", "enum": ["error", "warning", "info"]},
+                    "code": {"type": "string"},
+                    "message": {"type": "string"},
+                    "fixable": {
+                        "type": "boolean",
+                        "description": "Whether a following edit can repair this finding.",
+                    },
+                    "location": {
+                        "type": "string",
+                        "description": "Reference designator, pin, node, or label for this finding.",
+                    },
+                },
+            },
+        },
+    },
+}
+
 MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "read_net_connectivity": {
         "title": "Read Net Connectivity",
@@ -20,7 +47,8 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "check_schematic": {
         "title": "Check Schematic",
-        "description": "Run read-only ERC-style checks on a supported `.qsch` schematic: missing ground reference, floating pins, duplicate reference designators, missing component value or model, and conflicting net labels.",
+        "description": "Run read-only ERC-style checks on a supported `.qsch` schematic: missing ground reference, floating pins, duplicate reference designators, missing component value or model, and conflicting net labels. Each finding includes a location and whether a following edit can fix it.",
+        "output_schema": _CHECK_OUTPUT_SCHEMA,
         "input_schema": {
             "type": "object",
             "required": ["schematic_path"],
@@ -29,7 +57,8 @@ MCP_CONTRACTS: dict[str, dict[str, object]] = {
     },
     "check_netlist": {
         "title": "Check Netlist",
-        "description": "Run read-only ERC-style checks on a `.net` or `.cir` netlist: missing ground node 0, duplicate reference designators, and single-connection nodes.",
+        "description": "Run read-only ERC-style checks on a `.net` or `.cir` netlist: missing ground node 0, duplicate reference designators, and single-connection nodes. Each finding includes a location and whether a following edit can fix it.",
+        "output_schema": _CHECK_OUTPUT_SCHEMA,
         "input_schema": {
             "type": "object",
             "required": ["netlist_path"],

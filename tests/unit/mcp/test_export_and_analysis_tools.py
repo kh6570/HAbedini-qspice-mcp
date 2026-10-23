@@ -203,9 +203,9 @@ def test_mcp_describe_server_capabilities_reports_backend_state(
     assert "cmake_available" in dll_toolchain
     assert "auto_toolchain" in dll_toolchain
     assert result["feature_flags"]["native_mc_staging"] is True
-    assert result["feature_flags"]["local_remote_sessions"] is True
-    assert result["feature_flags"]["restart_safe_batch_rehydration"] is True
-    assert result["feature_flags"]["live_gui_manifest_scaffolding"] is True
+    assert result["feature_flags"]["local_remote_sessions"] is False
+    assert result["feature_flags"]["restart_safe_batch_rehydration"] is False
+    assert result["feature_flags"]["live_gui_manifest_scaffolding"] is False
     assert result["feature_flags"]["live_gui_external_bridge_required"] is True
     assert result["feature_flags"]["clean_room_stepped_real_raw_export"] is True
     assert result["feature_flags"]["clean_room_complex_frequency_raw_export"] is True
@@ -228,10 +228,9 @@ def test_mcp_describe_server_capabilities_reports_backend_state(
         group["name"] == "extended_raw_export" and group["state"] == "partial"
         for group in result["degraded_groups"]
     )
-    assert any(
-        group["name"] == "live_gui_optional" and group["state"] == "partial"
-        for group in result["degraded_groups"]
-    )
+    hidden_names = {group["name"] for group in result["hidden_tool_groups"]}
+    assert hidden_names == {"batch", "remote", "live_gui", "topology_ingest"}
+    assert all("default,extended" in str(group["enable"]) for group in result["hidden_tool_groups"])
 
     schematic_group = next(
         group for group in result["tool_groups"] if group["name"] == "schematic_editing"

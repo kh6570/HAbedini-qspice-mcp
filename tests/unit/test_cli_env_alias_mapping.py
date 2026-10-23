@@ -27,6 +27,7 @@ CLI_FLAG_TO_FIELD = {
     "--log-level": "log_level",
     "--log-folder": "log_folder",
     "--recipe-path": "recipe_path",
+    "--tool-profiles": "tool_profiles",
 }
 
 # Settings exposed only through the environment (no CLI flag).

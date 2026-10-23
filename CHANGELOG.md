@@ -15,6 +15,13 @@ drive the QSpice circuit simulator through stable JSON tools.
 
 ### Added
 
+- **Tool profiles** — a normal session loads the default tools. Remote, batch, live GUI, and topology ingest stay unloaded until `QSPICE_TOOL_PROFILES=default,extended` (or `--tool-profiles`). `describe_server_capabilities` lists the hidden groups and how to enable them.
+- **Schematic content hashes** — saves of an existing schematic go through `commit_file` and write nothing when the file no longer matches the hash from the last read. One place-and-wire save commits once. The reply separates prior ERC findings from findings that save introduced.
+- **Plot and schematic images** — `plot_waveforms` and `render_schematic_image` return the PNG in the tool result and still write the file. Plot downsampling uses minmax.
+- **Check locations** — `check_schematic` and `check_netlist` findings include `location` and `fixable`.
+- **Live GUI session limits** — `force_restart` stops only QSpice processes this server spawned. Command JSONL lines require a per-session secret, and the session folder is restricted to the current user on Windows. The MCP client name from initialize is shown while a session is open and cleared when the last session closes.
+- **Skill routers** — the default `install_skills.ps1` group `qspice-core` installs only `qspice-getting-started`. Layout, power, DLL, and analysis skills are optional groups. Each skill is a short router; the procedure is in `reference/*.md`, opened only when named. MCP prompts name the skill instead of repeating those steps.
+
 - **Shared framework** — catalog discovery, workspace sandbox, data budget, and the `AppError` base now come from `mcp-app-core` (https://github.com/kh6570/HAbedini-mcp-app-core). `pip install` clones it. `QSpiceError` remains the error type raised by QSpice tools.
 - **`.meas` `find_when` staging** — `prepare_meas(kind="find_when")` writes
   `.meas NAME find EXPR when EXPR=EXPR` with optional `td` and `cross`/`rise`/`fall`.
@@ -57,8 +64,7 @@ drive the QSpice circuit simulator through stable JSON tools.
   `[telemetry]`, and `[dev]` extras are opt-in; ships a `py.typed` marker for
   downstream type checkers.
 - **Agent skills catalog** — bundled client-side skills under
-  `qspice_mcp/data/skills/` (`qspice-core`: `qspice-getting-started`,
-  `qspice-convergence-debugging`), shipped as package data and installed into an
+  `qspice_mcp/data/skills/`, shipped as package data and installed into an
   agent's skills directory via `scripts/install_skills.ps1`. Skills are loaded by
   the agent (not the MCP server), adding no per-request server cost. Each skill's
   `manifest.yaml` `requires-tools` is validated against the live tool registry
@@ -319,7 +325,7 @@ drive the QSpice circuit simulator through stable JSON tools.
 - **`cancel_run` tool** — request cancellation of an in-flight `run_simulation` invocation by its `run_id`.
 - **CLI `--setup`, `--log-folder`, `--recipe-path`** — bootstrap diagnostics, optional file-log folder (`QSPICE_LOG_FOLDER`), and private recipe catalog override (`QSPICE_RECIPE_PATH`).
 - **Experimental SSE transport gate** — `--transport sse` is gated behind `QSPICE_ENABLE_SSE=true`.
-- **Companion agent skills** — `qspice-waveform-analysis`, `qspice-mixed-signal-dll`, and `qspice-power-electronics` added to the bundled `qspice-core` skill group.
+- **Companion agent skills** — `qspice-waveform-analysis`, `qspice-mixed-signal-dll`, and `qspice-power-electronics`.
 - **`prepare_noise` / `prepare_transfer_function` / `prepare_sensitivity` / `prepare_temperature_sweep` tools** — analysis-prep helpers for remaining directive types.
 - **MCP argument completions** — autocomplete for recipe IDs, instruction IDs, recipe documents, and workspace artifact paths.
 - **`workspace-artifact://{relpath}` resource template** — sandbox-validated workspace artifact pull (`~` encodes `/` in nested paths).

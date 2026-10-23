@@ -6,6 +6,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from mcp_app_core.commit import content_sha256
+
 from qspice_mcp.services._shared.paths import validate_existing_file
 from qspice_mcp.services.schematic._erc import evaluate_netlist
 from qspice_mcp.services.service_spec import ServiceSpec
@@ -26,6 +28,7 @@ class NetlistCheckReport:
     warning_count: int
     info_count: int
     findings: tuple[ErcFinding, ...]
+    content_sha256: str
 
 
 SERVICE_SPEC = ServiceSpec(
@@ -49,7 +52,8 @@ def check_netlist(
         workspace_root=workspace_root.resolve(strict=False),
         suffixes=(".net", ".cir"),
     )
-    report = evaluate_netlist(resolved_path.read_text(encoding="utf-8", errors="replace"))
+    raw_bytes = resolved_path.read_bytes()
+    report = evaluate_netlist(raw_bytes.decode("utf-8", errors="replace"))
     return NetlistCheckReport(
         netlist_path=resolved_path,
         ok=report.ok,
@@ -57,6 +61,7 @@ def check_netlist(
         warning_count=report.warning_count,
         info_count=report.info_count,
         findings=report.findings,
+        content_sha256=content_sha256(raw_bytes),
     )
 
 

@@ -15,6 +15,7 @@ from qspice_mcp.services._backends._qsch_editor import (
     _QSCH_BINARY_PREFIX,
     _decode_qsch_bytes,
 )
+from qspice_mcp.services._internals.schematic_commit import remember_schematic_content
 from qspice_mcp.services._shared.paths import validate_existing_file
 from qspice_mcp.services.schematic.read_net_connectivity import (
     NetConnectivityReport,
@@ -66,6 +67,7 @@ class SchematicInspection:
     parameters: tuple[str, ...] = field(default_factory=tuple)
     connectivity: NetConnectivityReport | None = None
     components_truncated: bool = False
+    content_sha256: str = ""
 
 
 class _ComponentAccumulator(TypedDict, total=False):
@@ -280,6 +282,7 @@ def inspect_schematic(
         suffixes=(".qsch",),
     )
     raw_bytes = schematic_path.read_bytes()
+    content_hash = remember_schematic_content(schematic_path, raw_bytes)
     content = inspect_schematic_bytes(raw_bytes)
     cleaned_lines = tuple(
         _clean_line(line) for line in _decode_inspection_bytes(raw_bytes).splitlines()
@@ -308,6 +311,7 @@ def inspect_schematic(
         parameters=content.parameters if include_parameters else (),
         connectivity=connectivity,
         components_truncated=components_truncated,
+        content_sha256=content_hash,
     )
 
 

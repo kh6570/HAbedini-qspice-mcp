@@ -14,6 +14,11 @@ import pytest
 
 from qspice_mcp.core.exceptions import BackendUnavailableError
 from qspice_mcp.infra.config import QSpiceSettings
+from qspice_mcp.infra.mcp_client_name import (
+    clear_mcp_client_name,
+    current_mcp_client_name,
+    record_mcp_client_name,
+)
 
 live_gui_manager_service = importlib.import_module(
     "qspice_mcp.services._internals.live_gui_manager"
@@ -160,6 +165,8 @@ def test_live_gui_manager_launches_polls_and_closes_bridge(
             live_gui_bridge_command=(sys.executable, str(bridge_script)),
         )
     )
+    clear_mcp_client_name()
+    record_mcp_client_name("Cursor")
 
     launched = manager.launch_live_gui_session(
         session_name="buck-debug",
@@ -184,6 +191,29 @@ def test_live_gui_manager_launches_polls_and_closes_bridge(
         )
         assert launched.bridge_command[-1] == str(launched.manifest_path)
         assert ready_path.read_text(encoding="utf-8") == "buck-debug"
+        assert launched.mcp_client_name == "Cursor"
+        assert current_mcp_client_name() == "Cursor"
+        session_text = (launched.output_root / "session.json").read_text(encoding="utf-8")
+        session_payload = json.loads(session_text)
+        registry_payload = json.loads(
+            (
+                tmp_path / "artifacts" / "live_gui" / "_sessions" / f"{launched.session_id}.json"
+            ).read_text(encoding="utf-8")
+        )
+        assert isinstance(session_payload["session_secret"], str)
+        assert session_payload["session_secret"]
+        assert "session_secret" not in registry_payload
+        manifest = json.loads(launched.manifest_path.read_text(encoding="utf-8"))
+        assert manifest["session_secret"] == session_payload["session_secret"]
+        dispatch = manager.send_live_gui_session_command(launched.session_id, command="ping")
+        command_text = (launched.output_root / "bridge.commands.jsonl").read_text(encoding="utf-8")
+        command_line = json.loads(command_text.splitlines()[-1])
+        assert dispatch.command_id == 1
+        assert command_line["session_secret"] == session_payload["session_secret"]
+        with (launched.output_root / "bridge.commands.jsonl").open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"command": "inject"}) + "\n")
+        second = manager.send_live_gui_session_command(launched.session_id, command="ping")
+        assert second.command_id == 2
     finally:
         closure = manager.close_live_gui_session(launched.session_id, delete_manifest=True)
 
@@ -191,6 +221,8 @@ def test_live_gui_manager_launches_polls_and_closes_bridge(
     assert closure.bridge_terminated is True
     assert closure.manifest_deleted is True
     assert launched.manifest_path.exists() is False
+    assert current_mcp_client_name() is None
+    assert manager.poll_live_gui_session(launched.session_id).mcp_client_name is None
 
 
 def test_live_gui_manager_rehydrates_completed_bridge_after_restart(

@@ -20,7 +20,9 @@
   directory your agent reads.
 
 .PARAMETER Groups
-  Skill groups to install. Defaults to qspice-core.
+  Skill groups to install. Defaults to qspice-core, which contains only the
+  orientation skill qspice-getting-started. Optional groups are qspice-layout,
+  qspice-power, qspice-dll, and qspice-analysis.
 
 .PARAMETER Symlink
   Create directory symlinks instead of copying (requires privilege on Windows).
@@ -32,7 +34,7 @@
   pwsh -File scripts/install_skills.ps1
 
 .EXAMPLE
-  pwsh -File scripts/install_skills.ps1 -SkillsRoot "$HOME/.agents/skills" -Force
+  pwsh -File scripts/install_skills.ps1 -Groups qspice-core,qspice-power -Force
 #>
 
 [CmdletBinding()]

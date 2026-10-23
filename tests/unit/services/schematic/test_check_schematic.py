@@ -45,6 +45,9 @@ def test_evaluate_flags_missing_ground() -> None:
     report = evaluate_schematic_connectivity(model)
 
     codes = {finding.code for finding in report.findings}
+    ground = next(finding for finding in report.findings if finding.code == "missing_ground")
+    assert ground.fixable is True
+    assert ground.location == "0"
     assert "missing_ground" in codes
     assert report.ok is False
     assert report.error_count >= 1

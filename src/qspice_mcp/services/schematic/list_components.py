@@ -14,6 +14,7 @@ from qspice_mcp.services._backends.schematic_editor import (
     component_attribute_text,
     open_schematic_editor,
 )
+from qspice_mcp.services._internals.schematic_commit import remember_schematic_read
 from qspice_mcp.services._shared.paths import validate_existing_file
 from qspice_mcp.services.service_spec import ServiceSpec
 
@@ -41,6 +42,7 @@ class ComponentCatalog:
     component_count: int
     prefixes: str
     components: tuple[ComponentSummary, ...]
+    content_sha256: str
 
 
 SERVICE_SPEC = ServiceSpec(
@@ -112,6 +114,7 @@ def list_components(
         component_count=len(components),
         prefixes=prefixes,
         components=tuple(components),
+        content_sha256=remember_schematic_read(resolved_path),
     )
 
 

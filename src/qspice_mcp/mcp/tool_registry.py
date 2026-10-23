@@ -5,9 +5,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import cache
+from typing import TYPE_CHECKING
+
+from mcp_app_core.registry import build_tool_registry as build_core_tool_registry
 
 from qspice_mcp.services._internals.service_catalog import build_service_spec_catalog
 from qspice_mcp.services.service_spec import ServiceSpec
+
+if TYPE_CHECKING:
+    from collections.abc import Collection
 
 _DESCRIBE_SERVER_CAPABILITIES_SERVICE = ServiceSpec(
     name="describe_server_capabilities",
@@ -57,6 +63,7 @@ class ToolDefinition:
     input_schema: dict[str, object]
     annotations: ToolAnnotations
     service: ServiceSpec
+    output_schema: dict[str, object] | None = None
 
     def summary(self) -> dict[str, object]:
         """Return a JSON-serializable summary of the tool."""
@@ -103,7 +110,20 @@ def _has_path_like_property(properties: dict[str, object]) -> bool:
     )
 
 
-def _normalize_input_schema(input_schema: dict[str, object]) -> dict[str, object]:
+_EXPECTED_HASH_PROPERTY: dict[str, object] = {
+    "type": "string",
+    "description": (
+        "SHA-256 content hash from the last read of this schematic. "
+        "When the file no longer matches, the save writes nothing."
+    ),
+}
+
+
+def _normalize_input_schema(
+    input_schema: dict[str, object],
+    *,
+    read_only: bool,
+) -> dict[str, object]:
     """Ensure `required` is present and expose `workspace_root` only where paths resolve.
 
     The server accepts a `workspace_root` argument for every tool (it is popped
@@ -118,6 +138,8 @@ def _normalize_input_schema(input_schema: dict[str, object]) -> dict[str, object
     )
     if _has_path_like_property(properties) and "workspace_root" not in properties:
         properties["workspace_root"] = dict(_WORKSPACE_ROOT_SCHEMA_PROPERTY)
+    if not read_only and "schematic_path" in properties and "expected_hash" not in properties:
+        properties["expected_hash"] = dict(_EXPECTED_HASH_PROPERTY)
     schema["properties"] = properties
     schema.setdefault("required", [])
     return schema
@@ -130,12 +152,31 @@ def _load_planned_service_specs() -> tuple[ServiceSpec, ...]:
     return build_service_spec_catalog(extra_specs=(_DESCRIBE_SERVER_CAPABILITIES_SERVICE,))
 
 
+def _select_specs(
+    specs: tuple[ServiceSpec, ...],
+    active_profiles: Collection[str] | None,
+) -> tuple[ServiceSpec, ...]:
+    """Keep specs whose profile is active. Omit the collection to keep every spec."""
+
+    if active_profiles is None:
+        return specs
+    selected = build_core_tool_registry(specs, active_profiles=active_profiles)
+    allowed = {tool.name for tool in selected}
+    return tuple(spec for spec in specs if spec.name in allowed)
+
+
 def build_tool_registry(
     service_specs: tuple[ServiceSpec, ...] | None = None,
+    *,
+    active_profiles: Collection[str] | None = None,
 ) -> tuple[ToolDefinition, ...]:
-    """Build the planned tool registry from the service catalog."""
+    """Build the planned tool registry from the service catalog.
 
-    specs = service_specs or _load_planned_service_specs()
+    Omit ``active_profiles`` to include every spec. A normal session passes
+    ``("default",)`` so extended groups stay unloaded.
+    """
+
+    specs = _select_specs(service_specs or _load_planned_service_specs(), active_profiles)
     tools: list[ToolDefinition] = []
     for spec in specs:
         if spec.input_schema is None:
@@ -145,9 +186,13 @@ def build_tool_registry(
                 name=spec.name,
                 title=spec.title,
                 description=spec.description or spec.summary,
-                input_schema=_normalize_input_schema(dict(spec.input_schema)),
+                input_schema=_normalize_input_schema(
+                    dict(spec.input_schema),
+                    read_only=spec.read_only,
+                ),
                 annotations=resolve_tool_annotations(spec),
                 service=spec,
+                output_schema=spec.output_schema,
             )
         )
     return tuple(tools)

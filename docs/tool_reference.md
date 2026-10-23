@@ -229,6 +229,7 @@ Expected outputs:
 - `error_taxonomy`
 - `feature_flags`
 - `tool_groups`
+- `hidden_tool_groups` (extended groups not loaded in this session, and how to enable them)
 - `degraded_groups`
 
 Implementation dependencies:
@@ -1505,7 +1506,8 @@ Typical inputs:
 Expected outputs:
 - `ok`
 - `error_count`, `warning_count`, `info_count`
-- `findings` (each with `severity`, `code`, `message`)
+- `findings` (each with `severity`, `code`, `message`, `fixable`, and `location`)
+- `content_sha256` (hash to pass back as `expected_hash` on a later save)
 
 Notes:
 Checks include missing ground reference (`missing_ground`), floating pins
@@ -1524,7 +1526,8 @@ Typical inputs:
 Expected outputs:
 - `ok`
 - `error_count`, `warning_count`, `info_count`
-- `findings` (each with `severity`, `code`, `message`)
+- `findings` (each with `severity`, `code`, `message`, `fixable`, and `location`)
+- `content_sha256`
 
 Notes:
 Checks include missing ground node `0` (`missing_ground`), duplicate reference
@@ -1643,6 +1646,7 @@ Typical inputs:
 Expected outputs:
 - `image_path`, `format`
 - `component_count`, `wire_count`, `net_label_count`
+- `image` (PNG bytes in the tool result: `summary`, `media_type`, `png_base64`)
 
 Notes:
 The render draws wire segments, junction dots, component pins and
@@ -3042,13 +3046,13 @@ Expected outputs:
 - `point_count`
 - `downsampled`
 - `warnings`
+- `image` (PNG bytes in the tool result: `summary`, `media_type`, `png_base64`)
 
 Notes:
-Plots are derived artifacts. The response should primarily return metadata and a
-path, not embed large binary content inline. The current implementation renders
-time/frequency-domain line plots from the same bounded waveform pipeline used by
-`read_waveform`, so large traces are downsampled before plotting. Stepped runs
-can be targeted either by numeric step index or by `step_filters`.
+Plots are derived artifacts. The tool still writes the plot file and also returns
+the PNG in the tool result. Large traces are downsampled with minmax so a fast
+carrier keeps its envelope. Stepped runs can be targeted either by numeric step
+index or by `step_filters`.
 
 ## read_device_operating_points
 

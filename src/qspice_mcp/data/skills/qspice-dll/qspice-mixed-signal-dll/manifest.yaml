@@ -25,3 +25,7 @@ requires-skills:
   - qspice-getting-started
 requires-products: []
 toolkit: qspice-mcp
+when-not-to-use: Do not use this for pure analog placement or for a simulation that runs but will not converge. Use qspice-schematic-layout or qspice-convergence-debugging.
+reference-files:
+  - workflow.md
+  - symbol-reuse.md

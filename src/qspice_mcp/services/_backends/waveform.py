@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Literal, Protocol, cast
 import numpy as np
 from numpy.typing import NDArray
 
-from qspice_mcp.core.budgets import DEFAULT_BUDGET, DataBudget
+from qspice_mcp.core.budgets import DEFAULT_BUDGET, DataBudget, DownsampleStrategy
 from qspice_mcp.core.exceptions import BackendUnavailableError, BudgetExceededError, ParseError
 from qspice_mcp.services._internals.step_filters import resolve_step_selection
 from qspice_mcp.services._shared.paths import validate_existing_file, validate_time_window
@@ -822,13 +822,18 @@ def _load_rawread_factory() -> tuple[_RawReadFactory | None, str | None]:
     return None, None
 
 
-def build_budget(*, max_points: int | None = None, max_bytes: int | None = None) -> DataBudget:
+def build_budget(
+    *,
+    max_points: int | None = None,
+    max_bytes: int | None = None,
+    strategy: DownsampleStrategy | None = None,
+) -> DataBudget:
     """Create a waveform budget from optional overrides."""
 
     return DataBudget(
         max_points=max_points if max_points is not None else DEFAULT_BUDGET.max_points,
         max_bytes=max_bytes if max_bytes is not None else DEFAULT_BUDGET.max_bytes,
-        strategy=DEFAULT_BUDGET.strategy,
+        strategy=strategy if strategy is not None else DEFAULT_BUDGET.strategy,
     )
 
 
@@ -1201,7 +1206,16 @@ def apply_budget(
             "Configured waveform budget cannot fit at least two waveform samples."
         )
 
-    indices = np.unique(np.linspace(0, axis.shape[0] - 1, num=target_points, dtype=int))
+    if budget.strategy == "minmax":
+        samples = [float(item) for item in values.tolist()]
+        selected = budget.select_indices(
+            int(axis.shape[0]),
+            values=samples,
+            dtype_size=dtype_size,
+        )
+        indices = np.asarray(selected, dtype=int)
+    else:
+        indices = np.unique(np.linspace(0, axis.shape[0] - 1, num=target_points, dtype=int))
     if indices.size == 0:
         raise BudgetExceededError("Configured waveform budget cannot fit any waveform samples.")
     return axis[indices], values[indices], True

@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from io import BytesIO
 from typing import TYPE_CHECKING
+
+from mcp_app_core.images import ImageResult
 
 from qspice_mcp.services._backends.matplotlib_agg import pyplot
 from qspice_mcp.services._backends.waveform import (
@@ -38,6 +41,7 @@ class WaveformPlot:
     x_unit: str
     y_unit: str
     warnings: tuple[str, ...] = ()
+    image: ImageResult | None = None
 
 
 SERVICE_SPEC = ServiceSpec(
@@ -95,7 +99,7 @@ def plot_waveforms(
     if normalized_format not in {"png", "svg"}:
         raise ValueError(f"Unsupported plot format: {fmt}")
 
-    budget = build_budget(max_points=max_points, max_bytes=max_bytes)
+    budget = build_budget(max_points=max_points, max_bytes=max_bytes, strategy="minmax")
     loaded_waveforms = [
         load_waveform(
             raw_path,
@@ -144,8 +148,16 @@ def plot_waveforms(
     axes.legend()
 
     plot_path.parent.mkdir(parents=True, exist_ok=True)
+    png_buffer = BytesIO()
+    figure.savefig(png_buffer, format="png", dpi=160)
     figure.savefig(plot_path, format=normalized_format, dpi=160)
     plt.close(figure)
+    image = ImageResult(
+        png=png_buffer.getvalue(),
+        summary=(
+            f"Plotted {len(loaded_waveforms)} signals ({point_count} points) to {plot_path.name}."
+        ),
+    )
 
     return WaveformPlot(
         raw_path=loaded_waveforms[0].raw_path,
@@ -161,6 +173,7 @@ def plot_waveforms(
         x_unit=loaded_waveforms[0].x_unit,
         y_unit=loaded_waveforms[0].y_unit if len(y_units) == 1 else "mixed",
         warnings=tuple(warnings),
+        image=image,
     )
 
 

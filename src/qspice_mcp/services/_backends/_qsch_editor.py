@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import re
 import time
-from typing import TYPE_CHECKING, Any
+from pathlib import Path
+from typing import Any
 
 import structlog
 
@@ -27,9 +28,11 @@ from qspice_mcp.services._backends._qsch_support import (
 )
 from qspice_mcp.services._backends.directive_placement import compute_directive_position
 from qspice_mcp.services._backends.qsch_codec import decode_qsch_bytes
-
-if TYPE_CHECKING:
-    from pathlib import Path
+from qspice_mcp.services._internals.schematic_commit import (
+    commit_schematic_bytes,
+    publish_schematic_edit_report,
+    schematic_findings_before_save,
+)
 
 # ---------------------------------------------------------------------------
 # Binary file magic / encoding
@@ -760,26 +763,32 @@ class QschEditor:
             workspace_root=self._workspace_root,
         )
 
-    def save_as(self, qsch_filename: str | Path) -> None:
-        """Persist the schematic tree to a .qsch file."""
-        from pathlib import Path as _Path  # noqa: PLC0415
+    def encoded_bytes(self) -> bytes:
+        """Return the schematic tree encoded as QSpice ``.qsch`` bytes."""
 
-        path = _Path(qsch_filename)
         out = self._root.out(level=0)
         # The instruction qualifier \ufeff cannot be encoded in Latin-1.
         # Replace it with the UTF-8 BOM byte sequence that QSPICE expects.
         out = out.replace("\ufeff", "\xef\xbb\xbf")
-        data = _QSCH_BINARY_PREFIX + out.encode("latin-1")
+        return _QSCH_BINARY_PREFIX + out.encode("latin-1")
+
+    def save_as(self, qsch_filename: str | Path) -> None:
+        """Persist the schematic tree to a .qsch file.
+
+        An existing file is replaced through ``commit_file`` and only when its
+        bytes still match the hash from the last read. One call writes once.
+        """
+
+        path = Path(qsch_filename)
+        data = self.encoded_bytes()
         path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path = path.with_name(f"{path.name}.tmp")
+        prior = schematic_findings_before_save(path)
         last_error: OSError | None = None
         for attempt in range(1, _SAVE_MAX_ATTEMPTS + 1):
             try:
-                temp_path.write_bytes(data)
-                temp_path.replace(path)
+                digest = commit_schematic_bytes(path, data)
             except OSError as exc:
                 last_error = exc
-                temp_path.unlink(missing_ok=True)
                 _logger.warning(
                     "qsch_save_attempt_failed",
                     path=str(path),
@@ -793,6 +802,7 @@ class QschEditor:
                 if attempt > 1:
                     _logger.info("qsch_save_succeeded_after_retry", path=str(path), attempt=attempt)
                 self.updated = False
+                publish_schematic_edit_report(path, prior=prior, content_hash=digest)
                 return
         if last_error is not None:
             _logger.error(

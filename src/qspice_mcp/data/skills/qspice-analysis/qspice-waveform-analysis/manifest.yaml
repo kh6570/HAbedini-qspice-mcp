@@ -25,3 +25,6 @@ requires-skills:
   - qspice-getting-started
 requires-products: []
 toolkit: qspice-mcp
+when-not-to-use: Do not use this when the run failed or produced no waveform, or when you still need to author or simulate the circuit. Use qspice-convergence-debugging or qspice-getting-started.
+reference-files:
+  - workflow.md

@@ -14,6 +14,7 @@ from qspice_mcp.infra.child_processes import (
     unregister_process,
     unregister_run,
 )
+from qspice_mcp.infra.spawned_processes import forget_spawned_pid, remember_qspice_process
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -52,6 +53,7 @@ def run_subprocess(
         env=env,
     )
     register_process(process)
+    remember_qspice_process(command, process.pid)
     if run_id is not None:
         register_run(run_id, process)
     try:
@@ -64,6 +66,7 @@ def run_subprocess(
         raise
     finally:
         unregister_process(process.pid)
+        forget_spawned_pid(process.pid)
         if run_id is not None:
             unregister_run(run_id)
     return SubprocessResult(

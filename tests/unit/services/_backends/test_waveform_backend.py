@@ -244,6 +244,14 @@ class TestApplyBudget:
         assert downsampled is True
         assert len(fx) < 100
 
+    def test_minmax_keeps_a_carrier_peak(self) -> None:
+        axis = np.arange(8, dtype=np.float64)
+        values = np.array([0.0, 0.0, 0.0, 100.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float64)
+        budget = DataBudget(max_points=4, max_bytes=1_000_000, strategy="minmax")
+        _fx, fy, downsampled = apply_budget(axis, values, budget=budget)
+        assert downsampled is True
+        assert 100.0 in fy
+
     def test_exact_points_at_budget_boundary(self) -> None:
         axis = np.linspace(0, 1, 64)
         values = np.linspace(0, 100, 64)

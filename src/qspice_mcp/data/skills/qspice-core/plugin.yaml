@@ -1,12 +1,10 @@
 # In the name of God, the Most Gracious, the Most Merciful
 description: >
-  Core QSpice workflow skills: discover or author circuits, generate netlists,
-  run simulations, read and measure waveforms, and debug non-convergence.
-  Every QSpice MCP user needs these.
+  Orientation for the QSpice MCP server. The default install is only
+  qspice-getting-started. Layout, power, DLL, and analysis skills are
+  optional groups.
 keywords:
   - qspice
-  - spice
-  - circuit-simulation
-  - waveforms
-  - convergence
-  - netlist
+  - orientation
+  - schematic
+  - simulation

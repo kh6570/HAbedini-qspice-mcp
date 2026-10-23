@@ -37,13 +37,47 @@ _NETLIST_NODE_COUNTS = {
 }
 
 
+_FIXABLE_CODES = frozenset(
+    {
+        "missing_ground",
+        "duplicate_reference",
+        "conflicting_net_labels",
+        "floating_pin",
+        "missing_value",
+        "single_connection_node",
+    }
+)
+
+
 @dataclass(frozen=True, slots=True)
 class ErcFinding:
-    """One ERC observation."""
+    """One ERC observation.
+
+    ``fixable`` is true when a later edit can repair the finding.
+    ``location`` is a reference designator, pin, node, or label when one is known.
+    """
 
     severity: str
     code: str
     message: str
+    fixable: bool = False
+    location: str | None = None
+
+
+def _finding(
+    *,
+    severity: str,
+    code: str,
+    message: str,
+    location: str | None = None,
+) -> ErcFinding:
+    return ErcFinding(
+        severity=severity,
+        code=code,
+        message=message,
+        fixable=code in _FIXABLE_CODES,
+        location=location,
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,13 +123,14 @@ def evaluate_schematic_connectivity(model: ConnectivityModel) -> ErcReport:
 
     if model.components and not model.ground_present:
         findings.append(
-            ErcFinding(
+            _finding(
                 severity="error",
                 code="missing_ground",
                 message=(
                     "No ground reference (node 0) was found. Add a GND net label "
                     "on the circuit's reference node."
                 ),
+                location="0",
             )
         )
 
@@ -105,20 +140,22 @@ def evaluate_schematic_connectivity(model: ConnectivityModel) -> ErcReport:
     for reference, count in sorted(reference_counts.items()):
         if count > 1:
             findings.append(
-                ErcFinding(
+                _finding(
                     severity="error",
                     code="duplicate_reference",
                     message=f"Reference designator {reference} is used by {count} components.",
+                    location=reference,
                 )
             )
 
     for conflict in model.conflicts:
         labels = ", ".join(conflict.labels)
         findings.append(
-            ErcFinding(
+            _finding(
                 severity="error",
                 code="conflicting_net_labels",
                 message=f"Conflicting net labels on one connection: {labels}.",
+                location=labels,
             )
         )
 
@@ -126,13 +163,14 @@ def evaluate_schematic_connectivity(model: ConnectivityModel) -> ErcReport:
         if len(group.members) == 1 and not group.labeled:
             member = group.members[0]
             findings.append(
-                ErcFinding(
+                _finding(
                     severity="warning",
                     code="floating_pin",
                     message=(
                         f"Pin {member.pin} of {member.reference} on net {group.name} has no "
                         "other connection. Add a wire or net label."
                     ),
+                    location=f"{member.reference}.{member.pin}",
                 )
             )
 
@@ -141,10 +179,11 @@ def evaluate_schematic_connectivity(model: ConnectivityModel) -> ErcReport:
             continue
         if _value_is_required(symbol=component.symbol, kind=component.kind) and not component.value:
             findings.append(
-                ErcFinding(
+                _finding(
                     severity="warning",
                     code="missing_value",
                     message=(f"Component {component.reference} has no value or model assigned."),
+                    location=component.reference,
                 )
             )
 
@@ -182,10 +221,11 @@ def evaluate_netlist(netlist_text: str) -> ErcReport:
     for reference, count in sorted(reference_counts.items()):
         if count > 1:
             findings.append(
-                ErcFinding(
+                _finding(
                     severity="error",
                     code="duplicate_reference",
                     message=f"Reference designator {reference} appears on {count} netlist lines.",
+                    location=reference,
                 )
             )
 
@@ -196,10 +236,11 @@ def evaluate_netlist(netlist_text: str) -> ErcReport:
 
     if elements and _GROUND_NODE not in node_usage:
         findings.append(
-            ErcFinding(
+            _finding(
                 severity="error",
                 code="missing_ground",
                 message="No ground node 0 was found in the netlist.",
+                location="0",
             )
         )
 
@@ -208,10 +249,11 @@ def evaluate_netlist(netlist_text: str) -> ErcReport:
             continue
         if count == 1:
             findings.append(
-                ErcFinding(
+                _finding(
                     severity="warning",
                     code="single_connection_node",
                     message=f"Node {node} connects to only one element pin.",
+                    location=node,
                 )
             )
 

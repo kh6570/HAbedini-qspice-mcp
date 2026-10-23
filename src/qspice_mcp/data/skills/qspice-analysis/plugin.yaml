@@ -1,0 +1,9 @@
+# In the name of God, the Most Gracious, the Most Merciful
+description: >
+  Optional analysis skills. Install for waveform math after a successful run,
+  or for simulations that fail to converge. Not part of the default install.
+keywords:
+  - qspice
+  - waveform
+  - measurement
+  - convergence

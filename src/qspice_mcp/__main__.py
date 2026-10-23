@@ -55,6 +55,15 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--log-folder", type=Path, default=None)
     parser.add_argument("--recipe-path", type=Path, default=None)
     parser.add_argument(
+        "--tool-profiles",
+        default=None,
+        help=(
+            "Comma-separated tool profiles to load. "
+            "default is the normal session. "
+            "Add extended to also load remote, batch, live GUI, and topology ingest tools."
+        ),
+    )
+    parser.add_argument(
         "--log-level",
         choices=("debug", "info", "warning", "error"),
         default=None,
@@ -134,6 +143,7 @@ def main() -> None:
         log_folder=args.log_folder,
         recipe_path=args.recipe_path,
         session_mode=args.session_mode,
+        tool_profiles=args.tool_profiles,
     )
     configure_logging(settings.log_level, log_folder=settings.log_folder)
 

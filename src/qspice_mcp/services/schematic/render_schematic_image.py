@@ -6,6 +6,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from mcp_app_core.images import ImageResult
+
 from qspice_mcp.services._backends.matplotlib_agg import pyplot
 from qspice_mcp.services._shared.paths import (
     resolve_workspace_output_path,
@@ -33,6 +35,7 @@ class RenderedSchematicImage:
     component_count: int
     wire_count: int
     net_label_count: int
+    image: ImageResult | None = None
 
 
 SERVICE_SPEC = ServiceSpec(
@@ -141,14 +144,21 @@ def render_schematic_image(
     image_path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(image_path, format="png", dpi=160)
     plt.close(figure)
+    component_count = len(components)
+    wire_count = len(wires)
+    image = ImageResult(
+        png=image_path.read_bytes(),
+        summary=(f"Rendered {image_path.name} ({component_count} components, {wire_count} wires)."),
+    )
 
     return RenderedSchematicImage(
         schematic_path=resolved_path,
         image_path=image_path,
         format="png",
-        component_count=len(components),
-        wire_count=len(wires),
+        component_count=component_count,
+        wire_count=wire_count,
         net_label_count=net_label_count,
+        image=image,
     )
 
 

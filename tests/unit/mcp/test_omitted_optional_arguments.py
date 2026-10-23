@@ -43,7 +43,13 @@ async def test_poll_live_gui_events_omits_optional_arguments(
     monkeypatch.setattr(LiveGuiSessionManager, "poll_live_gui_session_events", fake_poll)
     executable = tmp_path / "QSPICE64.exe"
     executable.write_text("", encoding="utf-8")
-    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    server = create_server(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            tool_profiles="default,extended",
+        )
+    )
 
     await server.app.call_tool("poll_live_gui_session_events", {"session_id": "sess-1"})
 

@@ -27,3 +27,9 @@ requires-skills:
   - qspice-convergence-debugging
 requires-products: []
 toolkit: qspice-mcp
+when-not-to-use: Do not use this when the run fails to converge or when you only need a generic waveform scalar. Use qspice-convergence-debugging first for a failed run, and qspice-waveform-analysis for ordinary trace math.
+reference-files:
+  - workflow.md
+  - bode.md
+  - buck-from-scratch.md
+  - loop-gain.md

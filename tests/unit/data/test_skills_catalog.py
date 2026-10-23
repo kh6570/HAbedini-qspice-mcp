@@ -11,9 +11,11 @@ from __future__ import annotations
 
 import re
 from importlib.resources import files
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+from mcp_app_core.skills import load_skill
 
 from qspice_mcp.mcp.tool_registry import build_runtime_tool_registry
 
@@ -153,3 +155,64 @@ def test_skill_requires_skills_resolve(skill: Traversable) -> None:
     known = _skill_names()
     unknown = [dep for dep in lists.get("requires-skills", []) if dep not in known]
     assert not unknown, f"{skill.name}: requires-skills not found in catalog: {unknown}"
+
+
+def _skills_in(group: Traversable) -> set[str]:
+    return {
+        entry.name for entry in group.iterdir() if entry.is_dir() and (entry / "SKILL.md").is_file()
+    }
+
+
+def test_default_install_is_orientation_only() -> None:
+    groups = {group.name: group for group in _iter_group_dirs()}
+    assert set(groups) == {
+        "qspice-analysis",
+        "qspice-core",
+        "qspice-dll",
+        "qspice-layout",
+        "qspice-power",
+    }
+    assert _skills_in(groups["qspice-core"]) == {"qspice-getting-started"}
+    assert _skills_in(groups["qspice-layout"]) == {"qspice-schematic-layout"}
+    assert _skills_in(groups["qspice-power"]) == {"qspice-power-electronics"}
+    assert _skills_in(groups["qspice-dll"]) == {"qspice-mixed-signal-dll"}
+    assert _skills_in(groups["qspice-analysis"]) == {
+        "qspice-convergence-debugging",
+        "qspice-waveform-analysis",
+    }
+    script = Path(__file__).resolve().parents[3] / "scripts" / "install_skills.ps1"
+    script_text = script.read_text(encoding="utf-8")
+    assert '[string[]] $Groups = @("qspice-core")' in script_text
+
+
+def _skill_path(skill: Traversable) -> Path:
+    path = Path(str(skill))
+    assert path.is_dir()
+    return path
+
+
+@pytest.mark.parametrize("skill", _iter_skill_dirs(), ids=lambda s: s.name)
+def test_skill_reference_files_exist_and_are_not_inlined(skill: Traversable) -> None:
+    loaded = load_skill(_skill_path(skill))
+    skill_text = (skill / "SKILL.md").read_text(encoding="utf-8")
+    front = _parse_frontmatter(skill_text)
+    assert loaded.manifest.name == skill.name
+    assert loaded.manifest.trigger == front["description"]
+    assert loaded.manifest.when_not_to_use
+    assert loaded.body.strip() in skill_text
+    numbered = [line for line in loaded.body.splitlines() if re.match(r"\s*\d+\.\s+", line)]
+    assert not numbered, f"{skill.name}: SKILL.md restates a numbered procedure"
+    assert loaded.manifest.reference_files, f"{skill.name}: router needs reference files"
+    for name in loaded.manifest.reference_files:
+        reference = skill / "reference" / name
+        assert reference.is_file(), f"{skill.name}: missing reference {name}"
+        reference_text = reference.read_text(encoding="utf-8")
+        assert reference_text.startswith("In the name of God, the Most Gracious, the Most Merciful")
+        markers = [
+            line.strip()
+            for line in reference_text.splitlines()
+            if len(line.strip()) >= 80 and "In the name of God" not in line
+        ]
+        assert markers, f"{skill.name}: {name} has no procedure line"
+        inlined = [line for line in markers if line in skill_text or line in loaded.body]
+        assert not inlined, f"{skill.name}: {name} is inlined into SKILL.md"

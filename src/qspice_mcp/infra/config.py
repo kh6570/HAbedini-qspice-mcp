@@ -6,10 +6,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import ClassVar, Literal, Self
 
+from mcp_app_core.catalog import SERVICE_PROFILES
 from mcp_app_core.settings import AppSettings
 from platformdirs import user_cache_dir
 from pydantic import BaseModel
 from pydantic_settings import SettingsConfigDict
+
+from qspice_mcp.core.exceptions import ConfigurationError
 
 
 class QSpiceFeatures(BaseModel):
@@ -27,6 +30,7 @@ class QSpiceSettings(AppSettings):
     session_mode: Literal["cold", "auto"] = "cold"
     recipe_path: Path | None = None
     telemetry_enabled: bool = False
+    tool_profiles: str = "default"
     cache_app_name: ClassVar[str] = "qspice-mcp"
 
     model_config = SettingsConfigDict(
@@ -75,6 +79,26 @@ class QSpiceSettings(AppSettings):
             return None
         return configured
 
+    def active_tool_profiles(self) -> tuple[str, ...]:
+        """Return the tool profiles a session should load.
+
+        ``default`` is the normal session. Add ``extended`` to also load remote,
+        batch, live GUI, and topology ingest tools.
+        """
+
+        parts = tuple(
+            dict.fromkeys(part.strip() for part in self.tool_profiles.split(",") if part.strip())
+        )
+        if not parts:
+            raise ConfigurationError(
+                "QSPICE_TOOL_PROFILES must name at least one of: default, extended."
+            )
+        unknown = [part for part in parts if part not in SERVICE_PROFILES]
+        if unknown:
+            names = ", ".join(unknown)
+            raise ConfigurationError(f"Unknown tool profile(s): {names}.")
+        return parts
+
     def with_cli_overrides(
         self,
         *,
@@ -87,6 +111,7 @@ class QSpiceSettings(AppSettings):
         recipe_path: Path | None = None,
         enable_sse: bool | None = None,
         session_mode: Literal["cold", "auto"] | None = None,
+        tool_profiles: str | None = None,
     ) -> Self:
         """Apply explicit CLI overrides on top of environment-loaded settings."""
 
@@ -109,6 +134,8 @@ class QSpiceSettings(AppSettings):
             updates["recipe_path"] = recipe_path
         if enable_sse is not None:
             updates["enable_sse"] = enable_sse
+        if tool_profiles is not None:
+            updates["tool_profiles"] = tool_profiles
         return self.model_copy(update=updates).normalized()
 
 
@@ -123,6 +150,7 @@ def build_settings(
     recipe_path: Path | None = None,
     enable_sse: bool | None = None,
     session_mode: Literal["cold", "auto"] | None = None,
+    tool_profiles: str | None = None,
 ) -> QSpiceSettings:
     """Load settings from the environment and apply explicit CLI overrides."""
 
@@ -136,4 +164,5 @@ def build_settings(
         recipe_path=recipe_path,
         enable_sse=enable_sse,
         session_mode=session_mode,
+        tool_profiles=tool_profiles,
     )

@@ -19,3 +19,10 @@ requires-tools:
 requires-skills: []
 requires-products: []
 toolkit: qspice-mcp
+when-not-to-use: Do not use this for placement grids, converter characterization, DLL authoring, waveform math, or convergence repair. Use the optional qspice-layout, qspice-power, qspice-dll, and qspice-analysis skills.
+reference-files:
+  - mental-model.md
+  - first-circuit.md
+  - simulate-and-read.md
+  - sweep.md
+  - tolerance.md

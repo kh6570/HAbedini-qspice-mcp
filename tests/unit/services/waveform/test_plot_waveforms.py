@@ -83,6 +83,9 @@ def test_plot_waveforms_creates_png_artifact(
     assert result.point_count == 4
     assert result.downsampled is True
     assert result.plot_path.stat().st_size > 0
+    assert result.image is not None
+    assert result.image.png.startswith(b"\x89PNG\r\n\x1a\n")
+    assert result.image.as_dict()["media_type"] == "image/png"
 
 
 def test_plot_waveforms_rejects_mismatched_output_suffix(

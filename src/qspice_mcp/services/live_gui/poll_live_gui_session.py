@@ -34,6 +34,7 @@ class LiveGuiSessionStatus:
     stdout_path: Path
     stderr_path: Path
     error: str | None = None
+    mcp_client_name: str | None = None
     notes: tuple[str, ...] = ()
 
 

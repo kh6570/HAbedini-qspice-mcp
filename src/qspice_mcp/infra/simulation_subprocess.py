@@ -17,6 +17,7 @@ from qspice_mcp.infra.child_processes import (
     unregister_run,
 )
 from qspice_mcp.infra.progress import report_info, report_progress
+from qspice_mcp.infra.spawned_processes import forget_spawned_pid, remember_qspice_process
 from qspice_mcp.infra.subprocess import SubprocessResult
 
 if TYPE_CHECKING:
@@ -104,6 +105,7 @@ def run_subprocess_with_log_progress(
         env=env,
     )
     register_process(process)
+    remember_qspice_process(command, process.pid)
     if run_id is not None:
         register_run(run_id, process)
     stop_event = threading.Event()
@@ -146,6 +148,7 @@ def run_subprocess_with_log_progress(
             poller.join(timeout=1.0)
         _drain_progress(progress_events)
         unregister_process(process.pid)
+        forget_spawned_pid(process.pid)
         if run_id is not None:
             unregister_run(run_id)
     return SubprocessResult(

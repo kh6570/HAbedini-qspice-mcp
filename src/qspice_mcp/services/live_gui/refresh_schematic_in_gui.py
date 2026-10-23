@@ -4,13 +4,17 @@
 from __future__ import annotations
 
 import os
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path  # noqa: TC003
 from typing import TYPE_CHECKING, Literal
 
 from qspice_mcp.core.exceptions import BackendUnavailableError, ValidationError
+from qspice_mcp.infra.spawned_processes import (
+    image_pids,
+    remember_new_image_pids,
+    terminate_spawned_processes,
+)
 from qspice_mcp.services._shared.paths import validate_existing_file
 from qspice_mcp.services.service_spec import ServiceSpec
 
@@ -37,7 +41,7 @@ SERVICE_SPEC = ServiceSpec(
     title="Refresh Schematic In GUI",
     summary=(
         "Refresh one workspace-local .qsch view on Windows by reopening via OS association "
-        "or by force-restarting QSpice before reopening."
+        "or by stopping only the QSpice processes this server spawned before reopening."
     ),
     phase="implemented",
     read_only=False,
@@ -74,36 +78,32 @@ def refresh_schematic_in_gui(
     restart_exit_code: int | None = None
     notes: list[str] = []
 
+    effective_settings = settings.normalized()
+    qspice_process_name = (
+        effective_settings.exe.name if effective_settings.exe is not None else "QSPICE64.exe"
+    )
     if restart_requested:
         if not force_restart:
             raise ValidationError(
-                "restart_qspice_and_reopen requires force_restart=true because it can close all open QSpice windows."  # noqa: E501
+                "restart_qspice_and_reopen requires force_restart=true "
+                "because it stops QSpice processes this server spawned."
             )
-        effective_settings = settings.normalized()
-        qspice_process_name = (
-            effective_settings.exe.name if effective_settings.exe is not None else "QSPICE64.exe"
-        )
-        taskkill = subprocess.run(  # noqa: S603
-            ["taskkill", "/F", "/IM", qspice_process_name],  # noqa: S607
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        restart_exit_code = taskkill.returncode
-        if taskkill.returncode == 0:
+        killed, restart_exit_code = terminate_spawned_processes()
+        if not killed:
             notes.append(
-                f"Requested force-restart for process image {qspice_process_name} before reopening."
+                "No QSpice process spawned by this server was running, so no process was stopped."
             )
         else:
-            notes.append(
-                f"taskkill returned exit code {taskkill.returncode} for process image {qspice_process_name}; proceeding with reopen."  # noqa: E501
-            )
+            stopped = ", ".join(str(pid) for pid in killed)
+            notes.append(f"Stopped QSpice processes spawned by this server: {stopped}.")
     else:
         notes.append(
-            "Requested reopen via OS file association without force-restarting QSpice processes."
+            "Requested reopen via OS file association without stopping spawned QSpice processes."
         )
 
+    before = image_pids(qspice_process_name)
     startfile(str(resolved_path))
+    remember_new_image_pids(qspice_process_name, before)
     notes.append("Dispatched a schematic open request through the host OS file association.")
 
     return RefreshedSchematicInGui(

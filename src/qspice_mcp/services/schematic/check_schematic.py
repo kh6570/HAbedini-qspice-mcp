@@ -6,6 +6,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from qspice_mcp.services._internals.schematic_commit import remember_schematic_read
 from qspice_mcp.services._shared.paths import validate_existing_file
 from qspice_mcp.services.schematic._connectivity import build_connectivity
 from qspice_mcp.services.schematic._erc import evaluate_schematic_connectivity
@@ -27,6 +28,7 @@ class SchematicCheckReport:
     warning_count: int
     info_count: int
     findings: tuple[ErcFinding, ...]
+    content_sha256: str
 
 
 SERVICE_SPEC = ServiceSpec(
@@ -50,6 +52,7 @@ def check_schematic(
         workspace_root=workspace_root.resolve(strict=False),
         suffixes=(".qsch",),
     )
+    content_hash = remember_schematic_read(resolved_path)
     model = build_connectivity(resolved_path)
     report = evaluate_schematic_connectivity(model)
     return SchematicCheckReport(
@@ -59,6 +62,7 @@ def check_schematic(
         warning_count=report.warning_count,
         info_count=report.info_count,
         findings=report.findings,
+        content_sha256=content_hash,
     )
 
 

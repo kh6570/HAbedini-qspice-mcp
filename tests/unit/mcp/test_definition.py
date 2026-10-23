@@ -117,7 +117,7 @@ def test_create_server_collects_bootstrap_summary(tmp_path: Path) -> None:
     assert summary["settings"]["workspace_root"] == str(tmp_path.resolve())
     assert summary["probe"]["exists"] is True
     assert summary["selected_adapter"]["key"] == "cli.v1"
-    assert len(summary["tools"]) == len(build_tool_registry())
+    assert len(summary["tools"]) == len(build_tool_registry(active_profiles=("default",)))
     assert "add_instruction" in summary["registered_tools"]
     assert "create_schematic" in summary["registered_tools"]
     assert "create_starter_schematic" in summary["registered_tools"]
@@ -143,8 +143,10 @@ def test_create_server_collects_bootstrap_summary(tmp_path: Path) -> None:
     assert "read_component" in summary["registered_tools"]
     assert "read_component_symbol" in summary["registered_tools"]
     assert "add_component_symbol_drawing" in summary["registered_tools"]
-    assert "describe_live_gui_support" in summary["registered_tools"]
-    assert "scaffold_live_gui_session" in summary["registered_tools"]
+    assert "describe_live_gui_support" not in summary["registered_tools"]
+    assert "scaffold_live_gui_session" not in summary["registered_tools"]
+    assert "submit_batch" not in summary["registered_tools"]
+    assert "ingest_topology_contribution" not in summary["registered_tools"]
     assert "set_component_symbol_drawing" in summary["registered_tools"]
     assert "set_component_symbol_text" in summary["registered_tools"]
     assert "set_component_symbol_pin" in summary["registered_tools"]
@@ -448,6 +450,7 @@ def test_mcp_list_components_is_invokable(monkeypatch: object, tmp_path: Path) -
                     has_subcircuit=False,
                 ),
             ),
+            content_sha256="abc",
         )
 
     typed_monkeypatch.setattr(mcp_schematic_tools, "list_components_service", fake_list_components)
@@ -2126,7 +2129,13 @@ def test_mcp_describe_live_gui_support_is_invokable(monkeypatch: object, tmp_pat
         fake_describe_live_gui_support,
     )
 
-    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    server = create_server(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            tool_profiles="default,extended",
+        )
+    )
     result = server.invoke_tool("describe_live_gui_support")
 
     assert result["windows_only"] is True
@@ -2161,7 +2170,13 @@ def test_mcp_open_schematic_in_gui_is_invokable(monkeypatch: object, tmp_path: P
         fake_open_schematic_in_gui,
     )
 
-    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    server = create_server(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            tool_profiles="default,extended",
+        )
+    )
     result = server.invoke_tool("open_schematic_in_gui", schematic_path="demo.qsch")
 
     assert result["schematic_path"].endswith("demo.qsch")
@@ -2205,7 +2220,13 @@ def test_mcp_refresh_schematic_in_gui_is_invokable(monkeypatch: object, tmp_path
         fake_refresh_schematic_in_gui,
     )
 
-    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    server = create_server(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            tool_profiles="default,extended",
+        )
+    )
     result = server.invoke_tool(
         "refresh_schematic_in_gui",
         schematic_path="demo.qsch",
@@ -2262,7 +2283,13 @@ def test_mcp_scaffold_live_gui_session_is_invokable(monkeypatch: object, tmp_pat
         fake_scaffold_live_gui_session,
     )
 
-    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    server = create_server(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            tool_profiles="default,extended",
+        )
+    )
     result = server.invoke_tool(
         "scaffold_live_gui_session",
         session_name="buck-debug",
@@ -2435,7 +2462,13 @@ def test_mcp_live_gui_runtime_tools_are_invokable(
 
     typed_monkeypatch.setattr(mcp_runtime, "LiveGuiSessionManager", FakeLiveGuiManager)
 
-    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    server = create_server(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            tool_profiles="default,extended",
+        )
+    )
 
     launch_result = server.invoke_tool(
         "launch_live_gui_session",
@@ -2577,7 +2610,13 @@ def test_mcp_submit_batch_is_invokable(monkeypatch: object, tmp_path: Path) -> N
 
     typed_monkeypatch.setattr(mcp_runtime, "SimulationBatchManager", FakeBatchManager)
 
-    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    server = create_server(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            tool_profiles="default,extended",
+        )
+    )
     result = server.invoke_tool(
         "submit_batch",
         batch_kind="component_value",
@@ -2675,7 +2714,13 @@ def test_mcp_remote_session_tools_are_invokable(monkeypatch: object, tmp_path: P
 
     typed_monkeypatch.setattr(mcp_runtime, "RemoteSimulationManager", FakeRemoteManager)
 
-    server = create_server(QSpiceSettings(exe=executable, workspace_root=tmp_path))
+    server = create_server(
+        QSpiceSettings(
+            exe=executable,
+            workspace_root=tmp_path,
+            tool_profiles="default,extended",
+        )
+    )
 
     submit_result = server.invoke_tool(
         "submit_remote_simulation",

@@ -1,0 +1,9 @@
+# In the name of God, the Most Gracious, the Most Merciful
+description: >
+  Optional mixed-signal skill. Install when a schematic needs a compiled C/C++
+  .DLL custom device, a scaffold, or a symbol-to-source signature check.
+keywords:
+  - qspice
+  - dll
+  - cblock
+  - mixed-signal

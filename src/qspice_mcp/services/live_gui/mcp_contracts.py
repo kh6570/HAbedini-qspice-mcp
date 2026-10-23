@@ -6,7 +6,7 @@ from __future__ import annotations
 MCP_CONTRACTS: dict[str, dict[str, object]] = {
     "refresh_schematic_in_gui": {
         "title": "Refresh Schematic In GUI",
-        "description": "Refresh one workspace-local .qsch GUI view on Windows by reopening via OS association or by force-restarting QSpice before reopening.",
+        "description": "Refresh one workspace-local .qsch GUI view on Windows by reopening via OS association or by stopping only the QSpice processes this server spawned before reopening.",
         "input_schema": {
             "type": "object",
             "required": ["schematic_path"],

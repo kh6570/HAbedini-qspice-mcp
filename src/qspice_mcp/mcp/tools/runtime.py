@@ -23,6 +23,12 @@ from qspice_mcp.infra.workspace_scope import (
 from qspice_mcp.services._internals.batch_manager import SimulationBatchManager
 from qspice_mcp.services._internals.live_gui_manager import LiveGuiSessionManager
 from qspice_mcp.services._internals.remote_session_manager import RemoteSimulationManager
+from qspice_mcp.services._internals.schematic_commit import (
+    attach_schematic_edit_report,
+    bind_expected_schematic_hash,
+    clear_schematic_edit_report,
+    reset_expected_schematic_hash,
+)
 
 from .handler_bindings import ToolHandler, build_raw_tool_handlers
 from .schema_handlers import expose_tool_schema
@@ -74,6 +80,7 @@ class QSpiceToolRuntime:
         logger = get_logger(component="mcp.tool", tool=tool.name)
 
         def _execute(**kwargs: object) -> dict[str, object]:
+            hash_token = bind_expected_schematic_hash(kwargs.pop("expected_hash", None))
             explicit_root = resolve_workspace_override(kwargs.pop("workspace_root", None))
             if explicit_root is None and get_pending_workspace_root() is None:
                 explicit_root = resolve_tool_workspace_override(
@@ -85,6 +92,7 @@ class QSpiceToolRuntime:
             try:
                 return _execute_in_scope(kwargs)
             finally:
+                reset_expected_schematic_hash(hash_token)
                 if workspace_token is not None:
                     reset_pending_workspace_root(workspace_token)
 
@@ -102,6 +110,7 @@ class QSpiceToolRuntime:
                 )
                 if tool.service.long_running:
                     report_progress(0, total=1, message=f"{tool.name} started")
+                clear_schematic_edit_report()
                 try:
                     result = handler(**call_kwargs)
                 except Exception as exc:
@@ -120,6 +129,7 @@ class QSpiceToolRuntime:
                 )
                 if tool.service.long_running:
                     report_progress(1, total=1, message=f"{tool.name} completed")
+                result = attach_schematic_edit_report(result)
                 result.setdefault("trace_id", trace_id)
                 return result
 
