@@ -25,7 +25,7 @@ def test_restrict_session_directory_uses_owner_mode_off_windows(
     directory = tmp_path / "session"
     directory.mkdir()
     modes: list[int] = []
-    monkeypatch.setattr(session_acl.os, "name", "posix")
+    monkeypatch.setattr(session_acl, "_is_windows", lambda: False)
     monkeypatch.setattr(Path, "chmod", lambda _self, mode: modes.append(mode))
 
     restrict_session_directory(directory)
@@ -45,7 +45,7 @@ def test_restrict_session_directory_grants_the_windows_user(
         commands.append(command)
         return SimpleNamespace(returncode=0, stdout="", stderr="")
 
-    monkeypatch.setattr(session_acl.os, "name", "nt")
+    monkeypatch.setattr(session_acl, "_is_windows", lambda: True)
     monkeypatch.setenv("USERNAME", "circuit-user")
     monkeypatch.setattr(session_acl.subprocess, "run", fake_run)
 
@@ -62,7 +62,7 @@ def test_restrict_session_directory_reports_acl_failure(
 ) -> None:
     directory = tmp_path / "session"
     directory.mkdir()
-    monkeypatch.setattr(session_acl.os, "name", "nt")
+    monkeypatch.setattr(session_acl, "_is_windows", lambda: True)
     monkeypatch.delenv("USERNAME", raising=False)
     with pytest.raises(ValidationError, match="Windows user name"):
         restrict_session_directory(directory)

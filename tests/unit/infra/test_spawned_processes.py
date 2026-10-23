@@ -68,13 +68,13 @@ def test_image_pids_parses_tasklist_and_skips_other_platforms(
             )
         )
 
-    monkeypatch.setattr(spawned_processes.os, "name", "nt")
+    monkeypatch.setattr(spawned_processes, "_is_windows", lambda: True)
     monkeypatch.setattr(spawned_processes.subprocess, "run", fake_run)
 
     assert image_pids("  ") == set()
     assert image_pids("QSPICE64.exe") == {4321}
 
-    monkeypatch.setattr(spawned_processes.os, "name", "posix")
+    monkeypatch.setattr(spawned_processes, "_is_windows", lambda: False)
     assert image_pids("QSPICE64.exe") == set()
 
 
@@ -112,14 +112,14 @@ def test_kill_pid_uses_taskkill_or_signal(monkeypatch: pytest.MonkeyPatch) -> No
         commands.append(command)
         return SimpleNamespace(returncode=0)
 
-    monkeypatch.setattr(spawned_processes.os, "name", "nt")
+    monkeypatch.setattr(spawned_processes, "_is_windows", lambda: True)
     monkeypatch.setattr(spawned_processes.subprocess, "run", fake_run)
     remember_spawned_pid(77)
     assert terminate_spawned_processes() == ((77,), 0)
     assert commands[0][:3] == ["taskkill", "/F", "/PID"]
 
     signals: list[tuple[int, int]] = []
-    monkeypatch.setattr(spawned_processes.os, "name", "posix")
+    monkeypatch.setattr(spawned_processes, "_is_windows", lambda: False)
     monkeypatch.setattr(spawned_processes.os, "kill", lambda pid, sig: signals.append((pid, sig)))
     remember_spawned_pid(78)
     assert terminate_spawned_processes() == ((78,), 0)

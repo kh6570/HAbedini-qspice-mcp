@@ -6,7 +6,7 @@ from __future__ import annotations
 import os
 import subprocess
 import threading
-from pathlib import Path
+from pathlib import PureWindowsPath
 
 _LOCK = threading.Lock()
 _PIDS: set[int] = set()
@@ -44,19 +44,29 @@ def clear_spawned_pids() -> None:
         _PIDS.clear()
 
 
+def _is_windows() -> bool:
+    return os.name == "nt"
+
+
+def _executable_name(command: str) -> str:
+    """Return the image name, including when the command uses Windows separators."""
+
+    return PureWindowsPath(command).name
+
+
 def remember_qspice_process(command: tuple[str, ...], pid: int) -> None:
     """Remember a PID when the command starts a QSpice executable."""
 
     if not command:
         return
-    if Path(command[0]).name.casefold().startswith("qspice"):
+    if _executable_name(command[0]).casefold().startswith("qspice"):
         remember_spawned_pid(pid)
 
 
 def image_pids(image_name: str) -> set[int]:
     """Return PIDs whose image name matches, on Windows."""
 
-    if os.name != "nt" or not image_name.strip():
+    if not _is_windows() or not image_name.strip():
         return set()
     completed = subprocess.run(  # noqa: S603
         ["tasklist", "/FI", f"IMAGENAME eq {image_name}", "/FO", "CSV", "/NH"],  # noqa: S607
@@ -82,7 +92,7 @@ def remember_new_image_pids(image_name: str, before: set[int]) -> tuple[int, ...
 
 
 def _kill_pid(pid: int) -> int:
-    if os.name == "nt":
+    if _is_windows():
         completed = subprocess.run(  # noqa: S603
             ["taskkill", "/F", "/PID", str(pid)],  # noqa: S607
             check=False,

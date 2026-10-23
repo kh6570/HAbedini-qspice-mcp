@@ -10,6 +10,10 @@ from pathlib import Path
 from qspice_mcp.core.exceptions import ValidationError
 
 
+def _is_windows() -> bool:
+    return os.name == "nt"
+
+
 def restrict_session_directory(path: Path) -> None:
     """Give only the current user access to one session directory.
 
@@ -20,7 +24,7 @@ def restrict_session_directory(path: Path) -> None:
     directory = Path(path)
     if not directory.is_dir():
         raise ValidationError("Live GUI session folder must be a directory before its ACL is set.")
-    if os.name != "nt":
+    if not _is_windows():
         directory.chmod(0o700)
         return
     username = os.environ.get("USERNAME", "").strip()
